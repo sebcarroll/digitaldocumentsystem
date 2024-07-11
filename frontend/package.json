@@ -1,0 +1,19 @@
+{
+  "name": "digitaldocumentsystem",
+  "version": "1.0.0",
+  "description": "A digital document management system that incorporates AI elements on top of the typical Google Drive.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebcarroll/digitaldocumentsystem.git"
+  },
+  "author": "Sebastian Carroll",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sebcarroll/digitaldocumentsystem/issues"
+  },
+  "homepage": "https://github.com/sebcarroll/digitaldocumentsystem#readme"
+}
