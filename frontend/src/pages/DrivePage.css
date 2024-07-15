@@ -1,56 +1,151 @@
 .drive-page {
-    font-family: Arial, sans-serif;
-    color: #202124;
-  }
-  
-  .drive-header {
-    background-color: #f1f3f4;
-    padding: 16px;
-    border-bottom: 1px solid #dadce0;
-  }
-  
-  .drive-header h1 {
-    font-size: 18px;
-    font-weight: 400;
-    margin: 0;
-  }
-  
-  .drive-content {
-    padding: 20px;
-  }
-  
-  .loading, .error, .no-files {
-    text-align: center;
-    padding: 20px;
-    font-size: 16px;
-  }
-  
-  .file-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-  }
-  
-  .file-item {
-    background-color: #fff;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-    padding: 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  .file-item:hover {
-    background-color: #f1f3f4;
-  }
-  
-  .file-icon {
-    font-size: 48px;
-    margin-bottom: 8px;
-  }
-  
-  .file-name {
-    font-size: 14px;
-    word-break: break-word;
-  }
+  font-family: Arial, sans-serif;
+  color: #202124;
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #f1f3f4;
+  padding: 20px;
+  border-right: 1px solid #dadce0;
+}
+
+.new-button-container {
+  margin-bottom: 20px;
+}
+
+.sidebar-nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.sidebar-nav li {
+  margin-bottom: 10px;
+}
+
+.sidebar-nav a {
+  text-decoration: none;
+  color: #202124;
+  font-size: 14px;
+}
+
+.sidebar-nav .active a {
+  font-weight: bold;
+  color: #1a73e8;
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.drive-header {
+  background-color: #f1f3f4;
+  padding: 16px;
+  border-bottom: 1px solid #dadce0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drive-header h1 {
+  font-size: 18px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.drive-content {
+  padding: 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.loading, .error, .no-files {
+  text-align: center;
+  padding: 20px;
+  font-size: 16px;
+}
+
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.file-item {
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.file-item:hover {
+  background-color: #f1f3f4;
+}
+
+.file-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.file-name {
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.drive-header {
+  background-color: #f1f3f4;
+  padding: 16px 24px;
+  border-bottom: 1px solid #dadce0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breadcrumbs {
+  font-size: 18px;
+  color: #202124;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.breadcrumb-item:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-item.current {
+  font-weight: 500;
+  color: #202124;
+}
+
+.breadcrumb-separator {
+  margin: 0 8px;
+  color: #5f6368;
+  font-weight: 400;
+}
+
+.drive-header button {
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.drive-header button:hover {
+  background-color: #f1f3f4;
+}

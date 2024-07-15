@@ -44,3 +44,7 @@
   .dropdown-menu button:hover {
     background-color: #f0f0f0;
   }
+  
+  .new-item-button:hover {
+  background-color: #7b1fa2; /* Darker purple on hover */
+}
