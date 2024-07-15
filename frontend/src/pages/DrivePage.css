@@ -1,0 +1,56 @@
+.drive-page {
+    font-family: Arial, sans-serif;
+    color: #202124;
+  }
+  
+  .drive-header {
+    background-color: #f1f3f4;
+    padding: 16px;
+    border-bottom: 1px solid #dadce0;
+  }
+  
+  .drive-header h1 {
+    font-size: 18px;
+    font-weight: 400;
+    margin: 0;
+  }
+  
+  .drive-content {
+    padding: 20px;
+  }
+  
+  .loading, .error, .no-files {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+  }
+  
+  .file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  
+  .file-item {
+    background-color: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .file-item:hover {
+    background-color: #f1f3f4;
+  }
+  
+  .file-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+  
+  .file-name {
+    font-size: 14px;
+    word-break: break-word;
+  }

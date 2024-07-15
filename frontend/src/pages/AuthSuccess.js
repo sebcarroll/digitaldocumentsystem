@@ -7,7 +7,7 @@ const AuthSuccess = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       navigate('/drive');
-    }, 1000); // Redirect after 1 second
+    }, 200); // Redirect after 1 second
 
     return () => clearTimeout(timer);
   }, [navigate]);
