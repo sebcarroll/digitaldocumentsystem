@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchDriveFiles, checkAuth, openDriveFile, createFolder, uploadFile, uploadFolder, createDoc, createSheet } from '../services/api';
 import './DrivePage.css';
-import NewItemButton from '../components/drivePage/newItemButton.js';
+import Sidebar from '../components/drivePage/sidebar.js';
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
@@ -183,26 +183,13 @@ const DrivePage = () => {
 
   return (
     <div className="drive-page">
-      <aside className="sidebar">
-        <div className="new-button-container">
-          <NewItemButton
-            onCreateFolder={handleCreateFolder}
-            onUploadFile={handleUploadFile}
-            onUploadFolder={handleUploadFolder}
-            onCreateDoc={handleCreateDoc}
-            onCreateSheet={handleCreateSheet}
-          />
-        </div>
-        <nav className="sidebar-nav">
-          <ul>
-            <li className={location.pathname === '/' ? 'active' : ''}><a href="/">Home</a></li>
-            <li className={location.pathname === '/my-archive' ? 'active' : ''}><a href="/my-archive">My Archive</a></li>
-            <li className={location.pathname === '/shared-with-me' ? 'active' : ''}><a href="/shared-with-me">Shared with me</a></li>
-            <li className={location.pathname === '/recent' ? 'active' : ''}><a href="/recent">Recent</a></li>
-            <li className={location.pathname === '/bin' ? 'active' : ''}><a href="/bin">Bin</a></li>
-          </ul>
-        </nav>
-      </aside>
+      <Sidebar
+        onCreateFolder={handleCreateFolder}
+        onUploadFile={handleUploadFile}
+        onUploadFolder={handleUploadFolder}
+        onCreateDoc={handleCreateDoc}
+        onCreateSheet={handleCreateSheet}
+      />
       <main className="main-content">
         <header className="drive-header">
           <div className="breadcrumbs">

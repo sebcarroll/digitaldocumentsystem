@@ -1,7 +1,7 @@
 import React from 'react';
-import GoogleBackground from './googleBackground';
-import GoogleLogo from './googleLogo';
-import SignInText from './signInText';
+import GoogleBackground from './GoogleSignInSubComponents/googleBackground';
+import GoogleLogo from './GoogleSignInSubComponents/googleLogo';
+import SignInText from './GoogleSignInSubComponents/signInText';
 
 const GoogleSignInButton = ({ onClick }) => {
   return (
