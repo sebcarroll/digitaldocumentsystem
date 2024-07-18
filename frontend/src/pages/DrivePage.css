@@ -1,34 +1,43 @@
 .drive-page {
   font-family: Arial, sans-serif;
   color: #202124;
-  display: flex;
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: auto 1fr;
   height: 100vh;
-}
-.main-content {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 .drive-header {
+  grid-area: header;
   background-color: #f1f3f4;
-  padding: 16px;
+  padding: 16px 24px;
   border-bottom: 1px solid #dadce0;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.drive-header h1 {
-  font-size: 18px;
-  font-weight: 400;
-  margin: 0;
+.sidebar {
+  grid-area: sidebar;
+  background-color: #f1f3f4;
+  border-right: 1px solid #dadce0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.main-content {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .drive-content {
   padding: 20px;
   flex-grow: 1;
-  overflow-y: auto;
 }
 
 .loading, .error, .no-files {
@@ -65,15 +74,6 @@
 .file-name {
   font-size: 14px;
   word-break: break-word;
-}
-
-.drive-header {
-  background-color: #f1f3f4;
-  padding: 16px 24px;
-  border-bottom: 1px solid #dadce0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .breadcrumbs {

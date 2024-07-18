@@ -1,7 +1,7 @@
 // Sidebar.js
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import NewItemButton from './newItemButton.js';
+import NewItemButton from './sidebarSubComponents/newItemButton.js';
 import './sidebar.css';
 import SidebarButton from './sidebarSubComponents/sidebarPageButton.js';
 

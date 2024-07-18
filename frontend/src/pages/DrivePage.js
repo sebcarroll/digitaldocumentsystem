@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchDriveFiles, checkAuth, openDriveFile, createFolder, uploadFile, uploadFolder, createDoc, createSheet } from '../services/api';
 import './DrivePage.css';
 import Sidebar from '../components/drivePage/sidebar.js';
+import Header from '../components/drivePage/header.js';
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
@@ -145,60 +146,28 @@ const DrivePage = () => {
     return '📄';
   };
 
-  const getPageTitle = () => {
-    const path = location.pathname.split('/').filter(Boolean);
-    if (path.length === 0) return 'Welcome to Diganise';
-    return path[path.length - 1].charAt(0).toUpperCase() + path[path.length - 1].slice(1);
-  };
-
-  const getBreadcrumbs = () => {
-    if (folderStack.length === 0 && currentFolder.id === 'root') return getPageTitle();
-
-    let breadcrumbs = [...folderStack, currentFolder];
-    if (breadcrumbs.length > 3) {
-      breadcrumbs = [{ id: '...', name: '...' }, ...breadcrumbs.slice(-2)];
-    }
-
-    return breadcrumbs.map((folder, index) => {
-      let folderName = folder.id === 'root' ? getPageTitle() : folder.name;
-      if (folderName.length > 20) {
-        folderName = folderName.slice(0, 17) + '...';
-      }
-      return (
-        <React.Fragment key={folder.id}>
-          {index > 0 && <span className="breadcrumb-separator"> &gt; </span>}
-          <span 
-            onClick={() => handleBreadcrumbClick(index)} 
-            className={`breadcrumb-item ${index === breadcrumbs.length - 1 ? 'current' : ''}`}
-          >
-            {folderName}
-          </span>
-        </React.Fragment>
-      );
-    });
-  };
-
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return (
     <div className="drive-page">
-      <Sidebar
-        onCreateFolder={handleCreateFolder}
-        onUploadFile={handleUploadFile}
-        onUploadFolder={handleUploadFolder}
-        onCreateDoc={handleCreateDoc}
-        onCreateSheet={handleCreateSheet}
-      />
+      <div className="drive-header">
+        <Header 
+          folderStack={folderStack}
+          currentFolder={currentFolder}
+          onBreadcrumbClick={handleBreadcrumbClick}
+        />
+      </div>
+      <div className="sidebar">
+        <Sidebar
+          onCreateFolder={handleCreateFolder}
+          onUploadFile={handleUploadFile}
+          onUploadFolder={handleUploadFolder}
+          onCreateDoc={handleCreateDoc}
+          onCreateSheet={handleCreateSheet}
+        />
+      </div>
       <main className="main-content">
-        <header className="drive-header">
-          <div className="breadcrumbs">
-            {getBreadcrumbs()}
-          </div>
-          {currentFolder.id !== 'root' && (
-            <button onClick={handleBackClick}>Back</button>
-          )}
-        </header>
         <div className="drive-content">
           {driveContent.length === 0 ? (
             <p className="no-files">This folder is empty.</p>
