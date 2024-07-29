@@ -2,30 +2,13 @@ import React from 'react';
 import GoogleBackground from './GoogleSignInSubComponents/googleBackground';
 import GoogleLogo from './GoogleSignInSubComponents/googleLogo';
 import SignInText from './GoogleSignInSubComponents/signInText';
+import '../../pages/LoginPage.css';
 
 const GoogleSignInButton = ({ onClick }) => {
   return (
-    <div 
-      onClick={onClick}
-      style={{
-        cursor: 'pointer',
-        width: '100%',
-      }}
-    >
-      <GoogleBackground style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        padding: '10px',
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '20px',
-          marginTop: '10px'
-        }}>
+    <div onClick={onClick} className="google-sign-in-button">
+      <GoogleBackground className="google-background">
+        <div className="google-content">
           <GoogleLogo />
           <SignInText />
         </div>

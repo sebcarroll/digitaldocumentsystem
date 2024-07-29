@@ -1,23 +1,31 @@
+/* DrivePage.css */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 .drive-page {
   font-family: Arial, sans-serif;
   color: #202124;
   display: grid;
   grid-template-areas:
     "header header"
-    "sidebar main";
+    "sidebar main-area";
   grid-template-columns: 250px 1fr;
   grid-template-rows: auto 1fr;
   height: 100vh;
+  overflow: hidden;
 }
 
 .drive-header {
   grid-area: header;
-  background-color: #f1f3f4;
-  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #fff;
   border-bottom: 1px solid #dadce0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .sidebar {
@@ -26,18 +34,29 @@
   border-right: 1px solid #dadce0;
   padding: 16px;
   overflow-y: auto;
+  height: calc(100vh - 80px); /* Adjust 80px to match your header height */
 }
 
-.main-content {
-  grid-area: main;
+.main-area {
+  grid-area: main-area;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  height: calc(100vh - 80px); /* Adjust 80px to match your header height */
+}
+
+.search-bar-container {
+  background-color: #ffffff;
+  padding: 16px 24px;
+  border-bottom: 1px solid #dadce0;
+}
+
+.main-content {
+  flex-grow: 1;
 }
 
 .drive-content {
   padding: 20px;
-  flex-grow: 1;
 }
 
 .loading, .error, .no-files {
@@ -48,7 +67,7 @@
 
 .file-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
@@ -76,35 +95,6 @@
   word-break: break-word;
 }
 
-.breadcrumbs {
-  font-size: 18px;
-  color: #202124;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.breadcrumb-item {
-  cursor: pointer;
-  font-weight: 400;
-  white-space: nowrap;
-}
-
-.breadcrumb-item:hover {
-  text-decoration: underline;
-}
-
-.breadcrumb-item.current {
-  font-weight: 500;
-  color: #202124;
-}
-
-.breadcrumb-separator {
-  margin: 0 8px;
-  color: #5f6368;
-  font-weight: 400;
-}
-
 .drive-header button {
   background-color: #fff;
   border: 1px solid #dadce0;
@@ -116,4 +106,52 @@
 
 .drive-header button:hover {
   background-color: #f1f3f4;
+}
+
+/* Responsive design */
+@media screen and (max-width: 768px) {
+  .drive-page {
+    grid-template-areas:
+      "header"
+      "sidebar"
+      "main-area";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid #dadce0;
+  }
+}
+
+  .search-bar-container {
+    border-bottom: 1px solid #dadce0;
+  }
+
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+@media screen and (max-width: 480px) {
+  .drive-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .drive-header button {
+    margin-top: 10px;
+  }
+
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .file-icon {
+    font-size: 36px;
+  }
+
+  .file-name {
+    font-size: 12px;
+  }
 }

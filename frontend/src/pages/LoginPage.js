@@ -1,14 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import BackgroundImage from '../components/login/backgroundImage.js';
 import LoginCard from '../components/login/loginCard.js';
 import DontHaveAccountText from '../components/login/dontHaveAccount.js';
 import SignUpButton from '../components/login/signUpButton.js';
 import GoogleSignInButton from '../components/login/completeGoogleSignInButton.js';
+import './LoginPage.css';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-
   const handleGoogleSignUp = () => {
     window.open('https://accounts.google.com/signup', '_blank');
   };
@@ -18,56 +16,25 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center',
-      position: 'relative'
-    }}>
+    <div className="login-page">
       <BackgroundImage />
 
-      <LoginCard style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        width: '100%',
-        maxWidth: '300px',
-        padding: '20px',
-        minHeight: '400px',
-      }}>
-        <div style={{ flex: 1 }} />
+      <LoginCard className="login-card-container">
+        <div className="flex-spacer" />
         
-        <div style={{ 
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: '20px 0',
-          marginLeft: '10%',
-          marginRight: '10%'
-        }}>
+        <div className="google-sign-in-container">
           <GoogleSignInButton onClick={handleGoogleSignIn} />
         </div>
-        <div style={{ flex: 1 }} />
+
+        <div className="flex-spacer" />
         
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          padding: '0 30px',
-          boxSizing: 'border-box',
-        }}>
-          <div style={{ flex: 1, maxWidth: '60%' }}>
-            <DontHaveAccountText style={{ 
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }} />
+        <div className="account-signup-container">
+          <div className="dont-have-account-container">
+            <DontHaveAccountText className="dont-have-account-text" />
           </div>
-          <div style={{ flex: 1, maxWidth: '40%', display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="signup-button-container">
             <SignUpButton 
-              style={{ cursor: 'pointer' }}
+              className="signup-button"
               onClick={handleGoogleSignUp}
             />
           </div>

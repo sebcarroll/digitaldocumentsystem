@@ -1,0 +1,175 @@
+/* LoginPage.css */
+
+/* BackgroundImage styles */
+.background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    z-index: -1;
+  }
+  
+  /* GoogleSignInButton styles */
+  .google-sign-in-button {
+    cursor: pointer;
+    width: 100%;
+  }
+  
+  .google-background {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+  }
+  
+  .google-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 10px;
+  }
+  
+  /* DontHaveAccountText styles */
+  .dont-have-account-text {
+    color: #5d5d5b;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    line-height: 24px;
+  }
+  
+  /* LoginCard styles */
+  .login-card {
+    top: 362.6963216252684px;
+    left: 528px;
+    width: 383px;
+    height: 170.3036783747316px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 1px 1px 8px rgba(149,149,149,0.25);
+  }
+  
+  /* SignUpButton styles */
+  .sign-up-button {
+    cursor: pointer;
+    top: 474px;
+    left: 800px;
+    width: 91px;
+    height: 40px;
+    padding: 0px 8px;
+    border: 0;
+    box-sizing: border-box;
+    border-radius: 9999px;
+    background-color: #7a52f4;
+    color: #ffffff;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    line-height: 24px;
+    outline: none;
+  }
+
+  /* LoginPage styles */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  
+  .login-card-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 300px;
+    padding: 20px;
+    min-height: 400px;
+  }
+  
+  .google-sign-in-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    margin-left: 10%;
+    margin-right: 10%;
+  }
+  
+  .account-signup-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 30px;
+    box-sizing: border-box;
+  }
+  
+  .dont-have-account-container {
+    flex: 1;
+    max-width: 60%;
+  }
+  
+  .dont-have-account-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .signup-button-container {
+    flex: 1;
+    max-width: 40%;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .signup-button {
+    cursor: pointer;
+  }
+  
+  /* Spacer */
+  .flex-spacer {
+    flex: 1;
+  }
+
+  /* googleSignInButton.css */
+
+/* GoogleBackground styles */
+.google-background {
+  top: 387px;
+  left: 560px;
+  width: 300px;
+  height: 68px;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  border: 1px solid #4285f4;
+  box-sizing: border-box;
+  box-shadow: 1px 1px 8px rgba(149,149,149,0.25);
+}
+
+/* GoogleLogo styles */
+.google-logo {
+  color: #4285f4;
+  fill: #4285f4;
+  font-size: 46px;
+  top: 398px;
+  left: 584px;
+  width: 46px;
+  height: 46px;
+}
+
+/* SignInText styles */
+.sign-in-text {
+  color: #080a0b;
+  font-size: 20px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  line-height: 28px;
+}

@@ -1,14 +1,5 @@
 import React from 'react';
-
-const styles = {
-  Text: {
-    color: '#080a0b',
-    fontSize: '20px',
-    fontFamily: 'Inter',
-    fontWeight: 700,
-    lineHeight: '28px',
-  },
-};
+import '../../../pages/LoginPage.css';
 
 const defaultProps = {
   text: 'Sign in with Google',
@@ -16,7 +7,7 @@ const defaultProps = {
 
 const SignInText = (props) => {
   return (
-    <div style={styles.Text}>
+    <div className="sign-in-text">
       {props.text ?? defaultProps.text}
     </div>
   );

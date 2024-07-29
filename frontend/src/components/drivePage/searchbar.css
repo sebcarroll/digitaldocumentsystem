@@ -1,0 +1,140 @@
+/* SearchBar.css */
+.searchbar-background {
+  position: relative;
+  width: 100%;
+  max-width: 1048px;
+  height: 339px;
+  background-color: #f6f6f6;
+  border-radius: 16px;
+  box-shadow: 1px 1px 8px rgba(149,149,149,0.25);
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.maximise-button-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.maximise-icon {
+  color: #5d5d5b;
+  fill: #5d5d5b;
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.welcome-card {
+  margin-top: 40px;
+  width: calc(100% - 40px);  /* Subtract padding from width */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.welcome-text {
+  color: #080a0b;
+  font-size: 16px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+}
+
+.search-form {
+  margin-top: auto;
+  display: flex;
+  width: calc(100% - 40px);  /* Subtract padding from width */
+  margin-left: auto;
+  margin-right: auto;
+  gap: 10px;  /* Add gap between input and button */
+}
+
+.input-field {
+  flex-grow: 1;
+  height: 45px;
+  padding: 0 15px;
+  border: 0.8px solid #d1d5db;
+  border-radius: 9999px;  /* Make fully rounded */
+  background-color: #ffffff;
+  color: #080a0b;
+  font-size: 16px;
+  font-family: 'Roboto', sans-serif;
+  outline: none;
+}
+
+.send-button {
+  cursor: pointer;
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+  top: 368px;
+  left: 1360px;
+  width: 45px;
+  height: 45px;
+  border: 0;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  color: #ffffff;
+  background-color: #1e3a8a;
+  outline: none;
+  padding: 0; 
+}
+
+.icon {
+  color: #ffffff;
+  fill: #ffffff;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  display: block; 
+  margin: auto; 
+}
+
+@media (max-width: 768px) {
+  .searchbar-background {
+    height: auto;
+    min-height: 339px;
+  }
+
+  .search-form {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .input-field {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .send-button {
+    width: 45px;  
+  }
+}
+
+@media (max-width: 768px) {
+  .searchbar-background {
+    height: auto;
+    min-height: 339px;
+  }
+
+  .search-form {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .input-field {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .send-button {
+    width: 45px;  
+  }
+}

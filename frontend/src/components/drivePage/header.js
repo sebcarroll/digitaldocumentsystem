@@ -8,18 +8,24 @@ import logoImage from '../../assets/images/proprietary_images/diganise_logo_july
 import './header.css';
 
 const Header = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
+  const isRootFolder = currentFolder.id === 'root' && folderStack.length === 0;
+
   return (
     <HeaderBackground>
       <div className="header-content">
-        <div className="logo-and-text">
-          <img src={logoImage} alt="Diganise Logo" className="logo" />
-          <div className="text">
-            <CurrentPageText 
-              folderStack={folderStack} 
-              currentFolder={currentFolder} 
+        <div className="left-section">
+          <div className="logo-and-text">
+            <img src={logoImage} alt="Diganise Logo" className="logo" />
+          </div>
+          {isRootFolder ? (
+            <span className="text">Welcome to Diganise</span>
+          ) : (
+            <CurrentPageText
+              folderStack={folderStack}
+              currentFolder={currentFolder}
               onBreadcrumbClick={onBreadcrumbClick}
             />
-          </div>
+          )}
         </div>
         <div className="icon-container">
           <HeaderQuestionIcon />

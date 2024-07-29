@@ -1,9 +1,6 @@
 .header {
-  position: fixed;
-  top: 0;
-  left: 0;
+  grid-area: header;
   width: 100%;
-  height: 80px;
   background-color: #ffffff;
   box-shadow: 1px 1px 8px rgba(149,149,149,0.25);
 }
@@ -12,13 +9,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 100%;
+  height: 90px;
   padding: 0 20px;
+}
+
+.left-section {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
 }
 
 .logo-and-text {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -28,15 +32,19 @@
 
 .text {
   color: #080a0b;
-  font-size: 18px;
-  font-family: Roboto, sans-serif;
-  font-weight: 500;
-  line-height: 1.3;
+  font-size: 34px;
+  font-family: "Roboto", sans-serif;
+  font-weight: 700;
+  line-height: 36px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .icon-container {
   display: flex;
   align-items: center;
+  margin-left: auto; 
 }
 
 .icon {
@@ -45,12 +53,51 @@
   width: 24px;
   height: 24px;
   margin-left: 20px;
+  display: block; 
+}
+
+/* Breadcrumb styles */
+.left-section {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: calc(100% - 120px); 
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  font-family: "Roboto", sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 36px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb-item {
+  color: #939393;
+  transition: color 0.3s ease;
+}
+
+.breadcrumb-item:hover {
+  cursor: pointer;
+}
+
+.breadcrumb-item.current-item {
+  color: #080a0b;
+}
+
+.breadcrumb-separator {
+  margin: 0 10px;
+  color: #939393;
 }
 
 @media (max-width: 768px) {
   .header-content {
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: space-between;
     height: auto;
     padding: 10px;
   }
@@ -64,13 +111,14 @@
     margin-right: 10px;
   }
 
-  .text {
+  .text, .breadcrumbs {
     font-size: 16px;
+    line-height: normal;
   }
 
   .icon-container {
     justify-content: center;
-    width: 100%;
+    width: auto;
   }
 
   .icon {
@@ -79,7 +127,7 @@
 }
 
 @media (max-width: 480px) {
-  .text {
+  .text, .breadcrumbs {
     font-size: 14px;
   }
 

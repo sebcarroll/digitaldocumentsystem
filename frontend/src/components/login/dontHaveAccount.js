@@ -1,22 +1,13 @@
 import React from 'react';
-
-const styles = {
-  Text: {
-    color: '#5d5d5b',
-    fontSize: '16px',
-    fontFamily: 'Inter',
-    fontWeight: 500,
-    lineHeight: '24px',
-  },
-};
+import '../../pages/LoginPage.css';
 
 const defaultProps = {
-  text: 'Don\'t have a Google account?',
+  text: 'Don\'t have an account?',
 };
 
 const DontHaveAccountText = (props) => {
   return (
-    <div style={styles.Text}>
+    <div className="dont-have-account-text">
       {props.text ?? defaultProps.text}
     </div>
   );

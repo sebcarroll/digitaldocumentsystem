@@ -1,6 +1,7 @@
 from flask import Blueprint, redirect, request, session, url_for, jsonify
 from google_auth_oauthlib.flow import Flow
 from config import Config
+from datetime import datetime
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -25,6 +26,7 @@ def login():
         include_granted_scopes='true'
     )
     session['state'] = state
+    session['last_active'] = datetime.now().timestamp()
     return redirect(authorization_url)
 
 @auth_bp.route('/oauth2callback')
@@ -55,10 +57,17 @@ def oauth2callback():
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes
     }
+    session['last_active'] = datetime.now().timestamp()
     return redirect('http://localhost:3000/auth-success')  # Redirect to React app
 
 @auth_bp.route('/check-auth')
 def check_auth():
     if 'credentials' in session:
+        session['last_active'] = datetime.now().timestamp()
         return jsonify({"authenticated": True})
     return jsonify({"authenticated": False})
+
+@auth_bp.route('/logout')
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out successfully"})

@@ -4,6 +4,7 @@ import { fetchDriveFiles, checkAuth, openDriveFile, createFolder, uploadFile, up
 import './DrivePage.css';
 import Sidebar from '../components/drivePage/sidebar.js';
 import Header from '../components/drivePage/header.js';
+import SearchBar from '../components/drivePage/searchbar.js';
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
@@ -134,6 +135,12 @@ const DrivePage = () => {
     }
   };
 
+  const handleSearch = (query) => {
+    // Implement your search logic here
+    console.log('Searching for:', query);
+    // You might want to call an API to search files or filter the current driveContent
+  };
+
   const getFileIcon = (mimeType) => {
     if (mimeType === 'application/vnd.google-apps.folder') return '📁';
     if (mimeType.includes('image')) return '🖼️';
@@ -167,26 +174,31 @@ const DrivePage = () => {
           onCreateSheet={handleCreateSheet}
         />
       </div>
-      <main className="main-content">
-        <div className="drive-content">
-          {driveContent.length === 0 ? (
-            <p className="no-files">This folder is empty.</p>
-          ) : (
-            <div className="file-grid">
-              {driveContent.map((file) => (
-                <div 
-                  key={file.id} 
-                  className="file-item"
-                  onClick={() => handleFileClick(file)}
-                >
-                  <div className="file-icon">{getFileIcon(file.mimeType)}</div>
-                  <div className="file-name">{file.name}</div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="main-area">
+        <div className="search-bar-container">
+          <SearchBar onSearch={handleSearch} />
         </div>
-      </main>
+        <main className="main-content">
+          <div className="drive-content">
+            {driveContent.length === 0 ? (
+              <p className="no-files">This folder is empty.</p>
+            ) : (
+              <div className="file-grid">
+                {driveContent.map((file) => (
+                  <div 
+                    key={file.id} 
+                    className="file-item"
+                    onClick={() => handleFileClick(file)}
+                  >
+                    <div className="file-icon">{getFileIcon(file.mimeType)}</div>
+                    <div className="file-name">{file.name}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

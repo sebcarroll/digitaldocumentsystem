@@ -1,5 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './newItemButton.css';
+import '../sidebar.css';
+
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import DriveFolderUploadIcon from '@mui/icons-material/DriveFolderUpload';
+import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
+import DescriptionIcon from '@mui/icons-material/Description';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 const NewItemButton = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, onCreateSheet }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,16 +65,27 @@ const NewItemButton = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateD
     setIsOpen(false);
   };
 
+  const menuItems = [
+    { icon: <CreateNewFolderIcon />, text: 'New Folder', action: onCreateFolder },
+    { icon: <FileUploadIcon />, text: 'Upload File', action: () => fileInputRef.current.click() },
+    { icon: <DriveFolderUploadIcon />, text: 'Upload Folder', action: () => folderInputRef.current.click() },
+    { icon: <DescriptionIcon />, text: 'New Google Doc', action: onCreateDoc },
+    { icon: <TableChartIcon />, text: 'New Google Sheet', action: onCreateSheet },
+  ];
+  
+
   return (
     <div className="new-item-button-container" ref={containerRef}>
       <button className="new-item-button" onClick={handleButtonClick}>+ New</button>
       {isOpen && (
         <div className="dropdown-menu">
-          <button onClick={() => handleMenuItemClick(onCreateFolder)}>New Folder</button>
-          <button onClick={() => fileInputRef.current.click()}>Upload File</button>
-          <button onClick={() => folderInputRef.current.click()}>Upload Folder</button>
-          <button onClick={() => handleMenuItemClick(onCreateDoc)}>New Google Doc</button>
-          <button onClick={() => handleMenuItemClick(onCreateSheet)}>New Google Sheet</button>
+          {menuItems.map((item, index) => (
+            <button key={index} onClick={() => handleMenuItemClick(item.action)}>
+              <span className="dropdown-menu-icon">{item.icon}</span>
+              <span className="dropdown-menu-text">{item.text}</span>
+              <span className="dropdown-menu-arrow"><ArrowForwardIosIcon fontSize="small" /></span>
+            </button>
+          ))}
         </div>
       )}
       <input
