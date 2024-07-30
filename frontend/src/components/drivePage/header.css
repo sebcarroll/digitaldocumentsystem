@@ -3,6 +3,8 @@
   width: 100%;
   background-color: #ffffff;
   box-shadow: 1px 1px 8px rgba(149,149,149,0.25);
+  position: relative;
+  z-index: 10; 
 }
 
 .header-content {
@@ -11,8 +13,8 @@
   align-items: center;
   height: 90px;
   padding: 0 20px;
+  overflow: visible; 
 }
-
 .left-section {
   display: flex;
   align-items: center;
@@ -41,27 +43,48 @@
   text-overflow: ellipsis;
 }
 
+/*
+
 .icon-container {
   display: flex;
   align-items: center;
-  margin-left: auto; 
+  margin-left: auto;
+  position: relative;
+  z-index: 11; 
+  overflow: visible;
 }
+
+.icon-wrapper {
+  margin-left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+*/
 
 .icon {
   color: #7a52f4;
   fill: #7a52f4;
-  width: 24px;
-  height: 24px;
-  margin-left: 20px;
-  display: block; 
+  width: 40px;
+  height: 40px;
+  display: block;
+  position: relative;
+  z-index: 12; 
+  transition: fill 0.3s ease;
+}
+
+
+.icon:hover {
+  fill: #6642d1; 
 }
 
 /* Breadcrumb styles */
 .left-section {
   display: flex;
   align-items: center;
-  overflow: hidden;
-  max-width: calc(100% - 120px); 
+  overflow: visible; 
+  max-width: calc(100% - 140px); 
 }
 
 .breadcrumbs {
@@ -116,13 +139,13 @@
     line-height: normal;
   }
 
-  .icon-container {
-    justify-content: center;
-    width: auto;
+  .icon-wrapper {
+    margin-left: 15px;
   }
 
   .icon {
-    margin-left: 15px;
+    width: 36px;
+    height: 36px;
   }
 }
 
@@ -131,9 +154,12 @@
     font-size: 14px;
   }
 
-  .icon {
-    width: 20px;
-    height: 20px;
+  .icon-wrapper {
     margin-left: 10px;
+  }
+
+  .icon {
+    width: 32px;
+    height: 32px;
   }
 }

@@ -136,4 +136,78 @@ def create_sheet():
     return jsonify({
         "id": file.get('id'),
         "webViewLink": file.get('webViewLink')
-    })
+    })  
+
+@drive_ops_bp.route('/drive/move-file', methods=['POST'])
+def move_file():
+    if 'credentials' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.json
+    file_id = data.get('fileId')
+    new_folder_id = data.get('newFolderId')
+
+    drive_service = get_drive_service()
+    
+    try:
+        file = drive_service.files().get(fileId=file_id, fields='parents').execute()
+        previous_parents = ",".join(file.get('parents'))
+        file = drive_service.files().update(
+            fileId=file_id,
+            addParents=new_folder_id,
+            removeParents=previous_parents,
+            fields='id, parents'
+        ).execute()
+        return jsonify({"id": file.get('id'), "parents": file.get('parents')})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@drive_ops_bp.route('/drive/<file_id>', methods=['DELETE'])
+def delete_file(file_id):
+    if 'credentials' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    drive_service = get_drive_service()
+    
+    try:
+        drive_service.files().delete(fileId=file_id).execute()
+        return jsonify({"message": "File deleted successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@drive_ops_bp.route('/drive/rename-file', methods=['POST'])
+def rename_file():
+    if 'credentials' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.json
+    file_id = data.get('fileId')
+    new_name = data.get('newName')
+
+    drive_service = get_drive_service()
+    
+    try:
+        file = drive_service.files().update(
+            fileId=file_id,
+            body={'name': new_name},
+            fields='id, name'
+        ).execute()
+        return jsonify({"id": file.get('id'), "name": file.get('name')})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@drive_ops_bp.route('/drive/copy-file', methods=['POST'])
+def copy_file():
+    if 'credentials' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    data = request.json
+    file_id = data.get('fileId')
+
+    drive_service = get_drive_service()
+    
+    try:
+        copied_file = drive_service.files().copy(fileId=file_id, fields='id, name').execute()
+        return jsonify({"id": copied_file.get('id'), "name": copied_file.get('name')})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

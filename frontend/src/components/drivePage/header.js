@@ -27,11 +27,11 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
             />
           )}
         </div>
-        <div className="icon-container">
-          <HeaderQuestionIcon />
-          <HeaderSettingIcon />
-          <HeaderProfileIcon />
-        </div>
+        <div>
+            <HeaderQuestionIcon />
+            <HeaderSettingIcon />
+            <HeaderProfileIcon />
+          </div>
       </div>
     </HeaderBackground>
   );

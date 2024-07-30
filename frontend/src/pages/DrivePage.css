@@ -30,11 +30,6 @@ html, body, #root {
 
 .sidebar {
   grid-area: sidebar;
-  background-color: #f1f3f4;
-  border-right: 1px solid #dadce0;
-  padding: 16px;
-  overflow-y: auto;
-  height: calc(100vh - 80px); /* Adjust 80px to match your header height */
 }
 
 .main-area {
@@ -42,13 +37,17 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  height: calc(100vh - 80px); /* Adjust 80px to match your header height */
+  height: calc(100vh - 80px); 
 }
 
 .search-bar-container {
   background-color: #ffffff;
   padding: 16px 24px;
   border-bottom: 1px solid #dadce0;
+}
+
+.view-options-container {
+  background-color: #ffffff;
 }
 
 .main-content {
@@ -79,6 +78,13 @@ html, body, #root {
   text-align: center;
   cursor: pointer;
   transition: background-color 0.3s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.file-actions {
+  cursor: pointer;
 }
 
 .file-item:hover {
@@ -123,15 +129,15 @@ html, body, #root {
     border-right: none;
     border-bottom: 1px solid #dadce0;
   }
-}
 
-  .search-bar-container {
-    border-bottom: 1px solid #dadce0;
+  .main-area {
+    height: auto;
   }
 
   .file-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
+}
 
 @media screen and (max-width: 480px) {
   .drive-header {

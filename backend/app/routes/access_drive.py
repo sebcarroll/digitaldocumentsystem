@@ -2,6 +2,7 @@ from flask import Blueprint, redirect, session, url_for, jsonify, request, g
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
+from googleapiclient.errors import HttpError
 
 drive_bp = Blueprint('drive', __name__)
 
@@ -25,20 +26,40 @@ def credentials_to_dict(credentials):
 @drive_bp.route('/drive')
 def drive():
     folder_id = request.args.get('folder_id', 'root')
+    page_token = request.args.get('page_token')
+    page_size = int(request.args.get('page_size', 100))  # Default to 100 items per page
+
     if 'credentials' not in session:
         return jsonify({"error": "Not authenticated"}), 401
     
     drive_service = get_drive_service()
     
-    query = f"'{folder_id}' in parents" if folder_id != 'root' else None
-    files = drive_service.files().list(q=query, fields="files(id, name, mimeType)").execute()
-    items = files.get('files', [])
-    
-    if not items:
-        return jsonify({"message": "No files found in this folder."})
-    else:
-        file_list = [{"name": item['name'], "id": item['id'], "mimeType": item['mimeType']} for item in items]
-        return jsonify({"files": file_list})
+    query = f"'{folder_id}' in parents and trashed = false"
+    if folder_id == 'root':
+        query = "trashed = false"
+
+    try:
+        files = drive_service.files().list(
+            q=query,
+            fields="nextPageToken, files(id, name, mimeType)",
+            pageToken=page_token,
+            pageSize=page_size
+        ).execute()
+
+        items = files.get('files', [])
+        next_page_token = files.get('nextPageToken')
+        
+        if not items:
+            return jsonify({"message": "No files found in this folder."})
+        else:
+            file_list = [{"name": item['name'], "id": item['id'], "mimeType": item['mimeType']} for item in items]
+            return jsonify({
+                "files": file_list,
+                "nextPageToken": next_page_token
+            })
+
+    except HttpError as error:
+        return jsonify({"error": f"An error occurred: {error}"}), 500
 
 @drive_bp.route('/drive/<file_id>/open')
 def open_file(file_id):

@@ -113,3 +113,59 @@ export const createSheet = async (folderId) => {
   }
   return response.json();
 };
+
+export const moveFile = async (fileId, newFolderId) => {
+  const response = await fetch(`${API_URL}/drive/move-file`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ fileId, newFolderId }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to move file');
+  }
+  return response.json();
+};
+
+export const deleteFile = async (fileId) => {
+  const response = await fetch(`${API_URL}/drive/${fileId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete file');
+  }
+  return response.json();
+};
+
+export const renameFile = async (fileId, newName) => {
+  const response = await fetch(`${API_URL}/drive/rename-file`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ fileId, newName }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to rename file');
+  }
+  return response.json();
+};
+
+export const copyFile = async (fileId) => {
+  const response = await fetch(`${API_URL}/drive/copy-file`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ fileId }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to copy file');
+  }
+  return response.json();
+};

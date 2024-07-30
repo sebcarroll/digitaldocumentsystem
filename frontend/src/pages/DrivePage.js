@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { fetchDriveFiles, checkAuth, openDriveFile, createFolder, uploadFile, uploadFolder, createDoc, createSheet } from '../services/api';
+import { fetchDriveFiles, checkAuth, openDriveFile, createFolder,
+uploadFile, uploadFolder, createDoc, createSheet,
+ moveFile, deleteFile, renameFile, copyFile} from '../services/api';
 import './DrivePage.css';
 import Sidebar from '../components/drivePage/sidebar.js';
 import Header from '../components/drivePage/header.js';
 import SearchBar from '../components/drivePage/searchbar.js';
+import ViewOptions from '../components/drivePage/viewOptions.js';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
@@ -14,6 +18,11 @@ const DrivePage = () => {
   const [folderStack, setFolderStack] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const [filesActive, setFilesActive] = useState(true);
+  const [foldersActive, setFoldersActive] = useState(true);
+  const [listLayoutActive, setListLayoutActive] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
     getDriveFiles(currentFolder.id);
@@ -153,6 +162,116 @@ const DrivePage = () => {
     return '📄';
   };
 
+  const handleFilesClick = () => setFilesActive(!filesActive);
+  const handleFoldersClick = () => setFoldersActive(!foldersActive);
+  const handleListLayoutClick = () => setListLayoutActive(true);
+  const handleGridLayoutClick = () => setListLayoutActive(false);
+
+  const filteredDriveContent = driveContent.filter(file => {
+    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+    return (filesActive && !isFolder) || (foldersActive && isFolder);
+  });
+
+  const handleMoreClick = (e, file) => {
+    e.stopPropagation();
+    setSelectedFiles([file]);
+    setShowActionMenu(true);
+  };
+
+  const handleDownload = async () => {
+    try {
+      const file = selectedFiles[0];
+      const response = await openDriveFile(file.id);
+      window.open(response.webViewLink, '_blank');
+    } catch (error) {
+      console.error('Failed to download file:', error);
+      setError('Failed to download file.');
+    } finally {
+      setShowActionMenu(false);
+      setSelectedFiles([]);
+    }
+  };
+
+  const handleMove = async () => {
+    try {
+      const file = selectedFiles[0];
+      const newFolderId = prompt("Enter the ID of the destination folder:");
+      if (newFolderId) {
+        await moveFile(file.id, newFolderId);
+        getDriveFiles(currentFolder.id);
+      }
+    } catch (error) {
+      console.error('Failed to move file:', error);
+      setError('Failed to move file.');
+    } finally {
+      setShowActionMenu(false);
+      setSelectedFiles([]);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const file = selectedFiles[0];
+      // Assuming we have a deleteFile function in the API
+      await deleteFile(file.id);
+      getDriveFiles(currentFolder.id);
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      setError('Failed to delete file.');
+    } finally {
+      setShowActionMenu(false);
+      setSelectedFiles([]);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const file = selectedFiles[0];
+      const response = await openDriveFile(file.id);
+      navigator.clipboard.writeText(response.webViewLink);
+      alert('Link copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      setError('Failed to copy link.');
+    } finally {
+      setShowActionMenu(false);
+      setSelectedFiles([]);
+    }
+  };
+
+  const handleRename = async () => {
+    try {
+      const file = selectedFiles[0];
+      const newName = prompt("Enter new name for the file:", file.name);
+      if (newName) {
+        // Assuming we have a renameFile function in the API
+        await renameFile(file.id, newName);
+        getDriveFiles(currentFolder.id);
+      }
+    } catch (error) {
+      console.error('Failed to rename file:', error);
+      setError('Failed to rename file.');
+    } finally {
+      setShowActionMenu(false);
+      setSelectedFiles([]);
+    }
+  };
+
+  const handleMakeCopy = async () => {
+    try {
+      const file = selectedFiles[0];
+      // Assuming we have a copyFile function in the API
+      await copyFile(file.id);
+      getDriveFiles(currentFolder.id);
+    } catch (error) {
+      console.error('Failed to make a copy:', error);
+      setError('Failed to make a copy.');
+    } finally {
+      setShowActionMenu(false);
+      setSelectedFiles([]);
+    }
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -178,21 +297,43 @@ const DrivePage = () => {
         <div className="search-bar-container">
           <SearchBar onSearch={handleSearch} />
         </div>
+        <div className="view-options-container">
+          <ViewOptions
+            filesActive={filesActive}
+            foldersActive={foldersActive}
+            listLayoutActive={listLayoutActive}
+            onFilesClick={handleFilesClick}
+            onFoldersClick={handleFoldersClick}
+            onListLayoutClick={handleListLayoutClick}
+            onGridLayoutClick={handleGridLayoutClick}
+            showActionMenu={showActionMenu}
+            onDownload={handleDownload}
+            onMove={handleMove}
+            onDelete={handleDelete}
+            onCopyLink={handleCopyLink}
+            onRename={handleRename}
+            onMakeCopy={handleMakeCopy}
+          />
+        </div>
         <main className="main-content">
           <div className="drive-content">
-            {driveContent.length === 0 ? (
-              <p className="no-files">This folder is empty.</p>
+            {filteredDriveContent.length === 0 ? (
+              <p className="no-files">No items to display.</p>
             ) : (
-              <div className="file-grid">
-                {driveContent.map((file) => (
-                  <div 
-                    key={file.id} 
-                    className="file-item"
-                    onClick={() => handleFileClick(file)}
-                  >
-                    <div className="file-icon">{getFileIcon(file.mimeType)}</div>
-                    <div className="file-name">{file.name}</div>
-                  </div>
+              <div className={`file-${listLayoutActive ? 'list' : 'grid'}`}>
+                {filteredDriveContent.map((file) => (
+                 <div 
+                 key={file.id} 
+                 className="file-item"
+               >
+                 <div onClick={() => handleFileClick(file)}>
+                   <div className="file-icon">{getFileIcon(file.mimeType)}</div>
+                   <div className="file-name">{file.name}</div>
+                 </div>
+                 <div className="file-actions">
+                   <MoreVertIcon onClick={(e) => handleMoreClick(e, file)} />
+                 </div>
+               </div>
                 ))}
               </div>
             )}
