@@ -22,7 +22,7 @@ const ViewOptions = ({
   onCopyLink,
   onRename,
   onMakeCopy,
-  onCloseActionMenu  // New prop for closing the action menu
+  onCloseActionMenu  
 }) => {
   return (
     <div className="view-options">
@@ -34,7 +34,7 @@ const ViewOptions = ({
           onCopyLink={onCopyLink}
           onRename={onRename}
           onMakeCopy={onMakeCopy}
-          onClose={onCloseActionMenu}  // Pass the close function to FileActionMenu
+          onClose={onCloseActionMenu}
         />
       ) : (
         <>
