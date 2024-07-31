@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import DownloadIcon from '@mui/icons-material/Download';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
@@ -38,16 +37,17 @@ const ActionButton = ({ icon, text, onClick }) => {
   );
 };
 
-const FileActionMenu = ({ onDownload, onMove, onDelete, onCopyLink, onRename, onMakeCopy, onClose }) => {
+const FileActionMenu = ({ onMove, onDelete, onCopyLink, onRename, onMakeCopy, onClose }) => {
   return (
     <div className="file-action-menu">
-      <ActionButton icon={<CloseIcon />} text="Close" onClick={onClose} />
-      <ActionButton icon={<DownloadIcon />} text="Download" onClick={onDownload} />
-      <ActionButton icon={<DriveFileMoveIcon />} text="Move" onClick={onMove} />
-      <ActionButton icon={<DeleteIcon />} text="Move to Bin" onClick={onDelete} />
-      <ActionButton icon={<LinkIcon />} text="Copy link" onClick={onCopyLink} />
-      <ActionButton icon={<DriveFileRenameOutlineIcon />} text="Rename" onClick={onRename} />
-      <ActionButton icon={<FileCopyIcon />} text="Make a copy" onClick={onMakeCopy} />
+      <div className="action-buttons-container">
+        <ActionButton icon={<CloseIcon />} text="Close" onClick={onClose} />
+        <ActionButton icon={<DriveFileMoveIcon />} text="Move" onClick={onMove} />
+        <ActionButton icon={<DeleteIcon />} text="Move to Bin" onClick={onDelete} />
+        <ActionButton icon={<LinkIcon />} text="Copy link" onClick={onCopyLink} />
+        <ActionButton icon={<DriveFileRenameOutlineIcon />} text="Rename" onClick={onRename} />
+        <ActionButton icon={<FileCopyIcon />} text="Make a copy" onClick={onMakeCopy} />
+      </div>
     </div>
   );
 };

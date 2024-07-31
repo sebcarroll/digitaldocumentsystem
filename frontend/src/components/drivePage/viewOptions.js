@@ -1,4 +1,4 @@
-// ViewOptions.jsx
+// ViewOptions.js
 import React from 'react';
 import FilesOnlyViewButton from './viewOptionsSubComponents/filesOnlyViewButton';
 import FoldersOnlyViewButton from './viewOptionsSubComponents/foldersOnlyViewButton';
@@ -16,7 +16,6 @@ const ViewOptions = ({
   onListLayoutClick, 
   onGridLayoutClick,
   showActionMenu,
-  onDownload,
   onMove,
   onDelete,
   onCopyLink,
@@ -28,7 +27,6 @@ const ViewOptions = ({
     <div className="view-options">
       {showActionMenu ? (
         <FileActionMenu 
-          onDownload={onDownload}
           onMove={onMove}
           onDelete={onDelete}
           onCopyLink={onCopyLink}
