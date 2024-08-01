@@ -1,3 +1,4 @@
+/* viewOptions.css */
 .view-options {
     display: flex;
     justify-content: space-between;
@@ -124,6 +125,11 @@
     flex-direction: row;
     align-items: center;
   }
+
+  .selected-count {
+    margin: 0 12px;
+    font-weight: bold;
+  }
   
   .action-button:first-child {
     margin-right: 12px;
@@ -156,6 +162,15 @@
   
   .action-button:hover .action-text {
     opacity: 1;
+  }
+
+  .action-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .action-button.disabled:hover {
+    background-color: transparent;
   }
 
   /* Responsive design */

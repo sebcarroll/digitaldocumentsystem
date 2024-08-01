@@ -11,6 +11,19 @@ def get_drive_service():
     credentials = Credentials(**session['credentials'])
     return build('drive', 'v3', credentials=credentials)
 
+@drive_ops_bp.route('/drive/<file_id>/open', methods=['GET'])
+def open_file(file_id):
+    if 'credentials' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    drive_service = get_drive_service()
+    
+    try:
+        file = drive_service.files().get(fileId=file_id, fields='webViewLink').execute()
+        return jsonify({"webViewLink": file.get('webViewLink')})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
 @drive_ops_bp.route('/drive/create-folder', methods=['POST'])
 def create_folder():
     if 'credentials' not in session:
