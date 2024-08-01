@@ -3,14 +3,21 @@ import { useState, useCallback } from 'react';
 import { createFolder, uploadFile, uploadFolder, createDoc, createSheet } from '../services/api';
 
 export const useFileOperations = (currentFolder, getDriveFiles, setError) => {
-  const handleCreateFolder = useCallback(async () => {
-    const folderName = prompt("Enter folder name:");
+  const [isNewFolderPopupOpen, setIsNewFolderPopupOpen] = useState(false);
+
+  const openCreateFolderPopup = useCallback(() => {
+    setIsNewFolderPopupOpen(true);
+  }, []);
+
+  const handleCreateFolder = useCallback(async (folderName) => {
     if (folderName) {
       try {
         await createFolder(currentFolder.id, folderName);
         getDriveFiles(currentFolder.id);
       } catch (error) {
         setError('Failed to create folder.');
+      } finally {
+        setIsNewFolderPopupOpen(false);
       }
     }
   }, [currentFolder.id, getDriveFiles, setError]);
@@ -70,10 +77,13 @@ export const useFileOperations = (currentFolder, getDriveFiles, setError) => {
   }, [currentFolder.id, getDriveFiles, setError]);
 
   return {
+    isNewFolderPopupOpen,
+    openCreateFolderPopup,
     handleCreateFolder,
     handleUploadFile,
     handleUploadFolder,
     handleCreateDoc,
-    handleCreateSheet
+    handleCreateSheet,
+    setIsNewFolderPopupOpen
   };
 };

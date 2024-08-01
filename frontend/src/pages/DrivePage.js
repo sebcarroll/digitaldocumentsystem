@@ -11,6 +11,7 @@ import { useFileOperations } from '../hooks/useFileOperations.js';
 import { useFileSelection } from '../hooks/useFileSelection.js';
 import { useViewOptions } from '../hooks/useViewOptions.js';
 import { useFolderNavigation } from '../hooks/useFolderNavigation.js';
+import StyledPopup from '../components/drivePage/folderAndRenamePopup.js';
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
@@ -44,38 +45,45 @@ const DrivePage = () => {
     handleFileClick
      } = useFolderNavigation();
   
-  const { 
-    showActionMenu, 
-    selectedFiles, 
-    handleFileSelect, 
-    handleMove, 
-    handleDelete, 
-    handleCopyLink, 
-    handleRename, 
-    handleMakeCopy, 
+  const {
+    isNewFolderPopupOpen,
+    openCreateFolderPopup,
+    handleCreateFolder,
+    handleUploadFile,
+    handleUploadFolder,
+    handleCreateDoc,
+    handleCreateSheet,
+    setIsNewFolderPopupOpen
+  } = useFileOperations(currentFolder, getDriveFiles, setError);
+
+  const {
+    showActionMenu,
+    selectedFiles,
+    isRenamePopupOpen,
+    fileToRename,
+    handleFileSelect,
+    handleMove,
+    handleDelete,
+    handleCopyLink,
+    openRenamePopup,
+    handleRename,
+    handleMakeCopy,
     handleCloseActionMenu,
     handleMoreClick,
+    setShowActionMenu,
+    setIsRenamePopupOpen
   } = useFileSelection(getDriveFiles, currentFolder, setError);
 
   const { 
     filesActive, 
     foldersActive, 
     listLayoutActive, 
-    showCover,
-    coverTop,
     handleFilesClick, 
     handleFoldersClick, 
     handleListLayoutClick, 
     handleGridLayoutClick,
   } = useViewOptions();
 
-  const { 
-    handleCreateFolder,
-    handleUploadFile,
-    handleUploadFolder,
-    handleCreateDoc,
-    handleCreateSheet
-   } = useFileOperations(currentFolder, getDriveFiles, setError);
 
   useEffect(() => {
     getDriveFiles(currentFolder.id);
@@ -110,7 +118,7 @@ const DrivePage = () => {
 
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
-  
+
   return (
     <div className="drive-page">
       <div className="drive-header">
@@ -122,7 +130,7 @@ const DrivePage = () => {
       </div>
       <div className="sidebar">
         <Sidebar
-          onCreateFolder={handleCreateFolder}
+          onCreateFolder={openCreateFolderPopup}
           onUploadFile={handleUploadFile}
           onUploadFolder={handleUploadFolder}
           onCreateDoc={handleCreateDoc}
@@ -133,44 +141,53 @@ const DrivePage = () => {
         <div className="search-bar-container">
           <SearchBar onSearch={handleSearch} />
         </div>
-        <div 
-          className={`view-options-cover ${showCover ? 'visible' : ''}`}
-          style={{ top: `${coverTop}px` }}
-        >
-        </div>
         <div className="view-options-container">
-        <ViewOptions
-          filesActive={filesActive}
-          foldersActive={foldersActive}
-          listLayoutActive={listLayoutActive}
-          onFilesClick={handleFilesClick}
-          onFoldersClick={handleFoldersClick}
-          onListLayoutClick={handleListLayoutClick}
-          onGridLayoutClick={handleGridLayoutClick}
-          showActionMenu={showActionMenu}
-          selectedFiles={selectedFiles}
-          onMove={handleMove}
-          onDelete={handleDelete}
-          onCopyLink={handleCopyLink}
-          onRename={handleRename}
-          onMakeCopy={handleMakeCopy}
-          onCloseActionMenu={handleCloseActionMenu}
-          onShare={handleShare}
-        />
+          <ViewOptions
+            filesActive={filesActive}
+            foldersActive={foldersActive}
+            listLayoutActive={listLayoutActive}
+            onFilesClick={handleFilesClick}
+            onFoldersClick={handleFoldersClick}
+            onListLayoutClick={handleListLayoutClick}
+            onGridLayoutClick={handleGridLayoutClick}
+            showActionMenu={showActionMenu}
+            selectedFiles={selectedFiles}
+            onMove={handleMove}
+            onDelete={handleDelete}
+            onCopyLink={handleCopyLink}
+            onRename={openRenamePopup}
+            onMakeCopy={handleMakeCopy}
+            onCloseActionMenu={handleCloseActionMenu}
+            onShare={handleShare}
+          />
+        </div>
+        <main className="main-content">
+          <DriveContent 
+            filteredDriveContent={filteredDriveContent}
+            listLayoutActive={listLayoutActive}
+            handleFileClick={handleFileClick}
+            handleFileSelect={handleFileSelect}
+            handleMoreClick={handleMoreClick}
+            getFileIcon={getFileIcon}
+            selectedFiles={selectedFiles}
+            showActionMenu={showActionMenu}
+          />
+        </main>
       </div>
-      <main className="main-content">
-      <DriveContent 
-        filteredDriveContent={filteredDriveContent}
-        listLayoutActive={listLayoutActive}
-        handleFileClick={handleFileClick}
-        handleFileSelect={handleFileSelect}
-        handleMoreClick={handleMoreClick}
-        getFileIcon={getFileIcon}
-        selectedFiles={selectedFiles}
-        showActionMenu={showActionMenu}
+      <StyledPopup
+        isOpen={isNewFolderPopupOpen}
+        onClose={() => setIsNewFolderPopupOpen(false)}
+        onSubmit={handleCreateFolder}
+        title="New Folder"
+        initialValue="Untitled Folder"
       />
-      </main>
-      </div>
+      <StyledPopup
+        isOpen={isRenamePopupOpen}
+        onClose={() => setIsRenamePopupOpen(false)}
+        onSubmit={handleRename}
+        title="Rename"
+        initialValue={fileToRename ? fileToRename.name : ''}
+      />
     </div>
   );
 };

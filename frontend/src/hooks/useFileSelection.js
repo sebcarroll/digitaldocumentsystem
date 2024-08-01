@@ -1,10 +1,12 @@
-//useFileSelection.js
+// useFileSelection.js
 import { useState, useCallback } from 'react';
 import { moveFiles, deleteFiles, copyFiles, openDriveFile, renameFile } from '../services/api';
 
 export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [isRenamePopupOpen, setIsRenamePopupOpen] = useState(false);
+  const [fileToRename, setFileToRename] = useState(null);
 
   const handleFileSelect = useCallback((file) => {
     if (showActionMenu) {
@@ -34,7 +36,7 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
       console.error('Failed to move files:', error);
       setError(error.message);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError, setShowActionMenu, setSelectedFiles]);
+  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
 
   const handleDelete = useCallback(async () => {
     try {
@@ -46,7 +48,7 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
       console.error('Failed to delete files:', error);
       setError(error.message);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError, setShowActionMenu, setSelectedFiles]);
+  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
 
   const handleCopyLink = useCallback(async () => {
     if (selectedFiles.length !== 1) return;
@@ -64,23 +66,27 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     }
   }, [selectedFiles, setError]);
 
-  const handleRename = useCallback(async () => {
+  const openRenamePopup = useCallback(() => {
     if (selectedFiles.length !== 1) return;
+    setFileToRename(selectedFiles[0]);
+    setIsRenamePopupOpen(true);
+  }, [selectedFiles]);
+
+  const handleRename = useCallback(async (newName) => {
+    if (!fileToRename) return;
     try {
-      const file = selectedFiles[0];
-      const newName = prompt("Enter new name for the file:", file.name);
-      if (newName) {
-        await renameFile(file.id, newName);
-        getDriveFiles(currentFolder.id);
-      }
+      await renameFile(fileToRename.id, newName);
+      getDriveFiles(currentFolder.id);
     } catch (error) {
       console.error('Failed to rename file:', error);
       setError(error.message);
     } finally {
+      setIsRenamePopupOpen(false);
+      setFileToRename(null);
       setShowActionMenu(false);
       setSelectedFiles([]);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
+  }, [fileToRename, getDriveFiles, currentFolder.id, setError]);
 
   const handleMakeCopy = useCallback(async () => {
     try {
@@ -92,7 +98,7 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
       console.error('Failed to make copies:', error);
       setError(error.message);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError, setShowActionMenu, setSelectedFiles]);
+  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
 
   const handleCloseActionMenu = useCallback(() => {
     setShowActionMenu(false);
@@ -102,14 +108,18 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
   return {
     showActionMenu,
     selectedFiles,
+    isRenamePopupOpen,
+    fileToRename,
     handleFileSelect,
     handleMove,
     handleDelete,
     handleCopyLink,
+    openRenamePopup,
     handleRename,
     handleMakeCopy,
     handleCloseActionMenu,
     handleMoreClick,
-    setShowActionMenu
+    setShowActionMenu,
+    setIsRenamePopupOpen
   };
 };
