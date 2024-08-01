@@ -11,8 +11,6 @@ import { useFileOperations } from '../hooks/useFileOperations.js';
 import { useFileSelection } from '../hooks/useFileSelection.js';
 import { useViewOptions } from '../hooks/useViewOptions.js';
 import { useFolderNavigation } from '../hooks/useFolderNavigation.js';
-import {handleFileClick} from '../hooks/useFolderNavigation.js'
-import {handleFileSelect} from '../hooks/useFileSelection.js'
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
@@ -39,7 +37,12 @@ const DrivePage = () => {
     }
   }, [navigate]);
 
-  const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation();
+  const { currentFolder,
+    folderStack,
+    handleBackClick,
+     handleBreadcrumbClick,
+    handleFileClick
+     } = useFolderNavigation();
   
   const { 
     showActionMenu, 
@@ -54,8 +57,25 @@ const DrivePage = () => {
     handleMoreClick,
   } = useFileSelection(getDriveFiles, currentFolder, setError);
 
-  const { handleCreateFolder, handleUploadFile, handleUploadFolder, handleCreateDoc, handleCreateSheet } = useFileOperations(currentFolder, getDriveFiles, setError);
-  const { filesActive, foldersActive, listLayoutActive, handleFilesClick, handleFoldersClick, handleListLayoutClick, handleGridLayoutClick } = useViewOptions();
+  const { 
+    filesActive, 
+    foldersActive, 
+    listLayoutActive, 
+    showCover,
+    coverTop,
+    handleFilesClick, 
+    handleFoldersClick, 
+    handleListLayoutClick, 
+    handleGridLayoutClick,
+  } = useViewOptions();
+
+  const { 
+    handleCreateFolder,
+    handleUploadFile,
+    handleUploadFolder,
+    handleCreateDoc,
+    handleCreateSheet
+   } = useFileOperations(currentFolder, getDriveFiles, setError);
 
   useEffect(() => {
     getDriveFiles(currentFolder.id);
@@ -112,6 +132,11 @@ const DrivePage = () => {
       <div className="main-area">
         <div className="search-bar-container">
           <SearchBar onSearch={handleSearch} />
+        </div>
+        <div 
+          className={`view-options-cover ${showCover ? 'visible' : ''}`}
+          style={{ top: `${coverTop}px` }}
+        >
         </div>
         <div className="view-options-container">
         <ViewOptions

@@ -1,4 +1,4 @@
-/* useFileSelection.js */
+//useFileSelection.js
 import { useState, useCallback } from 'react';
 import { moveFiles, deleteFiles, copyFiles, openDriveFile, renameFile } from '../services/api';
 
@@ -27,28 +27,26 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
       if (newFolderId) {
         await moveFiles(selectedFiles.map(f => f.id), newFolderId);
         getDriveFiles(currentFolder.id);
+        setShowActionMenu(false);
+        setSelectedFiles([]);
       }
     } catch (error) {
       console.error('Failed to move files:', error);
-      setError('Failed to move files.');
-    } finally {
-      setShowActionMenu(false);
-      setSelectedFiles([]);
+      setError(error.message);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
+  }, [selectedFiles, getDriveFiles, currentFolder.id, setError, setShowActionMenu, setSelectedFiles]);
 
   const handleDelete = useCallback(async () => {
     try {
       await deleteFiles(selectedFiles.map(f => f.id));
       getDriveFiles(currentFolder.id);
-    } catch (error) {
-      console.error('Failed to delete files:', error);
-      setError('Failed to delete files.');
-    } finally {
       setShowActionMenu(false);
       setSelectedFiles([]);
+    } catch (error) {
+      console.error('Failed to delete files:', error);
+      setError(error.message);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
+  }, [selectedFiles, getDriveFiles, currentFolder.id, setError, setShowActionMenu, setSelectedFiles]);
 
   const handleCopyLink = useCallback(async () => {
     if (selectedFiles.length !== 1) return;
@@ -59,7 +57,7 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
       alert('Link copied to clipboard!');
     } catch (error) {
       console.error('Failed to copy link:', error);
-      setError('Failed to copy link.');
+      setError(error.message);
     } finally {
       setShowActionMenu(false);
       setSelectedFiles([]);
@@ -77,7 +75,7 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
       }
     } catch (error) {
       console.error('Failed to rename file:', error);
-      setError('Failed to rename file.');
+      setError(error.message);
     } finally {
       setShowActionMenu(false);
       setSelectedFiles([]);
@@ -88,14 +86,13 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     try {
       await copyFiles(selectedFiles.map(f => f.id));
       getDriveFiles(currentFolder.id);
-    } catch (error) {
-      console.error('Failed to make copies:', error);
-      setError('Failed to make copies.');
-    } finally {
       setShowActionMenu(false);
       setSelectedFiles([]);
+    } catch (error) {
+      console.error('Failed to make copies:', error);
+      setError(error.message);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
+  }, [selectedFiles, getDriveFiles, currentFolder.id, setError, setShowActionMenu, setSelectedFiles]);
 
   const handleCloseActionMenu = useCallback(() => {
     setShowActionMenu(false);

@@ -114,28 +114,34 @@ export const createSheet = async (folderId) => {
   return response.json();
 };
 
-export const moveFile = async (fileId, newFolderId) => {
-  const response = await fetch(`${API_URL}/drive/move-file`, {
+export const moveFiles = async (fileIds, newFolderId) => {
+  const response = await fetch(`${API_URL}/drive/move-files`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     credentials: 'include',
-    body: JSON.stringify({ fileId, newFolderId }),
+    body: JSON.stringify({ fileIds, newFolderId }),
   });
   if (!response.ok) {
-    throw new Error('Failed to move file');
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to move files');
   }
   return response.json();
 };
 
-export const deleteFile = async (fileId) => {
-  const response = await fetch(`${API_URL}/drive/${fileId}`, {
-    method: 'DELETE',
+export const deleteFiles = async (fileIds) => {
+  const response = await fetch(`${API_URL}/drive/delete-files`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
     credentials: 'include',
+    body: JSON.stringify({ fileIds }),
   });
   if (!response.ok) {
-    throw new Error('Failed to delete file');
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to delete files');
   }
   return response.json();
 };
@@ -155,51 +161,6 @@ export const renameFile = async (fileId, newName) => {
   return response.json();
 };
 
-export const copyFile = async (fileId) => {
-  const response = await fetch(`${API_URL}/drive/copy-file`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ fileId }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to copy file');
-  }
-  return response.json();
-};
-
-export const moveFiles = async (fileIds, newFolderId) => {
-  const response = await fetch(`${API_URL}/drive/move-files`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ fileIds, newFolderId }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to move files');
-  }
-  return response.json();
-};
-
-export const deleteFiles = async (fileIds) => {
-  const response = await fetch(`${API_URL}/drive/delete-files`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ fileIds }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to delete files');
-  }
-  return response.json();
-};
-
 export const copyFiles = async (fileIds) => {
   const response = await fetch(`${API_URL}/drive/copy-files`, {
     method: 'POST',
@@ -210,7 +171,8 @@ export const copyFiles = async (fileIds) => {
     body: JSON.stringify({ fileIds }),
   });
   if (!response.ok) {
-    throw new Error('Failed to copy files');
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to copy files');
   }
   return response.json();
 };
