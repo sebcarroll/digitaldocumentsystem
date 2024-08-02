@@ -7,13 +7,15 @@ from googleapiclient.errors import HttpError
 drive_bp = Blueprint('drive', __name__)
 
 def get_drive_service():
-    if 'drive_service' not in g:
+    if 'drive_service' not in g or 'people_service' not in g:
         credentials = Credentials(**session['credentials'])
         if credentials and credentials.expired and credentials.refresh_token:
             credentials.refresh(Request())
             session['credentials'] = credentials_to_dict(credentials)
         g.drive_service = build('drive', 'v3', credentials=credentials, cache_discovery=False)
-    return g.drive_service
+        g.people_service = build('people', 'v1', credentials=credentials, cache_discovery=False)
+    return g.drive_service, g.people_service
+
 
 def credentials_to_dict(credentials):
     return {'token': credentials.token,

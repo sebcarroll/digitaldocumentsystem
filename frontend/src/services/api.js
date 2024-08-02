@@ -176,3 +176,85 @@ export const copyFiles = async (fileIds) => {
   }
   return response.json();
 };
+
+export const searchUsers = async (query) => {
+  const response = await fetch(`${API_URL}/drive/search-users?query=${encodeURIComponent(query)}`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to search users');
+  }
+  return response.json();
+};
+
+export const getPeopleWithAccess = async (fileId) => {
+  const response = await fetch(`${API_URL}/drive/${fileId}/people-with-access`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to get people with access');
+  }
+  return response.json();
+};
+
+export const shareFile = async (fileId, emails, role) => {
+  const response = await fetch(`${API_URL}/drive/${fileId}/share`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ emails, role }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to share file');
+  }
+  return response.json();
+};
+
+export const updatePermission = async (fileId, permissionId, role) => {
+  const response = await fetch(`${API_URL}/drive/${fileId}/update-permission`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ permissionId, role }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update permission');
+  }
+  return response.json();
+};
+
+export const removePermission = async (fileId, permissionId) => {
+  const response = await fetch(`${API_URL}/drive/${fileId}/remove-permission`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ permissionId }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to remove permission');
+  }
+  return response.json();
+};
+
+export const updateGeneralAccess = async (fileId, newAccess) => {
+  const response = await fetch(`${API_URL}/drive/${fileId}/update-general-access`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ access: newAccess }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update general access');
+  }
+  return response.json();
+};

@@ -12,7 +12,11 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
     GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI')
     # Google API scopes
-    SCOPES = ['https://www.googleapis.com/auth/drive']
+    SCOPES = ['https://www.googleapis.com/auth/drive'
+              'https://www.googleapis.com/auth/userinfo.email',
+              'https://www.googleapis.com/auth/userinfo.profile',
+              'https://www.googleapis.com/auth/contacts.readonly'
+              ]
     # Database URL
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     # Debug mode off by default

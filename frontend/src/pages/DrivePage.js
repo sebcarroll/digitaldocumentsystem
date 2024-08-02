@@ -11,12 +11,15 @@ import { useFileOperations } from '../hooks/useFileOperations.js';
 import { useFileSelection } from '../hooks/useFileSelection.js';
 import { useViewOptions } from '../hooks/useViewOptions.js';
 import { useFolderNavigation } from '../hooks/useFolderNavigation.js';
+import { useFileSharing } from '../hooks/useFileSharing.js';
 import StyledPopup from '../components/drivePage/folderAndRenamePopup.js';
+import SharePopup from '../components/drivePage/sharePopup.js';
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const navigate = useNavigate();
 
   const getDriveFiles = useCallback(async (folderId) => {
@@ -38,12 +41,7 @@ const DrivePage = () => {
     }
   }, [navigate]);
 
-  const { currentFolder,
-    folderStack,
-    handleBackClick,
-     handleBreadcrumbClick,
-    handleFileClick
-     } = useFolderNavigation();
+  const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation();
   
   const {
     isNewFolderPopupOpen,
@@ -84,6 +82,19 @@ const DrivePage = () => {
     handleGridLayoutClick,
   } = useViewOptions();
 
+  const {
+    email,
+    searchResults,
+    peopleWithAccess,
+    generalAccess,
+    isLoading: isSharingLoading,
+    error: sharingError,
+    handleEmailChange,
+    handleAddPerson,
+    handleAccessLevelChange,
+    handleRemoveAccess,
+    handleGeneralAccessChange,
+  } = useFileSharing(selectedFiles);
 
   useEffect(() => {
     getDriveFiles(currentFolder.id);
@@ -95,8 +106,11 @@ const DrivePage = () => {
   };
 
   const handleShare = () => {
-    console.log('Share functionality not implemented yet');
-    // Implement your share logic here
+    setIsSharePopupOpen(true);
+  };
+
+  const handleCloseSharePopup = () => {
+    setIsSharePopupOpen(false);
   };
 
   const getFileIcon = (mimeType) => {
@@ -187,6 +201,23 @@ const DrivePage = () => {
         onSubmit={handleRename}
         title="Rename"
         initialValue={fileToRename ? fileToRename.name : ''}
+      />
+      <SharePopup
+        isOpen={isSharePopupOpen}
+        onClose={handleCloseSharePopup}
+        items={selectedFiles}
+        email={email}
+        searchResults={searchResults}
+        peopleWithAccess={peopleWithAccess}
+        generalAccess={generalAccess}
+        isLoading={isSharingLoading}
+        error={sharingError}
+        onEmailChange={handleEmailChange}
+        onAddPerson={handleAddPerson}
+        onAccessLevelChange={handleAccessLevelChange}
+        onRemoveAccess={handleRemoveAccess}
+        onGeneralAccessChange={handleGeneralAccessChange}
+        onCopyLink={handleCopyLink}
       />
     </div>
   );
