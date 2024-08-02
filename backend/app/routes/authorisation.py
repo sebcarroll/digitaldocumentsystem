@@ -2,6 +2,8 @@ from flask import Blueprint, redirect, request, session, url_for, jsonify
 from google_auth_oauthlib.flow import Flow
 from config import Config
 from datetime import datetime
+from oauthlib.oauth2.rfc6749.errors import OAuth2Error
+import logging
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -47,7 +49,16 @@ def oauth2callback():
         state=state,
         redirect_uri=url_for('auth.oauth2callback', _external=True)
     )
-    flow.fetch_token(authorization_response=request.url)
+    try:
+        flow.fetch_token(authorization_response=request.url)
+    except OAuth2Error as e:
+        if "Scope has changed" in str(e):
+            logging.warning(f"Scope has changed: {str(e)}")
+            # Proceed with the new scopes
+        else:
+            logging.error(f"OAuth2 Error: {str(e)}")
+            return jsonify({"error": "Authentication failed", "details": str(e)}), 400
+
     credentials = flow.credentials
     session['credentials'] = {
         'token': credentials.token,
@@ -58,7 +69,11 @@ def oauth2callback():
         'scopes': credentials.scopes
     }
     session['last_active'] = datetime.now().timestamp()
-    return redirect('http://localhost:3000/auth-success')  # Redirect to React app
+
+    # Log the final scopes
+    logging.info(f"Authentication successful. Granted scopes: {credentials.scopes}")
+
+    return redirect('http://localhost:3000/auth-success')
 
 @auth_bp.route('/check-auth')
 def check_auth():

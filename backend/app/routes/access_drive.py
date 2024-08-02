@@ -6,7 +6,7 @@ from googleapiclient.errors import HttpError
 
 drive_bp = Blueprint('drive', __name__)
 
-def get_drive_service():
+def get_services():
     if 'drive_service' not in g or 'people_service' not in g:
         credentials = Credentials(**session['credentials'])
         if credentials and credentials.expired and credentials.refresh_token:
@@ -15,7 +15,6 @@ def get_drive_service():
         g.drive_service = build('drive', 'v3', credentials=credentials, cache_discovery=False)
         g.people_service = build('people', 'v1', credentials=credentials, cache_discovery=False)
     return g.drive_service, g.people_service
-
 
 def credentials_to_dict(credentials):
     return {'token': credentials.token,
@@ -34,7 +33,7 @@ def drive():
     if 'credentials' not in session:
         return jsonify({"error": "Not authenticated"}), 401
     
-    drive_service = get_drive_service()
+    drive_service, _ = get_services()
     
     query = f"'{folder_id}' in parents and trashed = false"
     if folder_id == 'root':
@@ -68,7 +67,7 @@ def open_file(file_id):
     if 'credentials' not in session:
         return jsonify({"error": "Not authenticated"}), 401
 
-    drive_service = get_drive_service()
+    drive_service, _ = get_services()
 
     try:
         file = drive_service.files().get(fileId=file_id, fields="webViewLink,mimeType").execute()
@@ -77,12 +76,16 @@ def open_file(file_id):
         return jsonify({"error": str(e)}), 400
 
 @drive_bp.teardown_app_request
-def cleanup_drive_service(exception=None):
+def cleanup_services(exception=None):
     drive_service = g.pop('drive_service', None)
+    people_service = g.pop('people_service', None)
     if drive_service is not None:
         drive_service.close()
+    if people_service is not None:
+        people_service.close()
 
 @drive_bp.route('/logout')
 def logout():
+    cleanup_services()
     session.clear()
     return jsonify({"message": "Logged out successfully"})
