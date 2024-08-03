@@ -7,7 +7,6 @@ import FileCopyIcon from '@mui/icons-material/FileCopy';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
-
 const ActionButton = ({ icon, text, onClick, disabled }) => {
   const [showText, setShowText] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState(null);
@@ -31,7 +30,8 @@ const ActionButton = ({ icon, text, onClick, disabled }) => {
       onClick={onClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="action-button"
+      className={`action-button ${disabled ? 'disabled' : ''}`}
+      disabled={disabled}
     >
       {icon}
       {showText && <span className="action-text">{text}</span>}
@@ -39,7 +39,7 @@ const ActionButton = ({ icon, text, onClick, disabled }) => {
   );
 };
 
-const FileActionMenu = ({ selectedFiles, onMove, onDelete, onCopyLink, onRename, onMakeCopy, onClose, onShare }) => {
+const FileActionMenu = ({ selectedFiles, onMove, onDelete, onCopyLink, onRename, onMakeCopy, onClose, onShare, isFolder }) => {
   const multipleFilesSelected = selectedFiles.length > 1;
 
   return (
@@ -52,7 +52,12 @@ const FileActionMenu = ({ selectedFiles, onMove, onDelete, onCopyLink, onRename,
         <ActionButton icon={<DeleteIcon />} text="Move to Bin" onClick={onDelete} />
         <ActionButton icon={<LinkIcon />} text="Copy link" onClick={onCopyLink} disabled={multipleFilesSelected} />
         <ActionButton icon={<DriveFileRenameOutlineIcon />} text="Rename" onClick={onRename} disabled={multipleFilesSelected} />
-        <ActionButton icon={<FileCopyIcon />} text="Make a copy" onClick={onMakeCopy} />
+        <ActionButton 
+          icon={<FileCopyIcon />} 
+          text="Make a copy" 
+          onClick={onMakeCopy} 
+          disabled={isFolder}
+        />
       </div>
     </div>
   );

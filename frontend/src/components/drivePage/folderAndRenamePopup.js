@@ -1,6 +1,6 @@
 // StyledPopup.js
 import React, { useState, useEffect, useRef } from 'react';
-import './folderAndRenamePopup.css';
+import './popup.css';
 
 const StyledPopup = ({ isOpen, onClose, onSubmit, title, initialValue }) => {
   const [inputValue, setInputValue] = useState(initialValue);

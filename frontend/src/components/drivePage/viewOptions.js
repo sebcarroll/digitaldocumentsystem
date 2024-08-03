@@ -1,4 +1,3 @@
-/* viewOptions.js */
 import React from 'react';
 import FilesOnlyViewButton from './viewOptionsSubComponents/filesOnlyViewButton';
 import FoldersOnlyViewButton from './viewOptionsSubComponents/foldersOnlyViewButton';
@@ -23,7 +22,8 @@ const ViewOptions = ({
   onRename,
   onMakeCopy,
   onCloseActionMenu,
-  onShare
+  onShare,
+  isFolder 
 }) => {
   return (
     <div className="view-options">
@@ -37,6 +37,7 @@ const ViewOptions = ({
           onMakeCopy={onMakeCopy}
           onClose={onCloseActionMenu}
           onShare={onShare}
+          isFolder={isFolder}
         />
       ) : (
         <>

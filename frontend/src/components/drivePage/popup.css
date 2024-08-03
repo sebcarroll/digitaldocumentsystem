@@ -1,0 +1,171 @@
+/* popup.css */
+
+.popup-overlay,
+.share-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.popup-content,
+.share-popup {
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 500px;
+    max-width: 90%;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.3s ease;
+}
+
+.close-button:hover {
+    color: #333;
+}
+
+.popup-title,
+.share-popup h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-align: left;
+    color: #333;
+}
+
+.popup-input,
+.share-popup input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.button-container,
+.popup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.cancel-button,
+.ok-button,
+.popup-actions button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.cancel-button,
+.popup-actions button:first-child {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.ok-button,
+.popup-actions button:last-child {
+    background-color: #1e3a8a;
+    color: white;
+}
+
+.cancel-button:hover,
+.ok-button:hover,
+.popup-actions button:hover {
+    transform: translateY(-2px);
+}
+
+.cancel-button:hover,
+.popup-actions button:first-child:hover {
+    background-color: #e0e0e0;
+}
+
+.ok-button:hover,
+.popup-actions button:last-child:hover {
+    background-color: #2c4f9e;
+}
+
+.search-results {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    border-radius: 8px;
+}
+
+.search-results li {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.search-results li:hover {
+    background-color: #f0f0f0;
+}
+
+.people-with-access {
+    list-style-type: none;
+    padding: 0;
+}
+
+.people-with-access li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+.people-with-access img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 15px;
+    object-fit: cover;
+}
+
+.people-with-access select,
+.general-access select {
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-left: auto;
+    cursor: pointer;
+}
+
+.general-access {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+.general-access h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #333;
+}

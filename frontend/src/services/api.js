@@ -178,13 +178,16 @@ export const copyFiles = async (fileIds) => {
 };
 
 export const searchUsers = async (query) => {
-  const response = await fetch(`${API_URL}/drive/search-users?query=${encodeURIComponent(query)}`, {
-    credentials: 'include',
-  });
-  if (!response.ok) {
-    throw new Error('Failed to search users');
+  try {
+    const response = await fetch(`/api/search-users?q=${encodeURIComponent(query)}`);
+    if (!response.ok) {
+      throw new Error('Failed to search users');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error searching users:', error);
+    return { users: [] };
   }
-  return response.json();
 };
 
 export const getPeopleWithAccess = async (fileId) => {

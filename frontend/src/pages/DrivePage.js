@@ -44,17 +44,6 @@ const DrivePage = () => {
   const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation();
   
   const {
-    isNewFolderPopupOpen,
-    openCreateFolderPopup,
-    handleCreateFolder,
-    handleUploadFile,
-    handleUploadFolder,
-    handleCreateDoc,
-    handleCreateSheet,
-    setIsNewFolderPopupOpen
-  } = useFileOperations(currentFolder, getDriveFiles, setError);
-
-  const {
     showActionMenu,
     selectedFiles,
     isRenamePopupOpen,
@@ -69,8 +58,20 @@ const DrivePage = () => {
     handleCloseActionMenu,
     handleMoreClick,
     setShowActionMenu,
-    setIsRenamePopupOpen
+    setIsRenamePopupOpen,
+    isFolder
   } = useFileSelection(getDriveFiles, currentFolder, setError);
+
+  const {
+    isNewFolderPopupOpen,
+    openCreateFolderPopup,
+    handleCreateFolder,
+    handleUploadFile,
+    handleUploadFolder,
+    handleCreateDoc,
+    handleCreateSheet,
+    setIsNewFolderPopupOpen
+  } = useFileOperations(currentFolder, getDriveFiles, setError);
 
   const { 
     filesActive, 
@@ -106,9 +107,12 @@ const DrivePage = () => {
   };
 
   const handleShare = () => {
-    setIsSharePopupOpen(true);
+    if (selectedFiles.length > 0) {
+      setIsSharePopupOpen(true);
+    } else {
+      console.log('No files selected to share');
+    }
   };
-
   const handleCloseSharePopup = () => {
     setIsSharePopupOpen(false);
   };
@@ -156,24 +160,25 @@ const DrivePage = () => {
           <SearchBar onSearch={handleSearch} />
         </div>
         <div className="view-options-container">
-          <ViewOptions
-            filesActive={filesActive}
-            foldersActive={foldersActive}
-            listLayoutActive={listLayoutActive}
-            onFilesClick={handleFilesClick}
-            onFoldersClick={handleFoldersClick}
-            onListLayoutClick={handleListLayoutClick}
-            onGridLayoutClick={handleGridLayoutClick}
-            showActionMenu={showActionMenu}
-            selectedFiles={selectedFiles}
-            onMove={handleMove}
-            onDelete={handleDelete}
-            onCopyLink={handleCopyLink}
-            onRename={openRenamePopup}
-            onMakeCopy={handleMakeCopy}
-            onCloseActionMenu={handleCloseActionMenu}
-            onShare={handleShare}
-          />
+        <ViewOptions
+          filesActive={filesActive}
+          foldersActive={foldersActive}
+          listLayoutActive={listLayoutActive}
+          onFilesClick={handleFilesClick}
+          onFoldersClick={handleFoldersClick}
+          onListLayoutClick={handleListLayoutClick}
+          onGridLayoutClick={handleGridLayoutClick}
+          showActionMenu={showActionMenu}
+          selectedFiles={selectedFiles}
+          onMove={handleMove}
+          onDelete={handleDelete}
+          onCopyLink={handleCopyLink}
+          onRename={openRenamePopup}
+          onMakeCopy={handleMakeCopy}
+          onCloseActionMenu={handleCloseActionMenu}
+          onShare={handleShare}
+          isFolder={isFolder}
+        />
         </div>
         <main className="main-content">
           <DriveContent 

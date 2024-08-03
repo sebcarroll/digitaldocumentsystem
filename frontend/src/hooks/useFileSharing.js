@@ -41,7 +41,7 @@ export const useFileSharing = (items) => {
     if (value.length > 2) {
       try {
         const response = await searchUsers(value);
-        setSearchResults(response.users);
+        setSearchResults(response.users || []);
       } catch (err) {
         console.error('Failed to search users:', err);
         setSearchResults([]);

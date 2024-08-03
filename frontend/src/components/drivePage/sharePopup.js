@@ -1,12 +1,11 @@
 // sharePopup.js
 import React from 'react';
-import './sharePopup.css';
+import './popup.css';
 
 const SharePopup = ({ 
   isOpen, 
   onClose, 
-  items, 
-  onShare, 
+  items = [], 
   onCopyLink,
   email,
   searchResults,
@@ -22,19 +21,16 @@ const SharePopup = ({
 }) => {
   if (!isOpen) return null;
 
-  const handleShare = () => {
-    onShare({
-      itemIds: items.map(item => item.id),
-      peopleWithAccess,
-      generalAccess,
-    });
-    onClose();
-  };
+  const title = items.length > 1 
+    ? `Share ${items.length} items` 
+    : items.length === 1 
+      ? `Share '${items[0].name}'` 
+      : 'Share';
 
   return (
     <div className="share-popup-overlay">
       <div className="share-popup">
-        <h2>Share {items.length > 1 ? `${items.length} items` : `'${items[0].name}'`}</h2>
+        <h2>{title}</h2>
         <input
           type="text"
           value={email}
@@ -85,8 +81,10 @@ const SharePopup = ({
           </select>
         </div>
         <div className="popup-actions">
-          <button onClick={() => onCopyLink(items[0])}>Copy link</button>
-          <button onClick={handleShare}>Done</button>
+        <button onClick={() => items.length > 0 && onCopyLink(items[0])} disabled={items.length === 0}>
+            Copy link
+          </button>
+          <button onClick={onClose}>Done</button>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 // useFileSelection.js
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { moveFiles, deleteFiles, copyFiles, openDriveFile, renameFile } from '../services/api';
 
 export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
@@ -88,18 +88,29 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     }
   }, [fileToRename, getDriveFiles, currentFolder.id, setError]);
 
+  const isFolder = useMemo(() => {
+    return selectedFiles.some(file => file.mimeType === 'application/vnd.google-apps.folder');
+  }, [selectedFiles]);
+
   const handleMakeCopy = useCallback(async () => {
     try {
-      await copyFiles(selectedFiles.map(f => f.id));
-      getDriveFiles(currentFolder.id);
+      const filesToCopy = selectedFiles.filter(file => file.mimeType !== 'application/vnd.google-apps.folder');
+      
+      if (filesToCopy.length === 0) {
+        setError("No files selected for copying. Folders cannot be copied.");
+        return;
+      }
+  
+      await copyFiles(filesToCopy.map(f => f.id));
+      await getDriveFiles(currentFolder.id);
       setShowActionMenu(false);
       setSelectedFiles([]);
     } catch (error) {
       console.error('Failed to make copies:', error);
       setError(error.message);
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
-
+  }, [selectedFiles, getDriveFiles, currentFolder.id, setError, setShowActionMenu, setSelectedFiles]);
+  
   const handleCloseActionMenu = useCallback(() => {
     setShowActionMenu(false);
     setSelectedFiles([]);
@@ -120,6 +131,7 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     handleCloseActionMenu,
     handleMoreClick,
     setShowActionMenu,
-    setIsRenamePopupOpen
+    setIsRenamePopupOpen,
+    isFolder
   };
 };
