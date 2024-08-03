@@ -23,20 +23,16 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     setShowActionMenu(true);
   }, []);
 
-  const handleMove = useCallback(async () => {
+  const handleMove = useCallback(async (fileIds, newFolderId) => {
     try {
-      const newFolderId = prompt("Enter the ID of the destination folder:");
-      if (newFolderId) {
-        await moveFiles(selectedFiles.map(f => f.id), newFolderId);
-        getDriveFiles(currentFolder.id);
-        setShowActionMenu(false);
-        setSelectedFiles([]);
-      }
+      await moveFiles(fileIds, newFolderId);
+      getDriveFiles(currentFolder.id);
     } catch (error) {
       console.error('Failed to move files:', error);
-      setError(error.message);
+      setError('Failed to move files. Please try again.');
     }
-  }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
+  }, [getDriveFiles, currentFolder, setError]);
+
 
   const handleDelete = useCallback(async () => {
     try {

@@ -440,3 +440,24 @@ def remove_anyone_permission_recursively(drive_service, folder_id):
                 ).execute()
         if item['mimeType'] == 'application/vnd.google-apps.folder':
             remove_anyone_permission_recursively(drive_service, item['id'])
+
+@drive_ops_bp.route('/drive/folders', methods=['GET'])
+def fetch_folders():
+    if 'credentials' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    drive_service, _ = get_services()
+    parent_id = request.args.get('parent_id', 'root')
+    
+    try:
+        results = drive_service.files().list(
+            q=f"'{parent_id}' in parents and mimeType='application/vnd.google-apps.folder'",
+            spaces='drive',
+            fields='files(id, name)',
+            supportsAllDrives=True
+        ).execute()
+        
+        folders = results.get('files', [])
+        return jsonify({"folders": folders})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

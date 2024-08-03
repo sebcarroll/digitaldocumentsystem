@@ -14,6 +14,8 @@ import { useFolderNavigation } from '../hooks/useFolderNavigation.js';
 import { useFileSharing } from '../hooks/useFileSharing.js';
 import StyledPopup from '../components/drivePage/folderAndRenamePopup.js';
 import SharePopup from '../components/drivePage/sharePopup.js';
+import MovePopup from '../components/drivePage/movePopup.js';
+import { useMovePopup } from '../hooks/useMovePopup';
 
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
@@ -97,6 +99,13 @@ const DrivePage = () => {
     handleGeneralAccessChange,
   } = useFileSharing(selectedFiles);
 
+  const {
+    isOpen: isMovePopupOpen,
+    handleOpen: handleOpenMovePopup,
+    handleClose: handleCloseMovePopup,
+    handleMove: handleMoveFiles,
+  } = useMovePopup(selectedFiles, handleMove, setError);
+
   useEffect(() => {
     getDriveFiles(currentFolder.id);
   }, [currentFolder.id, getDriveFiles]);
@@ -113,6 +122,8 @@ const DrivePage = () => {
       console.log('No files selected to share');
     }
   };
+
+
   const handleCloseSharePopup = () => {
     setIsSharePopupOpen(false);
   };
@@ -170,7 +181,7 @@ const DrivePage = () => {
           onGridLayoutClick={handleGridLayoutClick}
           showActionMenu={showActionMenu}
           selectedFiles={selectedFiles}
-          onMove={handleMove}
+          onMove={handleOpenMovePopup}
           onDelete={handleDelete}
           onCopyLink={handleCopyLink}
           onRename={openRenamePopup}
@@ -223,6 +234,17 @@ const DrivePage = () => {
         onRemoveAccess={handleRemoveAccess}
         onGeneralAccessChange={handleGeneralAccessChange}
         onCopyLink={handleCopyLink}
+      />
+      <MovePopup
+        isOpen={isMovePopupOpen}
+        onClose={handleCloseMovePopup}
+        onMove={handleMoveFiles}
+        selectedFiles={selectedFiles}
+        currentFolder={currentFolder}
+        folderStack={folderStack}
+        folders={driveContent.filter(item => item.mimeType === 'application/vnd.google-apps.folder')}
+        handleFolderClick={handleFileClick}
+        handleBreadcrumbClick={handleBreadcrumbClick}
       />
     </div>
   );

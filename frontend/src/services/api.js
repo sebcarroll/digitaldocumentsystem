@@ -261,3 +261,13 @@ export const updateGeneralAccess = async (fileId, newAccess) => {
   }
   return response.json();
 };
+
+export const fetchFolders = async (folderId = 'root') => {
+  const response = await fetch(`${API_URL}/drive/folders?parent_id=${folderId}`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch folders');
+  }
+  return response.json();
+};

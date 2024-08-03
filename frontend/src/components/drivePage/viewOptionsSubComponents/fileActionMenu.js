@@ -48,16 +48,11 @@ const FileActionMenu = ({ selectedFiles, onMove, onDelete, onCopyLink, onRename,
         <ActionButton icon={<CloseIcon />} text="Close" onClick={onClose} />
         <div className="selected-count">{selectedFiles.length} selected</div>
         <ActionButton icon={<PersonAddIcon />} text="Share" onClick={onShare} />
-        <ActionButton icon={<DriveFileMoveIcon />} text="Move" onClick={onMove} />
+        <ActionButton icon={<DriveFileMoveIcon />} text="Move" onClick={() => onMove(selectedFiles)}/>
         <ActionButton icon={<DeleteIcon />} text="Move to Bin" onClick={onDelete} />
         <ActionButton icon={<LinkIcon />} text="Copy link" onClick={onCopyLink} disabled={multipleFilesSelected} />
         <ActionButton icon={<DriveFileRenameOutlineIcon />} text="Rename" onClick={onRename} disabled={multipleFilesSelected} />
-        <ActionButton 
-          icon={<FileCopyIcon />} 
-          text="Make a copy" 
-          onClick={onMakeCopy} 
-          disabled={isFolder}
-        />
+        <ActionButton icon={<FileCopyIcon />} text="Make a copy" onClick={onMakeCopy} disabled={isFolder}/>
       </div>
     </div>
   );
