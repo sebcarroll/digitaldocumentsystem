@@ -1,4 +1,3 @@
-// sharePopup.js
 import React from 'react';
 import './popup.css';
 
@@ -13,11 +12,18 @@ const SharePopup = ({
   generalAccess,
   isLoading,
   error,
+  pendingEmails,
   onEmailChange,
-  onAddPerson,
+  onAddPendingEmail,
+  onRemovePendingEmail,
   onAccessLevelChange,
   onRemoveAccess,
-  onGeneralAccessChange
+  onGeneralAccessChange,
+  onShareWithPendingEmails,
+  currentUserRole,
+  linkAccessRole,
+  onLinkAccessChange,
+  currentUserId
 }) => {
   if (!isOpen) return null;
 
@@ -27,20 +33,47 @@ const SharePopup = ({
       ? `Share '${items[0].name}'` 
       : 'Share';
 
+  const handleKeyDown = (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      if (email.trim()) {
+        onAddPendingEmail(email.trim());
+      }
+    }
+  };
+
+  const handleDone = () => {
+    onShareWithPendingEmails();
+    onClose();
+  };
+
+  const canEditPermissions = currentUserRole === 'editor' || currentUserRole === 'owner';
+
   return (
     <div className="share-popup-overlay">
       <div className="share-popup">
         <h2>{title}</h2>
-        <input
-          type="text"
-          value={email}
-          onChange={(e) => onEmailChange(e.target.value)}
-          placeholder="Add people and groups"
-        />
-        {searchResults.length > 0 && (
+        {canEditPermissions && (
+          <div className="email-input-container">
+            {pendingEmails.map((pendingEmail, index) => (
+              <span key={index} className="pending-email">
+                {pendingEmail}
+                <button onClick={() => onRemovePendingEmail(pendingEmail)}>&times;</button>
+              </span>
+            ))}
+            <input
+              type="text"
+              value={email}
+              onChange={(e) => onEmailChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Add people and groups"
+            />
+          </div>
+        )}
+        {searchResults.length > 0 && canEditPermissions && (
           <ul className="search-results">
             {searchResults.map(person => (
-              <li key={person.id} onClick={() => onAddPerson(person)}>
+              <li key={person.id} onClick={() => onAddPendingEmail(person.email)}>
                 <img src={person.photoUrl} alt={person.name} />
                 {person.name} ({person.email})
               </li>
@@ -54,19 +87,26 @@ const SharePopup = ({
           {peopleWithAccess.map(person => (
             <li key={person.id}>
               <img src={person.photoLink} alt={person.displayName} />
-              <div>
+              <div className="person-info">
                 <strong>{person.displayName}</strong>
                 <span>{person.emailAddress}</span>
               </div>
-              <select
-                value={person.role}
-                onChange={(e) => onAccessLevelChange(person.id, e.target.value)}
-              >
-                <option value="reader">Viewer</option>
-                <option value="commenter">Commenter</option>
-                <option value="writer">Editor</option>
-              </select>
-              <button onClick={() => onRemoveAccess(person.id)}>Remove access</button>
+            <select
+              value={person.role}
+              onChange={(e) => onAccessLevelChange(person.id, e.target.value)}
+              disabled={
+                !canEditPermissions ||
+                (person.role === 'owner' && person.id === currentUserId)
+              }
+            >
+              <option value="viewer">Viewer</option>
+              <option value="commenter">Commenter</option>
+              <option value="editor">Editor</option>
+              {person.role === 'owner' && <option value="owner">Owner</option>}
+            </select>
+              {canEditPermissions && person.role !== 'owner' && (
+                <button onClick={() => onRemoveAccess(person.id)}>Remove access</button>
+              )}
             </li>
           ))}
         </ul>
@@ -75,16 +115,30 @@ const SharePopup = ({
           <select
             value={generalAccess}
             onChange={(e) => onGeneralAccessChange(e.target.value)}
+            disabled={!canEditPermissions}
           >
             <option value="Restricted">Restricted</option>
             <option value="Anyone with the link">Anyone with the link</option>
           </select>
+          {generalAccess === "Anyone with the link" && (
+          <select
+            value={linkAccessRole}
+            onChange={(e) => onLinkAccessChange(e.target.value)}
+            disabled={!canEditPermissions}
+          >
+            <option value="viewer">Viewer</option>
+            <option value="commenter">Commenter</option>
+            <option value="editor">Editor</option>
+          </select>
+        )}
         </div>
         <div className="popup-actions">
-        <button onClick={() => items.length > 0 && onCopyLink(items[0])} disabled={items.length === 0}>
-            Copy link
-          </button>
-          <button onClick={onClose}>Done</button>
+          {canEditPermissions && (
+            <button onClick={() => items.length > 0 && onCopyLink(items[0])} disabled={items.length === 0}>
+              Copy link
+            </button>
+          )}
+          <button onClick={handleDone}>Done</button>
         </div>
       </div>
     </div>

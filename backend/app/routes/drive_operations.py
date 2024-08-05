@@ -322,6 +322,11 @@ def update_permission(item_id):
     drive_service, _ = get_services()
     
     try:
+        # Check if the current user is an owner or editor
+        user_role = get_user_role(item_id)
+        if user_role.get('role') not in ['owner', 'editor']:
+            return jsonify({"error": "Only owners and editors can update permissions"}), 403
+
         updated_permission = drive_service.permissions().update(
             fileId=item_id,
             permissionId=permission_id,
@@ -332,6 +337,7 @@ def update_permission(item_id):
         return jsonify({"message": "Permission updated successfully", "updatedPermission": updated_permission})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 @drive_ops_bp.route('/drive/<item_id>/remove-permission', methods=['POST'])
 def remove_permission(item_id):
@@ -344,6 +350,11 @@ def remove_permission(item_id):
     drive_service, _ = get_services()
     
     try:
+        # Check if the current user is an owner or editor
+        user_role = get_user_role(item_id)
+        if user_role['role'] not in ['owner', 'editor']:
+            return jsonify({"error": "Only owners and editors can remove permissions"}), 403
+
         drive_service.permissions().delete(
             fileId=item_id, 
             permissionId=permission_id,
@@ -352,7 +363,7 @@ def remove_permission(item_id):
         return jsonify({"message": "Permission removed successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
+    
 @drive_ops_bp.route('/drive/<item_id>/update-general-access', methods=['POST'])
 def update_general_access(item_id):
     if 'credentials' not in session:
@@ -360,18 +371,18 @@ def update_general_access(item_id):
 
     data = request.json
     new_access = data.get('access')
+    link_role = data.get('linkRole', 'reader')
 
     drive_service, _ = get_services()
     
     try:
-        # Check if the item is a folder
         item = drive_service.files().get(fileId=item_id, fields='mimeType', supportsAllDrives=True).execute()
         is_folder = item['mimeType'] == 'application/vnd.google-apps.folder'
 
         if new_access == 'Anyone with the link':
             permission = {
                 'type': 'anyone',
-                'role': 'reader',
+                'role': link_role,
                 'allowFileDiscovery': False
             }
             drive_service.permissions().create(
@@ -461,3 +472,26 @@ def fetch_folders():
         return jsonify({"folders": folders})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+    
+@drive_ops_bp.route('/drive/<item_id>/user-role', methods=['GET'])
+def get_user_role(item_id):
+    if 'credentials' not in session:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    drive_service, _ = get_services()
+    
+    try:
+        file = drive_service.files().get(fileId=item_id, fields='owners,permissions', supportsAllDrives=True).execute()
+        user_email = session.get('user_email')
+        
+        if user_email in [owner['emailAddress'] for owner in file.get('owners', [])]:
+            return jsonify({"role": "owner"})
+        
+        for permission in file.get('permissions', []):
+            if permission.get('emailAddress') == user_email:
+                return jsonify({"role": permission['role']})
+        
+        return jsonify({"role": "viewer"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    

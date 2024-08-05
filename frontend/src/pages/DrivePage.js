@@ -92,11 +92,18 @@ const DrivePage = () => {
     generalAccess,
     isLoading: isSharingLoading,
     error: sharingError,
+    pendingEmails,
+    currentUserRole,
+    linkAccessRole,
+    currentUserId, 
     handleEmailChange,
-    handleAddPerson,
+    handleAddPendingEmail,
+    handleRemovePendingEmail,
     handleAccessLevelChange,
     handleRemoveAccess,
     handleGeneralAccessChange,
+    handleShareWithPendingEmails,
+    handleLinkAccessRoleChange,
   } = useFileSharing(selectedFiles);
 
   const {
@@ -218,6 +225,15 @@ const DrivePage = () => {
         title="Rename"
         initialValue={fileToRename ? fileToRename.name : ''}
       />
+
+{currentUserRole === null ? (
+  <div>Loading user permissions...</div>
+) : (
+  <SharePopup
+    // ... other props
+    currentUserRole={currentUserRole}
+  />
+)}
       <SharePopup
         isOpen={isSharePopupOpen}
         onClose={handleCloseSharePopup}
@@ -228,12 +244,19 @@ const DrivePage = () => {
         generalAccess={generalAccess}
         isLoading={isSharingLoading}
         error={sharingError}
+        pendingEmails={pendingEmails}
+        currentUserRole={currentUserRole}
+        linkAccessRole={linkAccessRole}
         onEmailChange={handleEmailChange}
-        onAddPerson={handleAddPerson}
+        onAddPendingEmail={handleAddPendingEmail}
+        onRemovePendingEmail={handleRemovePendingEmail}
         onAccessLevelChange={handleAccessLevelChange}
         onRemoveAccess={handleRemoveAccess}
         onGeneralAccessChange={handleGeneralAccessChange}
         onCopyLink={handleCopyLink}
+        onShareWithPendingEmails={handleShareWithPendingEmails}
+        onLinkAccessChange={handleLinkAccessRoleChange}
+        currentUserId={currentUserId}
       />
       <MovePopup
         isOpen={isMovePopupOpen}

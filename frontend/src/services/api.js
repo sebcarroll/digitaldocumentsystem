@@ -216,6 +216,16 @@ export const shareFile = async (fileId, emails, role) => {
   return response.json();
 };
 
+export const getCurrentUserRole = async (fileId) => {
+  const response = await fetch(`${API_URL}/drive/${fileId}/user-role`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to get current user role');
+  }
+  return response.json();
+};
+
 export const updatePermission = async (fileId, permissionId, role) => {
   const response = await fetch(`${API_URL}/drive/${fileId}/update-permission`, {
     method: 'POST',
@@ -226,7 +236,8 @@ export const updatePermission = async (fileId, permissionId, role) => {
     body: JSON.stringify({ permissionId, role }),
   });
   if (!response.ok) {
-    throw new Error('Failed to update permission');
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update permission');
   }
   return response.json();
 };
@@ -241,19 +252,20 @@ export const removePermission = async (fileId, permissionId) => {
     body: JSON.stringify({ permissionId }),
   });
   if (!response.ok) {
-    throw new Error('Failed to remove permission');
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to remove permission');
   }
   return response.json();
 };
 
-export const updateGeneralAccess = async (fileId, newAccess) => {
+export const updateGeneralAccess = async (fileId, newAccess, linkRole) => {
   const response = await fetch(`${API_URL}/drive/${fileId}/update-general-access`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     credentials: 'include',
-    body: JSON.stringify({ access: newAccess }),
+    body: JSON.stringify({ access: newAccess, linkRole: linkRole }),
   });
   if (!response.ok) {
     const errorData = await response.json();
@@ -271,3 +283,4 @@ export const fetchFolders = async (folderId = 'root') => {
   }
   return response.json();
 };
+

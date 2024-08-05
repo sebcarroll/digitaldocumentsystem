@@ -148,13 +148,40 @@
     object-fit: cover;
 }
 
+.people-with-access .person-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.people-with-access .person-info strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.people-with-access .person-info span {
+    font-size: 0.9em;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .people-with-access select,
 .general-access select {
     padding: 5px 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
-    margin-left: auto;
+    margin-left: 10px;
     cursor: pointer;
+}
+
+.people-with-access select:disabled,
+.general-access select:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
 }
 
 .general-access {
@@ -170,65 +197,41 @@
     color: #333;
 }
 
-.move-popup {
-    width: 600px;
-    max-height: 80vh;
+.email-input-container {
     display: flex;
-    flex-direction: column;
-  }
-  
-  .tabs {
-    display: flex;
-    margin-bottom: 20px;
-  }
-  
-  .tabs button {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    background-color: #f0f0f0;
-    cursor: pointer;
-  }
-  
-  .tabs button.active {
-    background-color: #1e3a8a;
-    color: white;
-  }
-  
-  .breadcrumbs {
+    flex-wrap: wrap;
+    align-items: center;
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 4px;
     margin-bottom: 10px;
-  }
-  
-  .breadcrumbs button {
+    min-height: 40px;
+}
+
+.pending-email {
+    background-color: #e0e0e0;
+    border-radius: 15px;
+    padding: 2px 8px;
+    margin: 2px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.pending-email button {
     background: none;
     border: none;
-    color: #1e3a8a;
+    color: #666;
     cursor: pointer;
-  }
-  
-  .folder-list {
-    flex: 1;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 10px;
-  }
-  
-  .folder-item {
-    padding: 10px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  .folder-item:hover {
-    background-color: #f0f0f0;
-  }
-  
-  .popup-actions {
-    margin-top: 20px;
-  }
-  
-  .ok-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-  }
+    margin-left: 5px;
+    font-size: 16px;
+    padding: 0 5px;
+}
+
+.email-input-container input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    padding: 5px;
+    min-width: 100px;
+}

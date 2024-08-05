@@ -1,6 +1,5 @@
-// useFileSharing.js
 import { useState, useEffect, useCallback } from 'react';
-import { searchUsers, getPeopleWithAccess, shareFile, updatePermission, removePermission, updateGeneralAccess } from '../services/api';
+import { searchUsers, getPeopleWithAccess, shareFile, updatePermission, removePermission, updateGeneralAccess, getCurrentUserRole } from '../services/api';
 
 export const useFileSharing = (items) => {
   const [email, setEmail] = useState('');
@@ -9,12 +8,33 @@ export const useFileSharing = (items) => {
   const [generalAccess, setGeneralAccess] = useState('Restricted');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pendingEmails, setPendingEmails] = useState([]);
+  const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [linkAccessRole, setLinkAccessRole] = useState('viewer');
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  useEffect(() => {
+    const fetchCurrentUserRole = async () => {
+      try {
+        const userInfo = await getCurrentUserRole();
+        setCurrentUserId(userInfo.id);
+      } catch (error) {
+        console.error('Failed to fetch current user info:', error);
+      }
+    };
+
+    fetchCurrentUserRole();
+  }, []);
 
   const fetchPeopleWithAccess = useCallback(async () => {
     if (items.length === 0) return;
     setIsLoading(true);
     setError(null);
     try {
+      // Fetch current user's role first
+      const userRole = await getCurrentUserRole(items[0].id);
+      setCurrentUserRole(userRole.role);
+  
       const responses = await Promise.all(items.map(item => getPeopleWithAccess(item.id)));
       const allPeople = responses.flatMap(response => response.peopleWithAccess);
       const uniquePeople = allPeople.reduce((acc, person) => {
@@ -32,40 +52,47 @@ export const useFileSharing = (items) => {
     }
   }, [items]);
 
-  useEffect(() => {
-    fetchPeopleWithAccess();
-  }, [fetchPeopleWithAccess]);
-
-  const handleEmailChange = useCallback(async (value) => {
+  const handleEmailChange = useCallback((value) => {
     setEmail(value);
     if (value.length > 2) {
-      try {
-        const response = await searchUsers(value);
+      searchUsers(value).then(response => {
         setSearchResults(response.users || []);
-      } catch (err) {
+      }).catch(err => {
         console.error('Failed to search users:', err);
         setSearchResults([]);
-      }
+      });
     } else {
       setSearchResults([]);
     }
   }, []);
 
-  const handleAddPerson = useCallback(async (person) => {
+  const handleAddPendingEmail = useCallback((emailToAdd) => {
+    setPendingEmails(prev => [...prev, emailToAdd]);
+    setEmail('');
+  }, []);
+
+  const handleRemovePendingEmail = useCallback((emailToRemove) => {
+    setPendingEmails(prev => prev.filter(email => email !== emailToRemove));
+  }, []);
+
+  const handleShareWithPendingEmails = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      await Promise.all(items.map(item => shareFile(item.id, [person.email], 'reader')));
+      await Promise.all(items.map(item => 
+        Promise.all(pendingEmails.map(email => 
+          shareFile(item.id, [email], 'viewer')
+        ))
+      ));
       await fetchPeopleWithAccess();
-      setSearchResults([]);
-      setEmail('');
+      setPendingEmails([]);
     } catch (err) {
-      setError('Failed to share with the selected person');
+      setError('Failed to share with some or all of the added emails');
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  }, [items, fetchPeopleWithAccess]);
+  }, [items, pendingEmails, fetchPeopleWithAccess]);
 
   const handleAccessLevelChange = useCallback(async (personId, newRole) => {
     setIsLoading(true);
@@ -82,6 +109,7 @@ export const useFileSharing = (items) => {
   }, [items, fetchPeopleWithAccess]);
 
   const handleRemoveAccess = useCallback(async (personId) => {
+    if (currentUserRole !== 'editor' && currentUserRole !== 'owner') return;
     setIsLoading(true);
     setError(null);
     try {
@@ -93,13 +121,14 @@ export const useFileSharing = (items) => {
     } finally {
       setIsLoading(false);
     }
-  }, [items, fetchPeopleWithAccess]);
+  }, [items, fetchPeopleWithAccess, currentUserRole]);
 
   const handleGeneralAccessChange = useCallback(async (newAccess) => {
+    if (currentUserRole !== 'editor' && currentUserRole !== 'owner') return;
     setIsLoading(true);
     setError(null);
     try {
-      await Promise.all(items.map(item => updateGeneralAccess(item.id, newAccess)));
+      await Promise.all(items.map(item => updateGeneralAccess(item.id, newAccess, linkAccessRole)));
       setGeneralAccess(newAccess);
     } catch (err) {
       setError('Failed to update general access');
@@ -107,7 +136,11 @@ export const useFileSharing = (items) => {
     } finally {
       setIsLoading(false);
     }
-  }, [items]);
+  }, [items, currentUserRole, linkAccessRole]);
+
+  const handleLinkAccessRoleChange = useCallback((newRole) => {
+    setLinkAccessRole(newRole);
+  }, []);
 
   return {
     email,
@@ -116,10 +149,17 @@ export const useFileSharing = (items) => {
     generalAccess,
     isLoading,
     error,
+    pendingEmails,
+    currentUserRole,
+    linkAccessRole,
+    currentUserId,
     handleEmailChange,
-    handleAddPerson,
+    handleAddPendingEmail,
+    handleRemovePendingEmail,
     handleAccessLevelChange,
     handleRemoveAccess,
     handleGeneralAccessChange,
+    handleShareWithPendingEmails,
+    handleLinkAccessRoleChange,
   };
 };
