@@ -6,3 +6,10 @@ google-api-python-client
 python-dotenv
 redis
 flask_cors
+pinecone-client
+marshmallow
+langchain
+langchain-community
+openai
+tiktoken
+langchain-openai
