@@ -2,7 +2,11 @@ from flask import Flask, session
 from flask_cors import CORS
 from app.routes.authorisation import auth_bp
 from app.routes.access_drive import drive_bp
-from app.routes.drive_operations import drive_ops_bp
+from app.routes.drive_core import drive_core_bp
+from app.routes.drive_file_operations import drive_file_ops_bp
+from app.routes.drive_folder_operations import drive_folder_ops_bp
+from app.routes.drive_permissions import drive_permissions_bp
+from app.routes.drive_sharing import drive_sharing_bp
 from config import DevelopmentConfig, ProductionConfig
 import os
 from datetime import datetime, timedelta
@@ -14,7 +18,11 @@ app.config.from_object(DevelopmentConfig if app.debug else ProductionConfig)
 # Register blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(drive_bp)
-app.register_blueprint(drive_ops_bp)
+app.register_blueprint(drive_core_bp)
+app.register_blueprint(drive_file_ops_bp)
+app.register_blueprint(drive_folder_ops_bp)
+app.register_blueprint(drive_permissions_bp)
+app.register_blueprint(drive_sharing_bp)
 
 # Session cleanup mechanism
 @app.before_request

@@ -27,6 +27,8 @@ const SharePopup = ({
 }) => {
   if (!isOpen) return null;
 
+  const currentUserAccess = peopleWithAccess.find(person => person.id === currentUserId);
+
   const title = items.length > 1 
     ? `Share ${items.length} items` 
     : items.length === 1 
@@ -47,7 +49,7 @@ const SharePopup = ({
     onClose();
   };
 
-  const canEditPermissions = currentUserRole === 'editor' || currentUserRole === 'owner';
+  const canEditPermissions = ['writer', 'owner'].includes(currentUserRole.toLowerCase());
 
   return (
     <div className="share-popup-overlay">
@@ -91,20 +93,20 @@ const SharePopup = ({
                 <strong>{person.displayName}</strong>
                 <span>{person.emailAddress}</span>
               </div>
-            <select
-              value={person.role}
-              onChange={(e) => onAccessLevelChange(person.id, e.target.value)}
-              disabled={
-                !canEditPermissions ||
-                (person.role === 'owner' && person.id === currentUserId)
-              }
-            >
-              <option value="viewer">Viewer</option>
-              <option value="commenter">Commenter</option>
-              <option value="editor">Editor</option>
-              {person.role === 'owner' && <option value="owner">Owner</option>}
-            </select>
-              {canEditPermissions && person.role !== 'owner' && (
+              <select
+                value={person.role}
+                onChange={(e) => onAccessLevelChange(person.id, e.target.value)}
+                disabled={
+                  !canEditPermissions ||
+                  person.role.toLowerCase() === 'owner'
+                }
+              >
+                <option value="viewer">Viewer</option>
+                <option value="commenter">Commenter</option>
+                <option value="writer">Editor</option>
+                {person.role.toLowerCase() === 'owner' && <option value="owner">Owner</option>}
+              </select>
+              {canEditPermissions && person.role.toLowerCase() !== 'owner' && (
                 <button onClick={() => onRemoveAccess(person.id)}>Remove access</button>
               )}
             </li>
@@ -121,16 +123,16 @@ const SharePopup = ({
             <option value="Anyone with the link">Anyone with the link</option>
           </select>
           {generalAccess === "Anyone with the link" && (
-          <select
-            value={linkAccessRole}
-            onChange={(e) => onLinkAccessChange(e.target.value)}
-            disabled={!canEditPermissions}
-          >
-            <option value="viewer">Viewer</option>
-            <option value="commenter">Commenter</option>
-            <option value="editor">Editor</option>
-          </select>
-        )}
+            <select
+              value={linkAccessRole}
+              onChange={(e) => onLinkAccessChange(e.target.value)}
+              disabled={!canEditPermissions}
+            >
+              <option value="viewer">Viewer</option>
+              <option value="commenter">Commenter</option>
+              <option value="writer">Editor</option>
+            </select>
+          )}
         </div>
         <div className="popup-actions">
           {canEditPermissions && (

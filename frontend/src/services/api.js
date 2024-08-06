@@ -197,7 +197,9 @@ export const getPeopleWithAccess = async (fileId) => {
   if (!response.ok) {
     throw new Error('Failed to get people with access');
   }
-  return response.json();
+  const data = await response.json();
+  console.log('API response data:', data); // Log the response data
+  return data;
 };
 
 export const shareFile = async (fileId, emails, role) => {
@@ -223,7 +225,8 @@ export const getCurrentUserRole = async (fileId) => {
   if (!response.ok) {
     throw new Error('Failed to get current user role');
   }
-  return response.json();
+  const data = await response.json();
+  return { role: data.role, id: data.id };
 };
 
 export const updatePermission = async (fileId, permissionId, role) => {

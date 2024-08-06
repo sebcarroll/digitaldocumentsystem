@@ -12,45 +12,52 @@ export const useFileSharing = (items) => {
   const [currentUserRole, setCurrentUserRole] = useState(null);
   const [linkAccessRole, setLinkAccessRole] = useState('viewer');
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [isSharingLoading, setIsSharingLoading] = useState(false);
+  const [sharingError, setSharingError] = useState(null);
+
+  const fetchCurrentUserRole = useCallback(async () => {
+    if (items.length === 0) return;
+    setIsSharingLoading(true);
+    setSharingError(null);
+    try {
+      const userInfo = await getCurrentUserRole(items[0].id);
+      console.log('User Info from API:', userInfo);
+      setCurrentUserRole(userInfo.role);
+      setCurrentUserId(userInfo.id);
+    } catch (error) {
+      console.error('Failed to fetch current user info:', error);
+      setSharingError('Failed to fetch user role');
+    } finally {
+      setIsSharingLoading(false);
+    }
+  }, [items]);
 
   useEffect(() => {
-    const fetchCurrentUserRole = async () => {
-      try {
-        const userInfo = await getCurrentUserRole();
-        setCurrentUserId(userInfo.id);
-      } catch (error) {
-        console.error('Failed to fetch current user info:', error);
-      }
-    };
-
     fetchCurrentUserRole();
-  }, []);
+  }, [fetchCurrentUserRole]);
 
   const fetchPeopleWithAccess = useCallback(async () => {
     if (items.length === 0) return;
-    setIsLoading(true);
-    setError(null);
+    setIsSharingLoading(true);
+    setSharingError(null);
     try {
-      // Fetch current user's role first
-      const userRole = await getCurrentUserRole(items[0].id);
-      setCurrentUserRole(userRole.role);
-  
-      const responses = await Promise.all(items.map(item => getPeopleWithAccess(item.id)));
-      const allPeople = responses.flatMap(response => response.peopleWithAccess);
-      const uniquePeople = allPeople.reduce((acc, person) => {
-        if (!acc.some(p => p.emailAddress === person.emailAddress)) {
-          acc.push(person);
-        }
-        return acc;
-      }, []);
-      setPeopleWithAccess(uniquePeople);
+      const response = await getPeopleWithAccess(items[0].id);
+      console.log('API Response:', response); // Log the full API response
+      setPeopleWithAccess(response.peopleWithAccess || []);
+      setCurrentUserRole(response.currentUserRole || 'viewer');
+      setCurrentUserId(response.currentUserId || null);
+      setGeneralAccess(response.generalAccess || 'Restricted');
     } catch (err) {
-      setError('Failed to fetch people with access');
-      console.error(err);
+      console.error('Error fetching people with access:', err);
+      setSharingError('Failed to fetch people with access');
     } finally {
-      setIsLoading(false);
+      setIsSharingLoading(false);
     }
   }, [items]);
+
+  useEffect(() => {
+    fetchPeopleWithAccess();
+  }, [fetchPeopleWithAccess]);
 
   const handleEmailChange = useCallback((value) => {
     setEmail(value);
@@ -76,8 +83,8 @@ export const useFileSharing = (items) => {
   }, []);
 
   const handleShareWithPendingEmails = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsSharingLoading(true);
+    setSharingError(null);
     try {
       await Promise.all(items.map(item => 
         Promise.all(pendingEmails.map(email => 
@@ -87,54 +94,54 @@ export const useFileSharing = (items) => {
       await fetchPeopleWithAccess();
       setPendingEmails([]);
     } catch (err) {
-      setError('Failed to share with some or all of the added emails');
+      setSharingError('Failed to share with some or all of the added emails');
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSharingLoading(false);
     }
   }, [items, pendingEmails, fetchPeopleWithAccess]);
 
   const handleAccessLevelChange = useCallback(async (personId, newRole) => {
-    setIsLoading(true);
-    setError(null);
+    setIsSharingLoading(true);
+    setSharingError(null);
     try {
       await Promise.all(items.map(item => updatePermission(item.id, personId, newRole)));
       await fetchPeopleWithAccess();
     } catch (err) {
-      setError('Failed to update permission');
+      setSharingError('Failed to update permission');
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSharingLoading(false);
     }
   }, [items, fetchPeopleWithAccess]);
 
   const handleRemoveAccess = useCallback(async (personId) => {
-    if (currentUserRole !== 'editor' && currentUserRole !== 'owner') return;
-    setIsLoading(true);
-    setError(null);
+    if (currentUserRole !== 'writer' && currentUserRole !== 'owner') return;
+    setIsSharingLoading(true);
+    setSharingError(null);
     try {
       await Promise.all(items.map(item => removePermission(item.id, personId)));
       await fetchPeopleWithAccess();
     } catch (err) {
-      setError('Failed to remove access');
+      setSharingError('Failed to remove access');
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSharingLoading(false);
     }
   }, [items, fetchPeopleWithAccess, currentUserRole]);
 
   const handleGeneralAccessChange = useCallback(async (newAccess) => {
-    if (currentUserRole !== 'editor' && currentUserRole !== 'owner') return;
-    setIsLoading(true);
-    setError(null);
+    if (currentUserRole !== 'writer' && currentUserRole !== 'owner') return;
+    setIsSharingLoading(true);
+    setSharingError(null);
     try {
       await Promise.all(items.map(item => updateGeneralAccess(item.id, newAccess, linkAccessRole)));
       setGeneralAccess(newAccess);
     } catch (err) {
-      setError('Failed to update general access');
+      setSharingError('Failed to update general access');
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSharingLoading(false);
     }
   }, [items, currentUserRole, linkAccessRole]);
 
@@ -161,5 +168,9 @@ export const useFileSharing = (items) => {
     handleGeneralAccessChange,
     handleShareWithPendingEmails,
     handleLinkAccessRoleChange,
+    fetchCurrentUserRole,
+    fetchPeopleWithAccess,
+    isSharingLoading,
+    sharingError,
   };
 };

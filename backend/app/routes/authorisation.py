@@ -1,9 +1,9 @@
 from flask import Blueprint, redirect, request, session, url_for, jsonify
 from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 from config import Config
 from datetime import datetime
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
-import logging
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -52,12 +52,7 @@ def oauth2callback():
     try:
         flow.fetch_token(authorization_response=request.url)
     except OAuth2Error as e:
-        if "Scope has changed" in str(e):
-            logging.warning(f"Scope has changed: {str(e)}")
-            # Proceed with the new scopes
-        else:
-            logging.error(f"OAuth2 Error: {str(e)}")
-            return jsonify({"error": "Authentication failed", "details": str(e)}), 400
+        return jsonify({"error": "Authentication failed", "details": str(e)}), 400
 
     credentials = flow.credentials
     session['credentials'] = {
@@ -68,10 +63,25 @@ def oauth2callback():
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes
     }
+    
+    # Fetch user info
+    try:
+        service = build('oauth2', 'v2', credentials=credentials)
+        user_info = service.userinfo().get().execute()
+        session['user_email'] = user_info.get('email')
+        session['user_id'] = user_info.get('id')
+        print(f"DEBUG: User authenticated - Email: {session['user_email']}, ID: {session['user_id']}")
+    except Exception as e:
+        print(f"ERROR: Failed to fetch user info - {str(e)}")
+        # Even if we fail to fetch user info, we don't want to block the authentication process
+        # So we'll set these to None and continue
+        session['user_email'] = None
+        session['user_id'] = None
+
     session['last_active'] = datetime.now().timestamp()
 
-    # Log the final scopes
-    logging.info(f"Authentication successful. Granted scopes: {credentials.scopes}")
+    # Log the final scopes granted to the user
+    print(f"DEBUG: Authentication successful. Granted scopes: {credentials.scopes}")
 
     return redirect('http://localhost:3000/auth-success')
 

@@ -29,7 +29,6 @@ const Sidebar = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, on
         </div>
         <nav className="sidebar-nav">
           {sidebarItems.map((item) => {
-            console.log('Rendering item:', item);
             return (
               <SidebarButton
                 key={item.path}

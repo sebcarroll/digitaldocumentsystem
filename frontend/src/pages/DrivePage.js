@@ -50,6 +50,7 @@ const DrivePage = () => {
     selectedFiles,
     isRenamePopupOpen,
     fileToRename,
+    isFolder,
     handleFileSelect,
     handleMove,
     handleDelete,
@@ -61,7 +62,7 @@ const DrivePage = () => {
     handleMoreClick,
     setShowActionMenu,
     setIsRenamePopupOpen,
-    isFolder
+    setSelectedFiles,
   } = useFileSelection(getDriveFiles, currentFolder, setError);
 
   const {
@@ -90,12 +91,11 @@ const DrivePage = () => {
     searchResults,
     peopleWithAccess,
     generalAccess,
-    isLoading: isSharingLoading,
-    error: sharingError,
+    isLoading,
     pendingEmails,
     currentUserRole,
     linkAccessRole,
-    currentUserId, 
+    currentUserId,
     handleEmailChange,
     handleAddPendingEmail,
     handleRemovePendingEmail,
@@ -104,6 +104,10 @@ const DrivePage = () => {
     handleGeneralAccessChange,
     handleShareWithPendingEmails,
     handleLinkAccessRoleChange,
+    fetchCurrentUserRole,
+    fetchPeopleWithAccess,
+    isSharingLoading,  
+    sharingError,    
   } = useFileSharing(selectedFiles);
 
   const {
@@ -112,6 +116,7 @@ const DrivePage = () => {
     handleClose: handleCloseMovePopup,
     handleMove: handleMoveFiles,
   } = useMovePopup(selectedFiles, handleMove, setError);
+
 
   useEffect(() => {
     getDriveFiles(currentFolder.id);
@@ -131,9 +136,11 @@ const DrivePage = () => {
   };
 
 
-  const handleCloseSharePopup = () => {
+  const handleCloseSharePopup = useCallback(() => {
     setIsSharePopupOpen(false);
-  };
+    setShowActionMenu(false);
+    setSelectedFiles([]);
+  }, []);
 
   const getFileIcon = (mimeType) => {
     if (mimeType === 'application/vnd.google-apps.folder') return '📁';
@@ -226,38 +233,36 @@ const DrivePage = () => {
         initialValue={fileToRename ? fileToRename.name : ''}
       />
 
-{currentUserRole === null ? (
-  <div>Loading user permissions...</div>
-) : (
-  <SharePopup
-    // ... other props
-    currentUserRole={currentUserRole}
-  />
+{isSharePopupOpen && (
+  currentUserRole === null ? (
+    <div>Loading user permissions...</div>
+  ) : (
+    <SharePopup
+      isOpen={true}
+      onClose={handleCloseSharePopup}
+      items={selectedFiles}
+      email={email}
+      searchResults={searchResults}
+      peopleWithAccess={peopleWithAccess}
+      generalAccess={generalAccess}
+      isLoading={isSharingLoading} 
+      error={sharingError}   
+      pendingEmails={pendingEmails}
+      currentUserRole={currentUserRole}
+      linkAccessRole={linkAccessRole}
+      onEmailChange={handleEmailChange}
+      onAddPendingEmail={handleAddPendingEmail}
+      onRemovePendingEmail={handleRemovePendingEmail}
+      onAccessLevelChange={handleAccessLevelChange}
+      onRemoveAccess={handleRemoveAccess}
+      onGeneralAccessChange={handleGeneralAccessChange}
+      onCopyLink={handleCopyLink}
+      onShareWithPendingEmails={handleShareWithPendingEmails}
+      onLinkAccessChange={handleLinkAccessRoleChange}
+      currentUserId={currentUserId}
+    />
+  )
 )}
-      <SharePopup
-        isOpen={isSharePopupOpen}
-        onClose={handleCloseSharePopup}
-        items={selectedFiles}
-        email={email}
-        searchResults={searchResults}
-        peopleWithAccess={peopleWithAccess}
-        generalAccess={generalAccess}
-        isLoading={isSharingLoading}
-        error={sharingError}
-        pendingEmails={pendingEmails}
-        currentUserRole={currentUserRole}
-        linkAccessRole={linkAccessRole}
-        onEmailChange={handleEmailChange}
-        onAddPendingEmail={handleAddPendingEmail}
-        onRemovePendingEmail={handleRemovePendingEmail}
-        onAccessLevelChange={handleAccessLevelChange}
-        onRemoveAccess={handleRemoveAccess}
-        onGeneralAccessChange={handleGeneralAccessChange}
-        onCopyLink={handleCopyLink}
-        onShareWithPendingEmails={handleShareWithPendingEmails}
-        onLinkAccessChange={handleLinkAccessRoleChange}
-        currentUserId={currentUserId}
-      />
       <MovePopup
         isOpen={isMovePopupOpen}
         onClose={handleCloseMovePopup}

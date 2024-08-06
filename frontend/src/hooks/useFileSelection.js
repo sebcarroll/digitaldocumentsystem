@@ -128,6 +128,7 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     handleMoreClick,
     setShowActionMenu,
     setIsRenamePopupOpen,
+    setSelectedFiles,   
     isFolder
   };
 };
