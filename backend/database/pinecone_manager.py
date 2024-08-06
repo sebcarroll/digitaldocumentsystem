@@ -6,13 +6,18 @@ import openai
 from flask import current_app
 import logging
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class PineconeManager:
-    def __init__(self, api_key, index_name, openai_api_key):
+    def __init__(self, api_key, environment, index_name, openai_api_key):
+        logger.info(f"Initializing PineconeManager with index name: {index_name}")
         self.pc = Pinecone(api_key=api_key)
+        self.index_name = index_name
+        self.environment = environment
+        self.ensure_index_exists()
+        logger.info(f"Connecting to index: {index_name}")
         self.index = self.pc.Index(index_name)
+        logger.info("Successfully connected to Pinecone index")
         self.document_schema = DocumentSchema()
         self.embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
         self.text_splitter = RecursiveCharacterTextSplitter(

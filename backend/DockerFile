@@ -19,5 +19,16 @@ EXPOSE 8080
 # Set the Python path to include the current directory
 ENV PYTHONPATH=/backend:$PYTHONPATH
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Set environment variables
+ARG PINECONE_API_KEY
+ARG PINECONE_ENVIRONMENT
+ARG PINECONE_INDEX_NAME
+ARG OPENAI_API_KEY
+
+ENV PINECONE_API_KEY=$PINECONE_API_KEY
+ENV PINECONE_ENVIRONMENT=$PINECONE_ENVIRONMENT
+ENV PINECONE_INDEX_NAME=$PINECONE_INDEX_NAME
+ENV OPENAI_API_KEY=$OPENAI_API_KEY
+
+# Run the application using Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "wsgi:application"]

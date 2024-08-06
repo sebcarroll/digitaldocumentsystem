@@ -13,3 +13,5 @@ langchain-community
 openai
 tiktoken
 langchain-openai
+langchain-pinecone
+gunicorn

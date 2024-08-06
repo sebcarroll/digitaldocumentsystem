@@ -8,9 +8,12 @@ services:
       - "8080:8080"
     volumes:
       - ./backend:/backend
+    env_file:
+      - ./backend/.env
     environment:
       - FLASK_ENV=development
       - OAUTHLIB_INSECURE_TRANSPORT=1
+    command: gunicorn --bind 0.0.0.0:8080 wsgi:application
 
   frontend:
     build:
