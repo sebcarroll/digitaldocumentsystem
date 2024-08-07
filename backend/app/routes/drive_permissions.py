@@ -12,7 +12,7 @@ def people_with_access(item_id):
     user_email = session.get('user_email')
     user_id = session.get('user_id')
 
-    print(f"Debug - User Email: {user_email}, User ID: {user_id}")  # Add this line
+    print(f"Debug - User Email: {user_email}, User ID: {user_id}") 
     
     try:
         # Get file metadata to check if the current user is an owner
@@ -128,7 +128,6 @@ def remove_permission(item_id):
         return jsonify({"error": str(e)}), 400
 
     
-@drive_permissions_bp.route('/drive/<item_id>/user-role', methods=['GET'])
 @drive_permissions_bp.route('/drive/<item_id>/user-role', methods=['GET'])
 def get_user_role(item_id):
     print(f"DEBUG: Fetching user role for item {item_id}")  # Add this line
