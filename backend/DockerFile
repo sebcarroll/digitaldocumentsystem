@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12
+FROM python:3.12 as base
 
 # Set the working directory in the container
 WORKDIR /backend
@@ -13,11 +13,23 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire backend directory into the container
 COPY . .
 
+# Set the Python path to include the current directory and its parent
+ENV PYTHONPATH=/backend:/backend/app:$PYTHONPATH
+
+# Make the start script executable
+RUN chmod +x /backend/start.sh
+
+# Test stage
+FROM base as test
+
+# Run pytest with verbose output
+CMD ["pytest", "-v", "/backend/app/tests"]
+
+# Production stage
+FROM base as production
+
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
-
-# Set the Python path to include the current directory
-ENV PYTHONPATH=/backend:$PYTHONPATH
 
 # Set environment variables
 ARG PINECONE_API_KEY
@@ -30,5 +42,5 @@ ENV PINECONE_ENVIRONMENT=$PINECONE_ENVIRONMENT
 ENV PINECONE_INDEX_NAME=$PINECONE_INDEX_NAME
 ENV OPENAI_API_KEY=$OPENAI_API_KEY
 
-# Run the application using Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "wsgi:application"]
+# Use the shell script as the CMD
+CMD ["/bin/sh", "/backend/start.sh"]

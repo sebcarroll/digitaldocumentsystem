@@ -4,6 +4,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: production
     ports:
       - "8080:8080"
     volumes:
@@ -13,7 +14,6 @@ services:
     environment:
       - FLASK_ENV=development
       - OAUTHLIB_INSECURE_TRANSPORT=1
-    command: gunicorn --bind 0.0.0.0:8080 wsgi:application
 
   frontend:
     build:

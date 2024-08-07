@@ -15,3 +15,4 @@ tiktoken
 langchain-openai
 langchain-pinecone
 gunicorn
+pytest
