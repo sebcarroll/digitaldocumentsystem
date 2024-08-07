@@ -10,7 +10,7 @@ from app.routes.drive_sharing import drive_sharing_bp
 from config import DevelopmentConfig, ProductionConfig
 import os
 from datetime import datetime, timedelta
-from database.db import init_db, get_db
+from app.services.database.db import init_db, get_db
 import json
 import logging
 

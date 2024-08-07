@@ -16,3 +16,4 @@ langchain-openai
 langchain-pinecone
 gunicorn
 pytest
+celery

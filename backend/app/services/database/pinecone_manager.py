@@ -1,7 +1,7 @@
 from pinecone import Pinecone
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from .schemas.document import DocumentSchema
+from database.schemas.document import DocumentSchema
 import openai
 from flask import current_app
 import logging

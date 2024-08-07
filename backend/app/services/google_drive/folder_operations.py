@@ -16,7 +16,7 @@ class DriveFolderOperations(DriveCore):
     
     def upload_folder(self, parent_folder_id, files):
         uploaded_files = []
-        folder_structure = {parent_folder_id: parent_folder_id}  # Initialize with the parent folder
+        folder_structure = {parent_folder_id: parent_folder_id} 
 
         def create_folder(name, parent_id):
             if (parent_id, name) in folder_structure:
