@@ -1,21 +1,21 @@
-
-from backend.app.services.google_drive.google_drive_service import GoogleDriveService
-from backend.app.services.database.pinecone_manager import PineconeManager
-from backend.database.schemas.document import DocumentSchema
-from backend.database.schemas.folder import FolderSchema
-from backend.database.schemas.sync_log import SyncLogSchema
-from backend.database.schemas.embedding_job import EmbeddingJobSchema
+from app.services.google_drive.google_drive_service import GoogleDriveService
+from app.services.database.pinecone_manager import PineconeManager
+from database.schemas.document import DocumentSchema
+from database.schemas.folder import FolderSchema
+from database.schemas.sync_log import SyncLogSchema
+from database.schemas.embedding_job import EmbeddingJobSchema
 import logging
 from datetime import datetime
 import uuid
-from backend.config import Config
+from config import Config
+from google.oauth2.credentials import Credentials
 
 logger = logging.getLogger(__name__)
 
 class DrivePineconeSync:
-    def __init__(self, user_id, credentials_dict):
+    def __init__(self, user_id, credentials):
         self.user_id = user_id
-        self.drive_service = GoogleDriveService(credentials_dict)
+        self.drive_service = GoogleDriveService(credentials)
         self.pinecone_manager = PineconeManager(
             api_key=Config.PINECONE_API_KEY,
             environment=Config.PINECONE_ENVIRONMENT,
@@ -42,7 +42,7 @@ class DrivePineconeSync:
                 'ownerId': file_metadata['owners'][0]['emailAddress'],
                 'parentFolderId': file_metadata.get('parents', [None])[0],
                 'webViewLink': file_metadata.get('webViewLink'),
-                'lastSyncTime': datetime.utcnow().isoformat(),
+                'lastSyncTime': datetime.now(datetime.UTC).isoformat(),
                 'version': 1,
                 'accessControl': {
                     'ownerId': file_metadata['owners'][0]['emailAddress'],
@@ -71,7 +71,7 @@ class DrivePineconeSync:
                 'createdAt': folder_metadata['createdTime'],
                 'modifiedAt': folder_metadata['modifiedTime'],
                 'ownerId': folder_metadata['owners'][0]['emailAddress'],
-                'lastSyncTime': datetime.utcnow().isoformat(),
+                'lastSyncTime': datetime.now(datetime.UTC).isoformat(),
                 'accessControl': {
                     'ownerId': folder_metadata['owners'][0]['emailAddress'],
                     'readers': [user['emailAddress'] for user in folder_metadata.get('permissions', []) if user.get('role') == 'reader'],
@@ -95,7 +95,7 @@ class DrivePineconeSync:
         sync_log = {
             'id': str(uuid.uuid4()),
             'userId': self.user_id,
-            'startTime': datetime.utcnow().isoformat(),
+            'startTime': datetime.now(datetime.UTC).isoformat(),
             'status': 'in_progress',
             'syncType': 'full'
         }
@@ -107,7 +107,7 @@ class DrivePineconeSync:
             sync_log['status'] = 'failed'
             sync_log['errors'] = [str(e)]
         finally:
-            sync_log['endTime'] = datetime.utcnow().isoformat()
+            sync_log['endTime'] = datetime.now(datetime.UTC).isoformat()
             validated_sync_log = self.sync_log_schema.load(sync_log)
             self.store_sync_log(validated_sync_log)
 
@@ -115,7 +115,7 @@ class DrivePineconeSync:
         sync_log = {
             'id': str(uuid.uuid4()),
             'userId': self.user_id,
-            'startTime': datetime.utcnow().isoformat(),
+            'startTime': datetime.now(datetime.UTC).isoformat(),
             'status': 'in_progress',
             'syncType': 'incremental'
         }
@@ -130,7 +130,7 @@ class DrivePineconeSync:
             sync_log['status'] = 'failed'
             sync_log['errors'] = [str(e)]
         finally:
-            sync_log['endTime'] = datetime.utcnow().isoformat()
+            sync_log['endTime'] = datetime.now(datetime.UTC).isoformat()
             validated_sync_log = self.sync_log_schema.load(sync_log)
             self.store_sync_log(validated_sync_log)
 
@@ -138,3 +138,12 @@ class DrivePineconeSync:
         # Implement method to store sync log
         # This could be stored in a separate database or logging system
         pass
+
+    def handle_file_open(self, file_id):
+        self.sync_file(file_id)
+
+    def handle_file_close(self, file_id):
+        self.sync_file(file_id)
+
+    def handle_file_change(self, file_id):
+        self.sync_file(file_id)

@@ -3,6 +3,7 @@ from config import Config
 from datetime import datetime
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from app.services.google_drive.auth_service import AuthService
+from app.services.sync.sync_service import SyncService
 
 auth_bp = Blueprint('auth', __name__)
 auth_service = AuthService(Config)
@@ -42,9 +43,9 @@ def oauth2callback():
         session['user_id'] = None
 
     session['last_active'] = datetime.now().timestamp()
-
-    # Log the final scopes granted to the user
-    print(f"DEBUG: Authentication successful. Granted scopes: {credentials.scopes}")
+    
+    sync_result = SyncService.sync_user_drive(session)
+    print(f"DEBUG: Initial sync result - {sync_result}")
 
     return redirect('http://localhost:3000/auth-success')
 

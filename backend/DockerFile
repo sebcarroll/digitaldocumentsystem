@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12 as base
+FROM python:3.12 AS base
 
 # Set the working directory in the container
 WORKDIR /backend
@@ -20,13 +20,13 @@ ENV PYTHONPATH=/backend:/backend/app:$PYTHONPATH
 RUN chmod +x /backend/start.sh
 
 # Test stage
-FROM base as test
+FROM base AS test
 
 # Run pytest with verbose output
 CMD ["pytest", "-v", "/backend/app/tests"]
 
 # Production stage
-FROM base as production
+FROM base AS production
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080

@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch
-from services.google_drive.drive_permissions_service import DrivePermissionsService
+from app.services.google_drive.drive_permissions_service import DrivePermissionsService
 
 @pytest.fixture
 def mock_session():
@@ -19,7 +19,7 @@ def mock_session():
 
 @pytest.fixture
 def drive_permissions_service(mock_session):
-    with patch('services.google_drive.drive_permissions_service.DriveCore') as MockDriveCore:
+    with patch('app.services.google_drive.drive_permissions_service.DriveCore') as MockDriveCore:
         MockDriveCore.return_value.drive_service = Mock()
         service = DrivePermissionsService(mock_session)
         return service

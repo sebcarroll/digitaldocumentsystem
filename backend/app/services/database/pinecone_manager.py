@@ -1,24 +1,29 @@
-from pinecone import Pinecone
+import pinecone
+from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from database.schemas.document import DocumentSchema
-import openai
-from flask import current_app
 import logging
 
 logger = logging.getLogger(__name__)
 
 class PineconeManager:
     def __init__(self, api_key, environment, index_name, openai_api_key):
-        logger.info(f"Initializing PineconeManager with index name: {index_name}")
-        self.pc = Pinecone(api_key=api_key)
-        self.index_name = index_name
+        self.api_key = api_key
         self.environment = environment
+        self.index_name = index_name
+        self.openai_api_key = openai_api_key
+        self.document_schema = DocumentSchema()         
+        # Initialize Pinecone
+        self.pc = Pinecone(api_key=api_key)
+        
+        # Ensure index exists
         self.ensure_index_exists()
-        logger.info(f"Connecting to index: {index_name}")
+        
+        # Get the index
         self.index = self.pc.Index(index_name)
-        logger.info("Successfully connected to Pinecone index")
-        self.document_schema = DocumentSchema()
+        
+        # Initialize OpenAI embeddings
         self.embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
@@ -28,15 +33,15 @@ class PineconeManager:
 
     def ensure_index_exists(self):
         try:
-            existing_indexes = [index_info['name'] for index_info in self.pc.list_indexes()]
+            existing_indexes = self.pc.list_indexes().names()
             if self.index_name not in existing_indexes:
                 logger.info(f"Creating new index: {self.index_name}")
                 self.pc.create_index(
                     name=self.index_name,
                     dimension=1536,  # OpenAI embeddings are 1536 dimensions
                     metric="cosine",
-                    spec=pinecone.ServerlessSpec(
-                        cloud=pinecone.Cloud.AWS,
+                    spec=ServerlessSpec(
+                        cloud="aws",
                         region=self.environment.split('-')[0]  # Extracts 'eu-west-1' from 'eu-west-1-aws'
                     )
                 )
@@ -47,27 +52,31 @@ class PineconeManager:
             raise
 
     def upsert_document(self, document):
-        chunks = self.text_splitter.split_text(document.content)
-        embeddings = self.embeddings.embed_documents(chunks)
-        
-        metadata = self.document_schema.dump(document)
-        vectors = []
-        
-        for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-            chunk_id = f"{str(document.id)}_{i}"
-            chunk_metadata = {
-                **metadata,
-                "chunk_index": i,
-                "total_chunks": len(chunks),
-                "chunk_content": chunk
-            }
-            vectors.append({
-                "id": chunk_id,
-                "values": embedding,
-                "metadata": chunk_metadata
-            })
-        
-        self.index.upsert(vectors=vectors)
+        try:
+            chunks = self.text_splitter.split_text(document.content)
+            embeddings = self.embeddings.embed_documents(chunks)
+            
+            metadata = self.document_schema.dump(document)
+            vectors = []
+            
+            for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+                chunk_id = f"{str(document.id)}_{i}"
+                chunk_metadata = {
+                    **metadata,
+                    "chunk_index": i,
+                    "total_chunks": len(chunks),
+                    "chunk_content": chunk
+                }
+                vectors.append({
+                    "id": chunk_id,
+                    "values": embedding,
+                    "metadata": chunk_metadata
+                })
+            
+            self.index.upsert(vectors=vectors)
+        except Exception as e:
+            logger.error(f"Error upserting document: {str(e)}")
+            raise
 
     def query_similar_documents(self, query, top_k=5, filter=None):
         query_embedding = self.embeddings.embed_query(query)

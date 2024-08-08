@@ -22,8 +22,19 @@ class Config:
     PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT')
     PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME')
 
-    #OpenAI configuration
+    # OpenAI configuration
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+    # Celery configuration
+    broker_url = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+    result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/1')
+
+    @classmethod
+    def init_app(cls, app):
+        app.config.update(
+            broker_url=cls.broker_url,
+            result_backend=cls.result_backend
+        )
 
 class DevelopmentConfig(Config):
     DEBUG = True

@@ -17,3 +17,4 @@ langchain-pinecone
 gunicorn
 pytest
 celery
+pyopenssl

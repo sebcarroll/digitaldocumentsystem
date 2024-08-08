@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from google.oauth2.credentials import Credentials
-from services.google_drive.core import DriveCore
+from app.services.google_drive.core import DriveCore
 
 @pytest.fixture
 def mock_credentials_dict():
@@ -23,7 +23,7 @@ def mock_people_service():
     return Mock()
 
 def test_drive_core_initialization(mock_credentials_dict):
-    with patch('services.google_drive.core.build') as mock_build:
+    with patch('app.services.google_drive.core.build') as mock_build:
         mock_build.side_effect = [Mock(), Mock()]  # For drive_service and people_service
         drive_core = DriveCore(mock_credentials_dict)
         
@@ -33,7 +33,7 @@ def test_drive_core_initialization(mock_credentials_dict):
         mock_build.assert_any_call('people', 'v1', credentials=drive_core.credentials)
 
 def test_list_folder_contents(mock_credentials_dict, mock_drive_service):
-    with patch('services.google_drive.core.build', return_value=mock_drive_service):
+    with patch('app.services.google_drive.core.build', return_value=mock_drive_service):
         drive_core = DriveCore(mock_credentials_dict)
         
         # Mock the files().list().execute() chain
@@ -62,7 +62,7 @@ def test_list_folder_contents(mock_credentials_dict, mock_drive_service):
         )
 
 def test_list_folder_contents_pagination(mock_credentials_dict, mock_drive_service):
-    with patch('services.google_drive.core.build', return_value=mock_drive_service):
+    with patch('app.services.google_drive.core.build', return_value=mock_drive_service):
         drive_core = DriveCore(mock_credentials_dict)
         
         # Mock the files().list().execute() chain with pagination
