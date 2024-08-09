@@ -53,8 +53,12 @@ class PineconeManager:
 
     def upsert_document(self, document):
         try:
+            logger.info(f"Starting upsert for document: {document.id}")
             chunks = self.text_splitter.split_text(document.content)
+            logger.info(f"Created {len(chunks)} chunks")
+            
             embeddings = self.embeddings.embed_documents(chunks)
+            logger.info(f"Created {len(embeddings)} embeddings")
             
             metadata = self.document_schema.dump(document)
             vectors = []
@@ -73,11 +77,15 @@ class PineconeManager:
                     "metadata": chunk_metadata
                 })
             
-            self.index.upsert(vectors=vectors)
+            logger.info(f"Upserting {len(vectors)} vectors to Pinecone")
+            upsert_response = self.index.upsert(vectors=vectors)
+            logger.info(f"Upsert response: {upsert_response}")
+            
+            return {"success": True, "vectors_upserted": len(vectors)}
         except Exception as e:
-            logger.error(f"Error upserting document: {str(e)}")
-            raise
-
+            logger.error(f"Error upserting document {document.id}: {str(e)}", exc_info=True)
+            return {"success": False, "error": str(e)}
+        
     def query_similar_documents(self, query, top_k=5, filter=None):
         query_embedding = self.embeddings.embed_query(query)
         results = self.index.query(

@@ -5,15 +5,9 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 class DriveFolderOperations:
-    def __init__(self, credentials):
-        if isinstance(credentials, dict):
-            self.credentials = Credentials(**credentials)
-        elif isinstance(credentials, Credentials):
-            self.credentials = credentials
-        else:
-            raise TypeError("credentials must be either a dict or a Credentials object")
-        
-        self.drive_service = build('drive', 'v3', credentials=self.credentials)
+    def __init__(self, drive_core):
+        self.drive_core = drive_core
+        self.drive_service = drive_core.drive_service
 
     def create_folder(self, parent_folder_id, folder_name):
         file_metadata = {

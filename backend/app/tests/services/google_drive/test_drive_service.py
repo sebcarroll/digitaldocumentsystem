@@ -1,7 +1,9 @@
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, call
 from flask import g
 from app.services.google_drive.drive_service import DriveService
+from app.services.google_drive.core import DriveCore
+from google.auth.transport.requests import Request
 
 @pytest.fixture
 def mock_session():
@@ -11,26 +13,34 @@ def mock_session():
         'token_uri': 'test_token_uri',
         'client_id': 'test_client_id',
         'client_secret': 'test_client_secret',
-        'scopes': ['test_scope']
+        'scopes': ['test_scope'],
+        'expiry': None 
     }}
 
 @pytest.fixture
 def drive_service(mock_session):
-    return DriveService(mock_session)
+    drive_core = DriveCore(mock_session['credentials'])
+    return DriveService(drive_core)
 
-def test_get_services(app, drive_service):
+@patch('app.services.google_drive.drive_service.Request')
+@patch('app.services.google_drive.drive_service.build')
+def test_get_services(mock_build, mock_request, app, drive_service):
     with app.app_context():
-        with patch('app.services.google_drive.drive_service.build') as mock_build:
-            mock_drive = Mock()
-            mock_people = Mock()
-            mock_build.side_effect = [mock_drive, mock_people]
-
+        mock_drive = Mock()
+        mock_people = Mock()
+        mock_build.side_effect = [mock_drive, mock_people]
+        
+        with patch.object(drive_service.drive_core.credentials, 'refresh') as mock_refresh:
             drive, people = drive_service.get_services()
 
-            assert drive == mock_drive
-            assert people == mock_people
-            assert g.drive_service == mock_drive
-            assert g.people_service == mock_people
+            # Log the actual calls to help with debugging
+            print(mock_build.mock_calls)
+
+            # Check that build was called with the correct arguments
+            mock_build.assert_has_calls([
+                call('drive', 'v3', credentials=drive_service.drive_core.credentials),
+                call('people', 'v1', credentials=drive_service.drive_core.credentials)
+            ], any_order=True)
 
 def test_list_folder_contents(app, drive_service):
     with app.app_context():

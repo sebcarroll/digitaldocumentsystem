@@ -1,8 +1,9 @@
 from .core import DriveCore
 
 class DrivePermissionsService:
-    def __init__(self, credentials, user_email=None, user_id=None):
-        self.drive_core = DriveCore(credentials)
+    def __init__(self, drive_core, user_email=None, user_id=None):
+        self.drive_core = drive_core
+        self.drive_service = drive_core.drive_service
         self.user_email = user_email
         self.user_id = user_id
 

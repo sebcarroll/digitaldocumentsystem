@@ -14,8 +14,9 @@ def mock_credentials():
 @pytest.fixture
 def drive_permissions_service(mock_credentials):
     with patch('app.services.google_drive.drive_permissions_service.DriveCore') as MockDriveCore:
-        MockDriveCore.return_value.drive_service = Mock()
-        service = DrivePermissionsService(mock_credentials, user_email='test@example.com', user_id='user123')
+        mock_drive_core = MockDriveCore.return_value
+        mock_drive_core.drive_service = Mock()
+        service = DrivePermissionsService(mock_drive_core, user_email='test@example.com', user_id='user123')
         return service
 
 def test_get_people_with_access(drive_permissions_service):

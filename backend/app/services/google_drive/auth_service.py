@@ -26,8 +26,8 @@ class AuthService:
         return flow
 
     @staticmethod
-    def fetch_user_info(credentials):
-        service = build('oauth2', 'v2', credentials=credentials)
+    def fetch_user_info(drive_core):
+        service = build('oauth2', 'v2', credentials=drive_core.credentials)
         return service.userinfo().get().execute()
 
     @staticmethod

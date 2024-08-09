@@ -16,14 +16,11 @@ def mock_credentials():
 
 @pytest.fixture
 def folder_operations(mock_credentials):
-    with patch('app.services.google_drive.core.build') as mock_build:
-        mock_drive = Mock()
-        mock_people = Mock()
-        mock_build.side_effect = [mock_drive, mock_people]
-        ops = DriveFolderOperations(mock_credentials)
-        ops.drive_service = mock_drive
-        ops.people_service = mock_people
-        return ops, mock_drive
+    with patch('app.services.google_drive.core.DriveCore') as MockDriveCore:
+        mock_drive_core = MockDriveCore.return_value
+        mock_drive_core.drive_service = Mock()
+        ops = DriveFolderOperations(mock_drive_core)
+        return ops, mock_drive_core.drive_service
 
 
 def test_create_folder(folder_operations):

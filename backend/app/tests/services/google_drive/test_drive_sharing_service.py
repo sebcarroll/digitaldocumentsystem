@@ -16,9 +16,11 @@ def mock_credentials():
 @pytest.fixture
 def drive_sharing_service(mock_credentials):
     with patch('app.services.google_drive.drive_sharing_service.DriveCore') as MockDriveCore:
-        MockDriveCore.return_value.drive_service = Mock()
-        service = DriveSharingService(mock_credentials)
+        mock_drive_core = MockDriveCore.return_value
+        mock_drive_core.drive_service = Mock()
+        service = DriveSharingService(mock_drive_core)
         return service
+    
 def test_share_item_success(drive_sharing_service):
     drive_sharing_service.drive_core.drive_service.permissions().create().execute.return_value = {'id': 'perm123'}
     result = drive_sharing_service.share_item('file123', ['user1@example.com', 'user2@example.com'], 'reader')
