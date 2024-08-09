@@ -13,9 +13,9 @@ from google.oauth2.credentials import Credentials
 logger = logging.getLogger(__name__)
 
 class DrivePineconeSync:
-    def __init__(self, user_id, credentials):
+    def __init__(self, user_id, drive_service):
         self.user_id = user_id
-        self.drive_service = GoogleDriveService(credentials)
+        self.drive_service = drive_service
         self.pinecone_manager = PineconeManager(
             api_key=Config.PINECONE_API_KEY,
             environment=Config.PINECONE_ENVIRONMENT,

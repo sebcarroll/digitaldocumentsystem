@@ -9,6 +9,7 @@ from app.routes.drive_permissions import drive_permissions_bp
 from app.routes.drive_sharing import drive_sharing_bp
 from app.routes.sync_routes import sync_bp
 from celery_app import init_celery
+from celery_app import celery_app
 from config import DevelopmentConfig, ProductionConfig
 import os
 from datetime import datetime, timedelta
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__)
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' #For Development purposes only
     CORS(app, supports_credentials=True)
     app.config.from_object(DevelopmentConfig if app.debug else ProductionConfig)
 
@@ -80,17 +82,18 @@ def create_app():
         app.permanent_session_lifetime = timedelta(minutes=30)
         session.modified = True
         
-        if 'last_active' in session:
-            last_active = datetime.fromtimestamp(session['last_active'])
-            if datetime.now() - last_active > app.permanent_session_lifetime:
-                session.clear()
-            elif datetime.now() - last_active > timedelta(minutes=2):
-                # Perform sync if it's been more than 2 minutes since last activity
-                if 'user_id' in session and 'credentials' in session:
-                    SyncService.sync_user_drive(session)
+        if 'credentials' in session and 'user_id' in session:
+            if 'last_active' in session:
+                last_active = datetime.fromtimestamp(session['last_active'])
+                if datetime.now() - last_active > timedelta(minutes=2):
+                    try:
+                        result = SyncService.sync_user_drive(session)
+                        logger.info(f"Sync result: {result}")
+                    except Exception as e:
+                        logger.error(f"Error during sync: {str(e)}", exc_info=True)
         
         session['last_active'] = datetime.now().timestamp()
-
+        
     return app
 
 # Create the application instance

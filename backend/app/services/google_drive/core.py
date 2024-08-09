@@ -1,9 +1,16 @@
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+
 class DriveCore:
-    def __init__(self, credentials_dict):
-        self.credentials = Credentials(**credentials_dict)
+    def __init__(self, credentials):
+        if isinstance(credentials, dict):
+            self.credentials = Credentials(**credentials)
+        elif isinstance(credentials, Credentials):
+            self.credentials = credentials
+        else:
+            raise TypeError("credentials must be either a dict or a Credentials object")
+        
         self.drive_service = build('drive', 'v3', credentials=self.credentials)
         self.people_service = build('people', 'v1', credentials=self.credentials)
 

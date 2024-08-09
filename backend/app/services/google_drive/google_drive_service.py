@@ -3,14 +3,22 @@ from .file_operations import DriveFileOperations
 from .folder_operations import DriveFolderOperations
 from .drive_permissions_service import DrivePermissionsService
 from .drive_sharing_service import DriveSharingService
+from google.oauth2.credentials import Credentials
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
 
 class GoogleDriveService:
-    def __init__(self, credentials_dict):
-        self.drive_core = DriveCore(credentials_dict)
+    def __init__(self, credentials):
+        if isinstance(credentials, dict):
+            self.credentials = Credentials(**credentials)
+        elif isinstance(credentials, Credentials):
+            self.credentials = credentials
+        else:
+            raise TypeError("credentials must be either a dict or a Credentials object")
+        
+        self.drive_core = DriveCore(self.credentials)
         self.file_ops = DriveFileOperations(self.drive_core.drive_service)
         self.folder_ops = DriveFolderOperations(self.drive_core.drive_service)
         self.permissions_service = DrivePermissionsService(self.drive_core.drive_service)

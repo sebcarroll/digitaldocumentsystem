@@ -29,7 +29,8 @@ def oauth2callback():
         return jsonify({"error": "Authentication failed", "details": str(e)}), 400
 
     credentials = flow.credentials
-    session['credentials'] = auth_service.credentials_to_dict(credentials)
+    credentials_dict = auth_service.credentials_to_dict(credentials)
+    session['credentials'] = credentials_dict
     
     # Fetch user info
     try:
@@ -44,6 +45,7 @@ def oauth2callback():
 
     session['last_active'] = datetime.now().timestamp()
     
+    # Perform sync
     sync_result = SyncService.sync_user_drive(session)
     print(f"DEBUG: Initial sync result - {sync_result}")
 

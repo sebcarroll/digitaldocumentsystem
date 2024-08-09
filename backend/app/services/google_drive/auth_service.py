@@ -1,6 +1,7 @@
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from flask import url_for
+from google.oauth2.credentials import Credentials
 
 class AuthService:
     def __init__(self, config):
@@ -39,3 +40,7 @@ class AuthService:
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes
         }
+
+    @staticmethod
+    def dict_to_credentials(credentials_dict):
+        return Credentials(**credentials_dict)

@@ -3,7 +3,10 @@ from googleapiclient.http import MediaIoBaseUpload
 import io
 import os
 
-class DriveFileOperations(DriveCore):
+class DriveFileOperations(object):
+    def __init__(self, drive_service):
+        self.drive_service = drive_service
+        
     def open_file(self, file_id):
         try:
             file = self.drive_service.files().get(fileId=file_id, fields='webViewLink').execute()
