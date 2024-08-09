@@ -4,13 +4,9 @@ from .folder_operations import DriveFolderOperations
 from .drive_permissions_service import DrivePermissionsService
 from .drive_sharing_service import DriveSharingService
 from google.oauth2.credentials import Credentials
-from datetime import datetime
-import logging
-
-logger = logging.getLogger(__name__)
 
 class GoogleDriveService:
-    def __init__(self, credentials):
+    def __init__(self, credentials, user_email=None, user_id=None):
         if isinstance(credentials, dict):
             self.credentials = Credentials(**credentials)
         elif isinstance(credentials, Credentials):
@@ -20,9 +16,12 @@ class GoogleDriveService:
         
         self.drive_core = DriveCore(self.credentials)
         self.file_ops = DriveFileOperations(self.drive_core.drive_service)
-        self.folder_ops = DriveFolderOperations(self.drive_core.drive_service)
-        self.permissions_service = DrivePermissionsService(self.drive_core.drive_service)
-        self.sharing_service = DriveSharingService(self.drive_core.drive_service)
+        self.folder_ops = DriveFolderOperations(self.credentials)
+        self.permissions_service = DrivePermissionsService(self.credentials, user_email, user_id)
+        self.sharing_service = DriveSharingService(self.credentials)
+
+        self.user_email = user_email
+        self.user_id = user_id
 
     def get_file_metadata(self, file_id):
         return self.drive_core.drive_service.files().get(fileId=file_id, fields='*').execute()

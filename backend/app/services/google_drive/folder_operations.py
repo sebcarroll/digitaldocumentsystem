@@ -1,9 +1,19 @@
-from .core import DriveCore
 from googleapiclient.http import MediaIoBaseUpload
 import io
 import os
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 
-class DriveFolderOperations(DriveCore):
+class DriveFolderOperations:
+    def __init__(self, credentials):
+        if isinstance(credentials, dict):
+            self.credentials = Credentials(**credentials)
+        elif isinstance(credentials, Credentials):
+            self.credentials = credentials
+        else:
+            raise TypeError("credentials must be either a dict or a Credentials object")
+        
+        self.drive_service = build('drive', 'v3', credentials=self.credentials)
 
     def create_folder(self, parent_folder_id, folder_name):
         file_metadata = {

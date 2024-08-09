@@ -1,9 +1,19 @@
 from .core import DriveCore
+from google.oauth2.credentials import Credentials
+
 
 class DriveSharingService:
-    def __init__(self, session):
-        self.session = session
-        self.drive_core = DriveCore(session['credentials'])
+    def __init__(self, credentials):
+        if isinstance(credentials, dict):
+            if 'credentials' in credentials:
+                credentials = credentials['credentials']
+            self.credentials = Credentials(**credentials)
+        elif isinstance(credentials, Credentials):
+            self.credentials = credentials
+        else:
+            raise TypeError("credentials must be either a dict or a Credentials object")
+        
+        self.drive_core = DriveCore(self.credentials)
 
     def share_item(self, item_id, emails, role):
         shared_with = []

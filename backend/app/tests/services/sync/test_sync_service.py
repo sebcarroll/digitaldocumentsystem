@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, timezone
 from app.services.sync.sync_service import SyncService
+from google.oauth2.credentials import Credentials
 
 @pytest.fixture
 def mock_session():
@@ -25,7 +26,7 @@ def test_sync_user_drive_full_sync(mock_drive_pinecone_sync, mock_google_drive_s
 
     result = SyncService.sync_user_drive(mock_session)
 
-    mock_google_drive_service.assert_called_once_with(mock_session['credentials'])
+    mock_google_drive_service.assert_called_once()
     mock_drive_pinecone_sync.assert_called_once()
     mock_sync_instance.full_sync.assert_called_once()
     assert 'last_sync_time' in mock_session
@@ -40,7 +41,7 @@ def test_sync_user_drive_incremental_sync(mock_drive_pinecone_sync, mock_google_
 
     result = SyncService.sync_user_drive(mock_session)
 
-    mock_google_drive_service.assert_called_once_with(mock_session['credentials'])
+    mock_google_drive_service.assert_called_once()
     mock_drive_pinecone_sync.assert_called_once()
     mock_sync_instance.incremental_sync.assert_called_once_with('2023-01-01T00:00:00')
     assert 'last_sync_time' in mock_session

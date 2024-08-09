@@ -1,11 +1,10 @@
 from .core import DriveCore
 
 class DrivePermissionsService:
-    def __init__(self, session):
-        self.session = session
-        self.drive_core = DriveCore(session['credentials'])
-        self.user_email = session.get('user_email')
-        self.user_id = session.get('user_id')
+    def __init__(self, credentials, user_email=None, user_id=None):
+        self.drive_core = DriveCore(credentials)
+        self.user_email = user_email
+        self.user_id = user_id
 
     def get_people_with_access(self, item_id):
         try:

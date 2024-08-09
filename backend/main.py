@@ -83,14 +83,22 @@ def create_app():
         session.modified = True
         
         if 'credentials' in session and 'user_id' in session:
+            logger.info(f"Session contains credentials and user_id")
             if 'last_active' in session:
                 last_active = datetime.fromtimestamp(session['last_active'])
                 if datetime.now() - last_active > timedelta(minutes=2):
+                    logger.info("Initiating sync due to inactivity")
                     try:
                         result = SyncService.sync_user_drive(session)
                         logger.info(f"Sync result: {result}")
                     except Exception as e:
-                        logger.error(f"Error during sync: {str(e)}", exc_info=True)
+                        logger.exception(f"Error during sync: {str(e)}")
+                else:
+                    logger.info("Skipping sync due to recent activity")
+            else:
+                logger.warning("No last_active timestamp in session")
+        else:
+            logger.warning("Missing credentials or user_id in session")
         
         session['last_active'] = datetime.now().timestamp()
         

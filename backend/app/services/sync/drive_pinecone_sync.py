@@ -5,7 +5,7 @@ from database.schemas.folder import FolderSchema
 from database.schemas.sync_log import SyncLogSchema
 from database.schemas.embedding_job import EmbeddingJobSchema
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from config import Config
 from google.oauth2.credentials import Credentials
@@ -42,7 +42,7 @@ class DrivePineconeSync:
                 'ownerId': file_metadata['owners'][0]['emailAddress'],
                 'parentFolderId': file_metadata.get('parents', [None])[0],
                 'webViewLink': file_metadata.get('webViewLink'),
-                'lastSyncTime': datetime.now(datetime.UTC).isoformat(),
+                'lastSyncTime': datetime.now(timezone.utc).isoformat(),
                 'version': 1,
                 'accessControl': {
                     'ownerId': file_metadata['owners'][0]['emailAddress'],
@@ -71,7 +71,7 @@ class DrivePineconeSync:
                 'createdAt': folder_metadata['createdTime'],
                 'modifiedAt': folder_metadata['modifiedTime'],
                 'ownerId': folder_metadata['owners'][0]['emailAddress'],
-                'lastSyncTime': datetime.now(datetime.UTC).isoformat(),
+                'lastSyncTime': datetime.now(timezone.utc).isoformat(),
                 'accessControl': {
                     'ownerId': folder_metadata['owners'][0]['emailAddress'],
                     'readers': [user['emailAddress'] for user in folder_metadata.get('permissions', []) if user.get('role') == 'reader'],
@@ -95,7 +95,7 @@ class DrivePineconeSync:
         sync_log = {
             'id': str(uuid.uuid4()),
             'userId': self.user_id,
-            'startTime': datetime.now(datetime.UTC).isoformat(),
+            'startTime': datetime.now(timezone.utc).isoformat(),
             'status': 'in_progress',
             'syncType': 'full'
         }
@@ -107,7 +107,7 @@ class DrivePineconeSync:
             sync_log['status'] = 'failed'
             sync_log['errors'] = [str(e)]
         finally:
-            sync_log['endTime'] = datetime.now(datetime.UTC).isoformat()
+            sync_log['endTime'] = datetime.now(timezone.utc).isoformat()
             validated_sync_log = self.sync_log_schema.load(sync_log)
             self.store_sync_log(validated_sync_log)
 
@@ -115,7 +115,7 @@ class DrivePineconeSync:
         sync_log = {
             'id': str(uuid.uuid4()),
             'userId': self.user_id,
-            'startTime': datetime.now(datetime.UTC).isoformat(),
+            'startTime': datetime.now(timezone.utc).isoformat(),
             'status': 'in_progress',
             'syncType': 'incremental'
         }
@@ -130,7 +130,7 @@ class DrivePineconeSync:
             sync_log['status'] = 'failed'
             sync_log['errors'] = [str(e)]
         finally:
-            sync_log['endTime'] = datetime.now(datetime.UTC).isoformat()
+            sync_log['endTime'] = datetime.now(timezone.utc).isoformat()
             validated_sync_log = self.sync_log_schema.load(sync_log)
             self.store_sync_log(validated_sync_log)
 

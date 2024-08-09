@@ -3,27 +3,22 @@ from unittest.mock import Mock, patch
 from app.services.google_drive.drive_sharing_service import DriveSharingService
 
 @pytest.fixture
-def mock_session():
+def mock_credentials():
     return {
-        'credentials': {
-            'token': 'fake_token',
-            'refresh_token': 'fake_refresh_token',
-            'token_uri': 'https://oauth2.googleapis.com/token',
-            'client_id': 'fake_client_id',
-            'client_secret': 'fake_client_secret',
-            'scopes': ['https://www.googleapis.com/auth/drive']
-        },
-        'user_email': 'test@example.com',
-        'user_id': '123'
+        'token': 'fake_token',
+        'refresh_token': 'fake_refresh_token',
+        'token_uri': 'https://oauth2.googleapis.com/token',
+        'client_id': 'fake_client_id',
+        'client_secret': 'fake_client_secret',
+        'scopes': ['https://www.googleapis.com/auth/drive']
     }
 
 @pytest.fixture
-def drive_sharing_service(mock_session):
+def drive_sharing_service(mock_credentials):
     with patch('app.services.google_drive.drive_sharing_service.DriveCore') as MockDriveCore:
         MockDriveCore.return_value.drive_service = Mock()
-        service = DriveSharingService(mock_session)
+        service = DriveSharingService(mock_credentials)
         return service
-
 def test_share_item_success(drive_sharing_service):
     drive_sharing_service.drive_core.drive_service.permissions().create().execute.return_value = {'id': 'perm123'}
     result = drive_sharing_service.share_item('file123', ['user1@example.com', 'user2@example.com'], 'reader')
