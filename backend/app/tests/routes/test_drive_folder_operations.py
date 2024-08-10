@@ -1,11 +1,24 @@
+"""
+This module contains unit tests for the drive_folder_operations_routes blueprint.
+
+It includes tests for creating folders, uploading folders, fetching folders,
+and error handling scenarios in Google Drive operations.
+"""
+
 import pytest
 from flask import Flask, session
 from unittest.mock import patch, MagicMock
-from app.routes.drive_folder_operations import drive_folder_ops_bp
+from backend.app.routes.drive_folder_operations_routes import drive_folder_ops_bp
 import io
 
 @pytest.fixture
 def app():
+    """
+    Create and configure a new Flask app instance for each test.
+
+    Returns:
+        Flask: A Flask application instance with testing config and drive_folder_ops_bp registered.
+    """
     app = Flask(__name__)
     app.config['TESTING'] = True
     app.config['SECRET_KEY'] = 'test_secret_key'
@@ -14,11 +27,26 @@ def app():
 
 @pytest.fixture
 def client(app):
+    """
+    Create a test client for the app.
+
+    Args:
+        app (Flask): The Flask application instance.
+
+    Returns:
+        FlaskClient: A test client for the Flask application.
+    """
     return app.test_client()
 
 def test_create_folder_success(client):
-    with patch('app.routes.drive_folder_operations.get_drive_core') as mock_get_drive_core, \
-         patch('app.routes.drive_folder_operations.DriveFolderOperations') as mock_folder_ops:
+    """
+    Test successful folder creation in Google Drive.
+
+    This test mocks the drive service and checks if the endpoint correctly
+    creates a new folder and returns its details.
+    """
+    with patch('backend.app.routes.drive_folder_operations_routes.get_drive_core') as mock_get_drive_core, \
+         patch('backend.app.routes.drive_folder_operations_routes.DriveFolderOperations') as mock_folder_ops:
         
         mock_folder_ops_instance = mock_folder_ops.return_value
         mock_folder_ops_instance.create_folder.return_value = {"id": "new_folder_id", "name": "New Folder"}
@@ -31,8 +59,14 @@ def test_create_folder_success(client):
         assert json_data['name'] == "New Folder"
 
 def test_upload_folder_success(client):
-    with patch('app.routes.drive_folder_operations.get_drive_core') as mock_get_drive_core, \
-         patch('app.routes.drive_folder_operations.DriveFolderOperations') as mock_folder_ops:
+    """
+    Test successful folder upload to Google Drive.
+
+    This test mocks the drive service and checks if the endpoint correctly
+    handles folder upload and returns the operation result.
+    """
+    with patch('backend.app.routes.drive_folder_operations_routes.get_drive_core') as mock_get_drive_core, \
+         patch('backend.app.routes.drive_folder_operations_routes.DriveFolderOperations') as mock_folder_ops:
         
         mock_folder_ops_instance = mock_folder_ops.return_value
         mock_folder_ops_instance.upload_folder.return_value = {"success": True, "uploadedFiles": 2}
@@ -52,8 +86,14 @@ def test_upload_folder_success(client):
         assert json_data['uploadedFiles'] == 2
 
 def test_fetch_folders_success(client):
-    with patch('app.routes.drive_folder_operations.get_drive_core') as mock_get_drive_core, \
-         patch('app.routes.drive_folder_operations.DriveFolderOperations') as mock_folder_ops:
+    """
+    Test successful fetching of folders from Google Drive.
+
+    This test mocks the drive service and checks if the endpoint correctly
+    retrieves and returns the list of folders.
+    """
+    with patch('backend.app.routes.drive_folder_operations_routes.get_drive_core') as mock_get_drive_core, \
+         patch('backend.app.routes.drive_folder_operations_routes.DriveFolderOperations') as mock_folder_ops:
         
         mock_folder_ops_instance = mock_folder_ops.return_value
         mock_folder_ops_instance.fetch_folders.return_value = [
@@ -70,7 +110,13 @@ def test_fetch_folders_success(client):
         assert json_data[1]['id'] == "folder2"
 
 def test_create_folder_value_error(client):
-    with patch('app.routes.drive_folder_operations.get_drive_core') as mock_get_drive_core:
+    """
+    Test error handling for invalid session when creating a folder.
+
+    This test ensures that the endpoint properly handles and reports
+    a ValueError, which might occur due to an invalid session.
+    """
+    with patch('backend.app.routes.drive_folder_operations_routes.get_drive_core') as mock_get_drive_core:
         mock_get_drive_core.side_effect = ValueError("Invalid session")
 
         response = client.post('/drive/create-folder', json={'parentFolderId': 'parent_id', 'folderName': 'New Folder'})
@@ -81,7 +127,13 @@ def test_create_folder_value_error(client):
         assert json_data['error'] == "Invalid session"
 
 def test_upload_folder_value_error(client):
-    with patch('app.routes.drive_folder_operations.get_drive_core') as mock_get_drive_core:
+    """
+    Test error handling for invalid session when uploading a folder.
+
+    This test ensures that the endpoint properly handles and reports
+    a ValueError, which might occur due to an invalid session.
+    """
+    with patch('backend.app.routes.drive_folder_operations_routes.get_drive_core') as mock_get_drive_core:
         mock_get_drive_core.side_effect = ValueError("Invalid session")
 
         data = {
@@ -98,7 +150,13 @@ def test_upload_folder_value_error(client):
         assert json_data['error'] == "Invalid session"
 
 def test_fetch_folders_value_error(client):
-    with patch('app.routes.drive_folder_operations.get_drive_core') as mock_get_drive_core:
+    """
+    Test error handling for invalid session when fetching folders.
+
+    This test ensures that the endpoint properly handles and reports
+    a ValueError, which might occur due to an invalid session.
+    """
+    with patch('backend.app.routes.drive_folder_operations_routes.get_drive_core') as mock_get_drive_core:
         mock_get_drive_core.side_effect = ValueError("Invalid session")
 
         response = client.get('/drive/folders?parent_id=parent_id')
@@ -109,7 +167,13 @@ def test_fetch_folders_value_error(client):
         assert json_data['error'] == "Invalid session"
 
 def test_general_error_handling(client):
-    with patch('app.routes.drive_folder_operations.get_drive_core') as mock_get_drive_core:
+    """
+    Test general error handling across all folder operation endpoints.
+
+    This test ensures that all endpoints properly handle and report
+    unexpected exceptions that might occur during the process.
+    """
+    with patch('backend.app.routes.drive_folder_operations_routes.get_drive_core') as mock_get_drive_core:
         mock_get_drive_core.side_effect = Exception("Unexpected error")
 
         endpoints = [

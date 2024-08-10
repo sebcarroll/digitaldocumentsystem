@@ -1,7 +1,7 @@
 import pytest
 from flask import Flask, session
 from unittest.mock import patch, MagicMock
-from app.routes.drive_permissions import drive_permissions_bp
+from backend.app.routes.drive_permissions_routes import drive_permissions_bp
 
 @pytest.fixture
 def app():

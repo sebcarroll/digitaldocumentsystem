@@ -1,3 +1,9 @@
+"""
+This module provides Flask routes for synchronization operations between Google Drive and Pinecone.
+
+It includes functionality for starting and ending sync sessions, and handling file events.
+"""
+
 from flask import Blueprint, jsonify, request, session
 from tasks.sync_tasks import sync_drive_to_pinecone
 from app.services.sync.drive_pinecone_sync import DrivePineconeSync
@@ -8,6 +14,17 @@ sync_bp = Blueprint('sync', __name__)
 
 @sync_bp.route('/sync/start_session', methods=['POST'])
 def start_sync_session():
+    """
+    Start a synchronization session between Google Drive and Pinecone.
+
+    This function initiates an asynchronous task to sync the user's Google Drive with Pinecone.
+
+    Returns:
+        flask.Response: A JSON response indicating the start of the sync session.
+
+    Raises:
+        401: If the user is not authenticated.
+    """
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
@@ -17,6 +34,17 @@ def start_sync_session():
 
 @sync_bp.route('/sync/end_session', methods=['POST'])
 def end_sync_session():
+    """
+    End a synchronization session between Google Drive and Pinecone.
+
+    This function initiates an asynchronous task to finalize the sync process.
+
+    Returns:
+        flask.Response: A JSON response indicating the end of the sync session.
+
+    Raises:
+        401: If the user is not authenticated.
+    """
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
@@ -26,6 +54,18 @@ def end_sync_session():
 
 @sync_bp.route('/sync/file_event', methods=['POST'])
 def handle_file_event():
+    """
+    Handle file events for synchronization between Google Drive and Pinecone.
+
+    This function processes file events (open, close, change) and updates the sync state accordingly.
+
+    Returns:
+        flask.Response: A JSON response indicating the file event was processed.
+
+    Raises:
+        401: If the user is not authenticated.
+        400: If the event_type or file_id is missing, or if the event_type is invalid.
+    """
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401

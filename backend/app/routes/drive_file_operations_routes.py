@@ -1,3 +1,10 @@
+"""
+This module provides Flask routes for Google Drive file operations.
+
+It includes functionality for opening, uploading, creating, moving, deleting,
+copying, and renaming files in Google Drive.
+"""
+
 from flask import Blueprint, request, jsonify, session
 from app.services.google_drive.file_operations import DriveFileOperations
 from app.utils.drive_utils import get_drive_core
@@ -6,6 +13,19 @@ drive_file_ops_bp = Blueprint('drive_file_ops', __name__)
 
 @drive_file_ops_bp.route('/drive/<file_id>/open', methods=['GET'])
 def open_file(file_id):
+    """
+    Open a file in Google Drive.
+
+    Args:
+        file_id (str): The ID of the file to open.
+
+    Returns:
+        flask.Response: A JSON response containing the file's web view link.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
@@ -17,6 +37,18 @@ def open_file(file_id):
 
 @drive_file_ops_bp.route('/drive/upload-file', methods=['POST'])
 def upload_file():
+    """
+    Upload a file to Google Drive.
+
+    Expects a multipart/form-data request with 'file' and optional 'folderId'.
+
+    Returns:
+        flask.Response: A JSON response containing the uploaded file's details.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
@@ -30,6 +62,18 @@ def upload_file():
 
 @drive_file_ops_bp.route('/drive/create-doc', methods=['POST'])
 def create_doc():
+    """
+    Create a new Google Doc.
+
+    Expects a JSON payload with optional 'folderId'.
+
+    Returns:
+        flask.Response: A JSON response containing the created document's details.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
@@ -43,6 +87,18 @@ def create_doc():
 
 @drive_file_ops_bp.route('/drive/create-sheet', methods=['POST'])
 def create_sheet():
+    """
+    Create a new Google Sheet.
+
+    Expects a JSON payload with optional 'folderId'.
+
+    Returns:
+        flask.Response: A JSON response containing the created spreadsheet's details.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
@@ -56,6 +112,18 @@ def create_sheet():
 
 @drive_file_ops_bp.route('/drive/move-files', methods=['POST'])
 def move_files():
+    """
+    Move files to a new folder in Google Drive.
+
+    Expects a JSON payload with 'fileIds' and 'newFolderId'.
+
+    Returns:
+        flask.Response: A JSON response containing the result of the move operation.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
@@ -68,6 +136,18 @@ def move_files():
 
 @drive_file_ops_bp.route('/drive/delete-files', methods=['POST'])
 def delete_files():
+    """
+    Delete files from Google Drive.
+
+    Expects a JSON payload with 'fileIds'.
+
+    Returns:
+        flask.Response: A JSON response containing the result of the delete operation.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
@@ -80,6 +160,18 @@ def delete_files():
 
 @drive_file_ops_bp.route('/drive/copy-files', methods=['POST'])
 def copy_files():
+    """
+    Copy files in Google Drive.
+
+    Expects a JSON payload with 'fileIds'.
+
+    Returns:
+        flask.Response: A JSON response containing the result of the copy operation.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
@@ -92,6 +184,18 @@ def copy_files():
 
 @drive_file_ops_bp.route('/drive/rename-file', methods=['POST'])
 def rename_file():
+    """
+    Rename a file in Google Drive.
+
+    Expects a JSON payload with 'fileId' and 'newName'.
+
+    Returns:
+        flask.Response: A JSON response containing the renamed file's details.
+
+    Raises:
+        ValueError: If there's an issue with the user's session or credentials.
+        Exception: For any other unexpected errors during the process.
+    """
     try:
         drive_core = get_drive_core(session)
         drive_ops = DriveFileOperations(drive_core)
