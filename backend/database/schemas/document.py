@@ -27,3 +27,4 @@ class DocumentSchema(Schema):
     lastSyncTime = fields.DateTime()
     chunk_index = fields.Int()
     total_chunks = fields.Int()
+    content = fields.Str()

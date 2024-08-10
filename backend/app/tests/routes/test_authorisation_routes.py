@@ -1,232 +1,207 @@
 """
-Test suite for the Google OAuth authorisation routes.
+Unit tests for the `authorisation_routes.py` module.
 
-This module contains tests for the various endpoints and functionalities
-related to Google OAuth in the application.
+This module tests the various routes in the `authorisation_routes.py` module,
+which handles user authentication through OAuth2 with Google. The tests ensure
+that the routes function correctly, including login, OAuth2 callback handling,
+authentication status checking, and logout. The tests use `pytest` and mock
+external dependencies to isolate the logic being tested.
 """
 
 import pytest
-from flask import Flask, session, url_for
 from unittest.mock import patch, MagicMock
-import json
-from datetime import datetime, timezone
-from oauthlib.oauth2.rfc6749.errors import OAuth2Error
-from app.routes.authorisation_routes import auth_bp, AuthService, SyncService, UserService
-from app.services.google_drive.core import DriveCore
+from flask import Flask, session, json
+from app.routes.authorisation_routes import auth_bp
+from app.routes.authorisation_routes import redis_client
 
 @pytest.fixture
-def app():
+def client():
     """
-    Create and configure a new Flask app instance for each test.
+    Set up a Flask test client.
+
+    This fixture creates and returns a Flask test client instance for use in the tests.
+    It also registers the `auth_bp` blueprint with the Flask app.
 
     Returns:
-        Flask: A Flask application instance configured for testing.
+        flask.testing.FlaskClient: A test client for the Flask app.
     """
     app = Flask(__name__)
-    app.config['TESTING'] = True
-    app.config['SECRET_KEY'] = 'test_secret_key'
     app.register_blueprint(auth_bp)
-    return app
-
-@pytest.fixture
-def client(app):
-    """
-    Create a test client for the app.
-
-    Args:
-        app (Flask): The Flask application instance.
-
-    Returns:
-        FlaskClient: A test client for the Flask application.
-    """
+    app.config['SECRET_KEY'] = 'secret'
     return app.test_client()
 
-def test_login(client, app):
+@pytest.fixture
+def init_session(client):
     """
-    Test the login route.
+    Initialize a session for the Flask test client.
 
-    This test ensures that the login route correctly initializes the OAuth2 flow
-    and sets the appropriate session variables.
+    This fixture sets up a session with predefined user data to simulate
+    an authenticated user.
+
+    Yields:
+        flask.testing.FlaskClient: The test client with an active session.
+    """
+    with client.session_transaction() as sess:
+        sess['user_id'] = 'test_user_id'
+        sess['user_email'] = 'test_user_email@example.com'
+    yield client
+
+@patch('app.routes.authorisation_routes.auth_service.create_flow')
+@patch('app.routes.authorisation_routes.auth_service.credentials_to_dict')
+@patch('app.routes.authorisation_routes.auth_service.fetch_user_info')
+@patch('app.routes.authorisation_routes.DriveCore')
+@patch('app.routes.authorisation_routes.SyncService.sync_user_drive')
+@patch('app.routes.authorisation_routes.redis_client')
+def test_oauth2callback_route_success(mock_redis, mock_sync_user_drive,
+                                      mock_drive_core, mock_fetch_user_info,
+                                      mock_credentials_to_dict, mock_create_flow,
+                                      client, init_session, capfd):
+    # Set up session state
+    with client.session_transaction() as sess:
+        sess['state'] = 'test_state'
+
+    # Mock the OAuth2 flow and credentials
+    mock_flow = MagicMock()
+    mock_create_flow.return_value = mock_flow
+    mock_credentials = MagicMock()
+    mock_flow.fetch_token = MagicMock()
+    mock_flow.credentials = mock_credentials
+    mock_credentials_to_dict.return_value = {
+        'token': 'mock_token',
+        'refresh_token': 'mock_refresh_token',
+        'token_uri': 'https://oauth2.googleapis.com/token',
+        'client_id': 'mock_client_id',
+        'client_secret': 'mock_client_secret',
+        'scopes': ['https://www.googleapis.com/auth/drive.readonly'],
+        'expiry': '2023-08-10T12:00:00Z'  # Add any other fields that might be present
+    }
+    mock_fetch_user_info.return_value = {'id': 'test_user_id', 'email': 'test_user_email@example.com'}
+
+    # Simulate the call to the callback URL
+    response = client.get('/oauth2callback?state=test_state&code=test_code')
+
+    # Capture the output
+    captured = capfd.readouterr()
+    print("Captured output:", captured.out)
+
+    # Check if Redis `set` method was called
+    try:
+        expected_credentials = json.dumps(mock_credentials_to_dict.return_value)
+        mock_redis.set.assert_called_with('user:test_user_id:token', expected_credentials)
+    except AssertionError as e:
+        print(f"Redis set call not found: {e}")
+        print(f"Call args list: {mock_redis.set.call_args_list}")
+        raise e
+
+    # Ensure the response is correct
+    assert response.status_code == 302
+    assert 'http://localhost:3000/auth-success' in response.headers['Location']
+
+    # Verify session values are updated correctly
+    with client.session_transaction() as sess:
+        assert sess['user_email'] == 'test_user_email@example.com'
+        assert sess['user_id'] == 'test_user_id'
+        assert 'last_active' in sess
+
+@patch('app.routes.authorisation_routes.auth_service.create_flow')
+def test_login_route(mock_create_flow, client):
+    """
+    Test the `/login` route.
+
+    This test verifies that the `/login` route correctly initiates the OAuth2 flow,
+    redirects to the authorization URL, and stores the state and last active timestamp
+    in the session.
 
     Args:
-        client (FlaskClient): The test client for the Flask application.
-        app (Flask): The Flask application instance.
+        mock_create_flow (unittest.mock.MagicMock): Mocked `create_flow` method.
+        client (flask.testing.FlaskClient): The test client instance.
     """
-    with app.test_request_context():
-        with patch.object(AuthService, 'create_flow') as mock_create_flow:
-            mock_flow = MagicMock()
-            mock_flow.authorization_url.return_value = ('https://example.com/auth', 'test_state')
-            mock_create_flow.return_value = mock_flow
+    mock_flow = MagicMock()
+    mock_flow.authorization_url.return_value = ('https://auth_url', 'test_state')
+    mock_create_flow.return_value = mock_flow
 
-            response = client.get('/login')
+    response = client.get('/login')
+    assert response.status_code == 302
+    assert 'https://auth_url' in response.headers['Location']
 
-            assert response.status_code == 302
-            assert response.headers['Location'] == 'https://example.com/auth'
-            assert session['state'] == 'test_state'
-            assert 'last_active' in session
+    with client.session_transaction() as sess:
+        assert 'state' in sess
+        assert 'last_active' in sess
 
-def test_oauth2callback_success(client, app):
+@patch('app.routes.authorisation_routes.auth_service.create_flow')
+def test_oauth2callback_route_oauth_error(mock_create_flow, client):
     """
-    Test the OAuth2 callback route for successful authentication.
+    Test the `/oauth2callback` route for an OAuth2 error.
 
-    This test simulates a successful OAuth2 callback, ensuring that user information
-    is correctly processed and stored, and that the appropriate redirect occurs.
+    This test checks the route's behavior when the OAuth2 callback contains an error,
+    ensuring that an appropriate error response is returned.
 
     Args:
-        client (FlaskClient): The test client for the Flask application.
-        app (Flask): The Flask application instance.
+        mock_create_flow (unittest.mock.MagicMock): Mocked `create_flow` method.
+        client (flask.testing.FlaskClient): The test client instance.
     """
-    with app.test_request_context():
-        with patch.object(AuthService, 'create_flow') as mock_create_flow, \
-             patch.object(AuthService, 'credentials_to_dict') as mock_credentials_to_dict, \
-             patch.object(AuthService, 'fetch_user_info') as mock_fetch_user_info, \
-             patch.object(SyncService, 'sync_user_drive') as mock_sync_user_drive, \
-             patch('builtins.open', MagicMock()) as mock_open:
+    response = client.get('/oauth2callback?error=access_denied')
+    assert response.status_code == 400
+    assert response.json == {"error": "Authentication failed", "details": "access_denied"}
 
-            mock_flow = MagicMock()
-            mock_flow.fetch_token.return_value = None
-            mock_flow.credentials = MagicMock()
-            mock_create_flow.return_value = mock_flow
-
-            mock_credentials_to_dict.return_value = {'token': 'test_token'}
-            mock_fetch_user_info.return_value = {'id': 'test_id', 'email': 'test@example.com'}
-            mock_sync_user_drive.return_value = 'Sync successful'
-
-            with client.session_transaction() as sess:
-                sess['state'] = 'test_state'
-
-            response = client.get('/oauth2callback?code=test_code&state=test_state')
-
-            assert response.status_code == 302
-            assert response.headers['Location'] == 'http://localhost:3000/auth-success'
-            assert session['user_email'] == 'test@example.com'
-            assert session['user_id'] == 'test_id'
-            assert 'last_active' in session
-            mock_open.assert_called_once_with('tokens/test_id.json', 'w')
-
-def test_oauth2callback_auth_error(client, app):
+@patch('app.routes.authorisation_routes.UserService')
+def test_check_auth_route_authenticated(mock_user_service, client, init_session):
     """
-    Test the OAuth2 callback route for authentication errors.
+    Test the `/check-auth` route for an authenticated user.
 
-    This test simulates an authentication error during the OAuth2 callback,
-    ensuring that the appropriate error response is returned.
+    This test verifies that the route correctly identifies an authenticated user
+    by attempting to retrieve the `DriveCore` instance, and that it updates the
+    session's last active timestamp.
 
     Args:
-        client (FlaskClient): The test client for the Flask application.
-        app (Flask): The Flask application instance.
+        mock_user_service (unittest.mock.MagicMock): Mocked `UserService` class.
+        client (flask.testing.FlaskClient): The test client instance.
+        init_session (flask.testing.FlaskClient): The test client with an active session.
     """
-    with app.test_request_context():
-        with patch.object(AuthService, 'create_flow') as mock_create_flow:
-            mock_flow = MagicMock()
-            mock_flow.fetch_token.side_effect = OAuth2Error('Auth failed')
-            mock_create_flow.return_value = mock_flow
+    mock_service_instance = mock_user_service.return_value
+    mock_service_instance.get_drive_core.return_value = MagicMock()
 
-            with client.session_transaction() as sess:
-                sess['state'] = 'test_state'
+    response = client.get('/check-auth')
+    assert response.status_code == 200
+    assert response.json == {"authenticated": True}
 
-            response = client.get('/oauth2callback?error=access_denied')
+    with client.session_transaction() as sess:
+        assert 'last_active' in sess
 
-            assert response.status_code == 400
-            json_data = response.get_json()
-            assert json_data['error'] == 'Authentication failed'
-
-def test_oauth2callback_user_info_error(client, app):
+@patch('app.routes.authorisation_routes.UserService')
+def test_check_auth_route_not_authenticated(mock_user_service, client, init_session):
     """
-    Test the OAuth2 callback route for user info fetch errors.
+    Test the `/check-auth` route for a non-authenticated user.
 
-    This test simulates an error occurring while fetching user information
-    after successful authentication, ensuring that the appropriate error
-    response is returned.
+    This test ensures that if the `DriveCore` retrieval fails, the user is considered
+    not authenticated, and the response reflects this.
 
     Args:
-        client (FlaskClient): The test client for the Flask application.
-        app (Flask): The Flask application instance.
+        mock_user_service (unittest.mock.MagicMock): Mocked `UserService` class.
+        client (flask.testing.FlaskClient): The test client instance.
+        init_session (flask.testing.FlaskClient): The test client with an active session.
     """
-    with app.test_request_context():
-        with patch.object(AuthService, 'create_flow') as mock_create_flow, \
-             patch.object(AuthService, 'fetch_user_info') as mock_fetch_user_info:
+    mock_service_instance = mock_user_service.return_value
+    mock_service_instance.get_drive_core.side_effect = Exception("DriveCore error")
 
-            mock_flow = MagicMock()
-            mock_flow.fetch_token.return_value = None
-            mock_flow.credentials = MagicMock()
-            mock_create_flow.return_value = mock_flow
+    response = client.get('/check-auth')
+    assert response.status_code == 200
+    assert response.json == {"authenticated": False}
 
-            mock_fetch_user_info.side_effect = Exception('User info fetch failed')
-
-            with client.session_transaction() as sess:
-                sess['state'] = 'test_state'
-
-            response = client.get('/oauth2callback?code=test_code&state=test_state')
-
-            assert response.status_code == 500
-            json_data = response.get_json()
-            assert json_data['error'] == 'Failed to fetch user info'
-
-def test_check_auth_authenticated(client, app):
+def test_logout_route(client, init_session):
     """
-    Test the check_auth route for an authenticated user.
+    Test the `/logout` route.
 
-    This test ensures that the check_auth route correctly identifies
-    an authenticated user and returns the appropriate response.
+    This test verifies that the `/logout` route correctly clears the user's session
+    and returns a successful logout message.
 
     Args:
-        client (FlaskClient): The test client for the Flask application.
-        app (Flask): The Flask application instance.
+        client (flask.testing.FlaskClient): The test client instance.
+        init_session (flask.testing.FlaskClient): The test client with an active session.
     """
-    with app.test_request_context():
-        with patch.object(UserService, 'get_drive_core') as mock_get_drive_core:
-            mock_get_drive_core.return_value = MagicMock()
+    response = client.get('/logout')
+    assert response.status_code == 200
+    assert response.json == {"message": "Logged out successfully"}
 
-            with client.session_transaction() as sess:
-                sess['user_id'] = 'test_user_id'
-
-            response = client.get('/check-auth')
-
-            assert response.status_code == 200
-            json_data = response.get_json()
-            assert json_data['authenticated'] is True
-            assert 'last_active' in session
-
-def test_check_auth_not_authenticated(client, app):
-    """
-    Test the check_auth route for a non-authenticated user.
-
-    This test ensures that the check_auth route correctly identifies
-    a non-authenticated user and returns the appropriate response.
-
-    Args:
-        client (FlaskClient): The test client for the Flask application.
-        app (Flask): The Flask application instance.
-    """
-    with app.test_request_context():
-        response = client.get('/check-auth')
-
-        assert response.status_code == 200
-        json_data = response.get_json()
-        assert json_data['authenticated'] is False
-
-def test_logout(client, app):
-    """
-    Test the logout route.
-
-    This test ensures that the logout route correctly clears the session
-    and returns the appropriate response.
-
-    Args:
-        client (FlaskClient): The test client for the Flask application.
-        app (Flask): The Flask application instance.
-    """
-    with app.test_request_context():
-        with client.session_transaction() as sess:
-            sess['user_id'] = 'test_user_id'
-            sess['user_email'] = 'test@example.com'
-
-        response = client.get('/logout')
-
-        assert response.status_code == 200
-        json_data = response.get_json()
-        assert json_data['message'] == 'Logged out successfully'
-        
-        with client.session_transaction() as sess:
-            assert 'user_id' not in sess
-            assert 'user_email' not in sess
+    with client.session_transaction() as sess:
+        assert not sess

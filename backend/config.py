@@ -16,7 +16,10 @@ class Config:
         'https://www.googleapis.com/auth/userinfo.email'
     ]
     DEBUG = False
-    
+
+    # Redis configuration for storing tokens
+    REDIS_TOKEN_URL = os.getenv('REDIS_TOKEN_URL')
+
     # Pinecone configuration
     PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
     PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT')
@@ -44,3 +47,15 @@ class ProductionConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    
+    # Use the real Pinecone API key and environment for testing
+    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+    PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT')
+    PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME')
+    
+    # For OpenAI, you might still want to use a test key or mock it
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    
+    # Use in-memory broker for Celery in testing
+    broker_url = 'memory://'
+    result_backend = 'memory://'

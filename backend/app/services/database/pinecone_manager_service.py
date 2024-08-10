@@ -1,3 +1,5 @@
+"""Module for managing Pinecone database operations."""
+
 import pinecone
 from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
@@ -8,7 +10,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 class PineconeManager:
+    """Manages operations related to Pinecone vector database."""
+
     def __init__(self, api_key, environment, index_name, openai_api_key):
+        """
+        Initialize the PineconeManager.
+
+        Args:
+            api_key (str): The Pinecone API key.
+            environment (str): The Pinecone environment.
+            index_name (str): The name of the Pinecone index.
+            openai_api_key (str): The OpenAI API key.
+        """
         self.api_key = api_key
         self.environment = environment
         self.index_name = index_name
@@ -32,6 +45,7 @@ class PineconeManager:
         )
 
     def ensure_index_exists(self):
+        """Ensure that the specified Pinecone index exists, creating it if necessary."""
         try:
             existing_indexes = self.pc.list_indexes().names()
             if self.index_name not in existing_indexes:
@@ -48,10 +62,20 @@ class PineconeManager:
             else:
                 logger.info(f"Index {self.index_name} already exists")
         except Exception as e:
-            logger.error(f"Error ensuring index exists: {str(e)}")
-            raise
+            error_message = f"Error ensuring index exists: {str(e)}"
+            logger.error(error_message)
+            raise Exception(error_message)
 
     def upsert_document(self, document):
+        """
+        Upsert a document into the Pinecone index.
+
+        Args:
+            document: The document to upsert.
+
+        Returns:
+            dict: A dictionary indicating success and the number of vectors upserted.
+        """
         try:
             logger.info(f"Starting upsert for document: {document.id}")
             chunks = self.text_splitter.split_text(document.content)
@@ -87,6 +111,17 @@ class PineconeManager:
             return {"success": False, "error": str(e)}
         
     def query_similar_documents(self, query, top_k=5, filter=None):
+        """
+        Query the Pinecone index for similar documents.
+
+        Args:
+            query (str): The query string.
+            top_k (int): The number of top results to return.
+            filter (dict): An optional filter for the query.
+
+        Returns:
+            dict: The query results from Pinecone.
+        """
         query_embedding = self.embeddings.embed_query(query)
         results = self.index.query(
             vector=query_embedding,
@@ -98,6 +133,10 @@ class PineconeManager:
         return results
 
     def delete_document(self, document_id):
-        self.index.delete(filter={"id": {"$eq": document_id}})
+        """
+        Delete a document from the Pinecone index.
 
-    # Add more methods as needed
+        Args:
+            document_id (str): The ID of the document to delete.
+        """
+        self.index.delete(filter={"id": {"$eq": document_id}})

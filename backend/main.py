@@ -13,7 +13,7 @@ from celery_app import celery_app
 from config import DevelopmentConfig, ProductionConfig
 import os
 from datetime import datetime, timedelta
-from app.services.database.db import init_db, get_db
+from app.services.database.db_service import init_db, get_db
 from app.services.sync.sync_service import SyncService
 import json
 import logging

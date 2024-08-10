@@ -1,40 +1,37 @@
+import redis
 import json
-from google.oauth2.credentials import Credentials
 from app.services.google_drive.core import DriveCore
-
+from config import Config
 class UserService:
-    @staticmethod
-    def get_user(user_id):
+    def __init__(self):
+        self.redis_client = redis.StrictRedis.from_url(Config.REDIS_TOKEN_URL, decode_responses=True)
+
+    def get_user(self, user_id):
         try:
-            with open(f'tokens/{user_id}.json', 'r') as token_file:
-                user_data = json.load(token_file)
-            return user_data
-        except FileNotFoundError:
+            user_data = self.redis_client.get(f'user:{user_id}:token')
+            if user_data:
+                return json.loads(user_data)
             return None
         except json.JSONDecodeError:
-            raise ValueError(f"Corrupted token file for user {user_id}")
+            raise ValueError(f"Corrupted token data for user {user_id}")
 
-    @staticmethod
-    def update_last_sync_time(user_id, last_sync_time):
+    def update_last_sync_time(self, user_id, last_sync_time):
         try:
-            with open(f'tokens/{user_id}.json', 'r+') as token_file:
-                user_data = json.load(token_file)
-                user_data['last_sync_time'] = last_sync_time
-                token_file.seek(0)
-                json.dump(user_data, token_file, indent=2)
-                token_file.truncate()
-        except FileNotFoundError:
-            raise ValueError(f"No token file found for user {user_id}")
+            user_data = self.get_user(user_id)
+            if not user_data:
+                raise ValueError(f"No token data found for user {user_id}")
+
+            user_data['last_sync_time'] = last_sync_time
+            self.redis_client.set(f'user:{user_id}:token', json.dumps(user_data))
         except json.JSONDecodeError:
-            raise ValueError(f"Corrupted token file for user {user_id}")
+            raise ValueError(f"Corrupted token data for user {user_id}")
 
-    @staticmethod
-    def get_drive_core(user_id):
+    def get_drive_core(self, user_id):
         try:
-            with open(f'tokens/{user_id}.json', 'r') as token_file:
-                credentials_data = json.load(token_file)
-            return DriveCore(credentials_data)
-        except FileNotFoundError:
+            credentials_data = self.get_user(user_id)
+            if credentials_data:
+                return DriveCore(credentials_data)
             return None
         except json.JSONDecodeError:
-            raise ValueError(f"Corrupted token file for user {user_id}")
+            raise ValueError(f"Corrupted token data for user {user_id}")
+

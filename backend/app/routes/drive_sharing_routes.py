@@ -31,6 +31,9 @@ def share_item(item_id):
         service = DriveSharingService(drive_core)
         
         data = request.json
+        if not data or 'emails' not in data or 'role' not in data:
+            return jsonify({"error": "Missing required fields"}), 400
+        
         emails = data.get('emails', [])
         role = data.get('role', 'reader')
         
@@ -43,6 +46,7 @@ def share_item(item_id):
         return jsonify({"error": str(e)}), 401
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
 
 @drive_sharing_bp.route('/drive/<item_id>/update-general-access', methods=['POST'])
 def update_general_access(item_id):

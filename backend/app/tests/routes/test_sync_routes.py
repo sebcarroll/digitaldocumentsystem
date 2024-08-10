@@ -132,7 +132,13 @@ def test_handle_file_event_success(client, mock_user_service, mock_drive_pinecon
         sess['user_id'] = 'test_user_id'
 
     mock_user_service_instance = mock_user_service.return_value
-    mock_user_service_instance.get_user.return_value = {'credentials': {}}
+    mock_user_service_instance.get_user.return_value = {
+        'credentials': {
+            'refresh_token': 'test_refresh_token',
+            'client_id': 'test_client_id',
+            'client_secret': 'test_client_secret'
+        }
+    }
 
     mock_sync_service = mock_drive_pinecone_sync.return_value
 
@@ -221,7 +227,14 @@ def test_handle_file_event_credentials(mock_credentials, client, mock_user_servi
         sess['user_id'] = 'test_user_id'
 
     mock_user_service_instance = mock_user_service.return_value
-    mock_user_service_instance.get_user.return_value = {'credentials': {'token': 'test_token'}}
+    mock_user_service_instance.get_user.return_value = {
+        'credentials': {
+            'refresh_token': 'test_refresh_token',
+            'client_id': 'test_client_id',
+            'client_secret': 'test_client_secret',
+            'token': 'test_token'
+        }
+    }
 
     response = client.post('/sync/file_event', json={
         'event_type': 'open',
@@ -229,5 +242,10 @@ def test_handle_file_event_credentials(mock_credentials, client, mock_user_servi
     })
     
     assert response.status_code == 200
-    mock_credentials.from_authorized_user_info.assert_called_once_with({'token': 'test_token'})
+    mock_credentials.from_authorized_user_info.assert_called_once_with({
+        'refresh_token': 'test_refresh_token',
+        'client_id': 'test_client_id',
+        'client_secret': 'test_client_secret',
+        'token': 'test_token'
+    })
     mock_drive_pinecone_sync.assert_called_once()

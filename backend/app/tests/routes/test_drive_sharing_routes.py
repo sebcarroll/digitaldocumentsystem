@@ -206,14 +206,16 @@ def test_share_item_missing_data(client, mock_get_drive_core, mock_drive_sharing
     Test sharing an item with missing data in the request.
 
     This test checks how the endpoint handles requests with missing data.
+    It now expects a 400 Bad Request response if required fields are missing.
     """
     mock_service = MagicMock()
     mock_drive_sharing_service.return_value = mock_service
 
     response = client.post('/drive/item123/share', json={})
     
-    assert response.status_code == 200  # This might be 400 if you add input validation
-    mock_service.share_item.assert_called_with('item123', [], 'reader')
+    assert response.status_code == 400  # Expecting a 400 due to missing required fields
+    mock_service.share_item.assert_not_called()
+
 
 def test_update_general_access_missing_data(client, mock_get_drive_core, mock_drive_sharing_service):
     """

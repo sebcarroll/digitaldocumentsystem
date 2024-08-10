@@ -1,13 +1,10 @@
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-
 class DriveCore:
     def __init__(self, credentials):
         if isinstance(credentials, dict):
-            credential_keys = ['token', 'refresh_token', 'token_uri', 'client_id', 'client_secret', 'scopes']
-            filtered_credentials = {k: v for k, v in credentials.items() if k in credential_keys}
-            self.credentials = Credentials(**filtered_credentials)
+            self.credentials = Credentials(**credentials)
         elif isinstance(credentials, Credentials):
             self.credentials = credentials
         else:
