@@ -9,7 +9,6 @@ import pytest
 from flask import Flask, session
 from unittest.mock import patch, MagicMock
 from backend.app.routes.access_drive_routes import drive_bp
-from app.services.google_drive.drive_service import DriveService
 from app.utils.drive_utils import get_drive_core
 
 @pytest.fixture
@@ -44,31 +43,29 @@ def test_drive_success(client):
     Test successful retrieval of Drive contents.
 
     This test verifies that the /drive endpoint correctly returns
-    a list of files and the next page token when files are present.
+    a list of files when files are present.
 
     Args:
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
-         patch('backend.app.routes.access_drive_routes.DriveService') as mock_drive_service:
-        
-        mock_drive_service_instance = mock_drive_service.return_value
-        mock_drive_service_instance.list_folder_contents.return_value = (
-            [{'id': '1', 'name': 'file1'}, {'id': '2', 'name': 'file2'}],
-            'next_page_token'
-        )
+    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_drive_core.list_folder_contents.return_value = [
+            {'id': '1', 'name': 'file1'},
+            {'id': '2', 'name': 'file2'}
+        ]
 
         response = client.get('/drive?folder_id=test_folder&page_token=test_token&page_size=10')
         
         assert response.status_code == 200
         json_data = response.get_json()
         assert 'files' in json_data
-        assert 'nextPageToken' in json_data
         assert len(json_data['files']) == 2
-        assert json_data['nextPageToken'] == 'next_page_token'
+        assert 'nextPageToken' in json_data
+        assert json_data['nextPageToken'] is None  # Assuming we're not implementing pagination in DriveCore
 
 def test_drive_no_files(client):
     """
@@ -81,13 +78,11 @@ def test_drive_no_files(client):
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
-         patch('backend.app.routes.access_drive_routes.DriveService') as mock_drive_service:
-        
-        mock_drive_service_instance = mock_drive_service.return_value
-        mock_drive_service_instance.list_folder_contents.return_value = ([], None)
+    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_drive_core.list_folder_contents.return_value = []
 
         response = client.get('/drive')
         
@@ -107,13 +102,10 @@ def test_drive_value_error(client):
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'invalid_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
-         patch('backend.app.routes.access_drive_routes.DriveService') as mock_drive_service:
-        
-        mock_drive_service_instance = mock_drive_service.return_value
-        mock_drive_service_instance.list_folder_contents.side_effect = ValueError("Invalid credentials")
+    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+        mock_get_drive_core.side_effect = ValueError("Invalid credentials")
 
         response = client.get('/drive')
         
@@ -133,13 +125,11 @@ def test_drive_general_error(client):
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
-         patch('backend.app.routes.access_drive_routes.DriveService') as mock_drive_service:
-        
-        mock_drive_service_instance = mock_drive_service.return_value
-        mock_drive_service_instance.list_folder_contents.side_effect = Exception("Unexpected error")
+    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_drive_core.list_folder_contents.side_effect = Exception("Unexpected error")
 
         response = client.get('/drive')
         
@@ -159,13 +149,11 @@ def test_open_file_success(client):
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
-         patch('backend.app.routes.access_drive_routes.DriveService') as mock_drive_service:
-        
-        mock_drive_service_instance = mock_drive_service.return_value
-        mock_drive_service_instance.get_file_web_view_link.return_value = ('https://example.com', 'text/plain')
+    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_drive_core.get_file_web_view_link.return_value = ('https://example.com', 'text/plain')
 
         response = client.get('/drive/test_file_id/open')
         
@@ -187,13 +175,11 @@ def test_open_file_value_error(client):
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
-         patch('backend.app.routes.access_drive_routes.DriveService') as mock_drive_service:
-        
-        mock_drive_service_instance = mock_drive_service.return_value
-        mock_drive_service_instance.get_file_web_view_link.side_effect = ValueError("Invalid file ID")
+    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_drive_core.get_file_web_view_link.side_effect = ValueError("Invalid file ID")
 
         response = client.get('/drive/invalid_file_id/open')
         
@@ -213,13 +199,11 @@ def test_open_file_general_error(client):
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
-         patch('backend.app.routes.access_drive_routes.DriveService') as mock_drive_service:
-        
-        mock_drive_service_instance = mock_drive_service.return_value
-        mock_drive_service_instance.get_file_web_view_link.side_effect = Exception("Unexpected error")
+    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_drive_core.get_file_web_view_link.side_effect = Exception("Unexpected error")
 
         response = client.get('/drive/test_file_id/open')
         
@@ -239,7 +223,7 @@ def test_logout(client):
         client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
-        sess['user_id'] = 'test_user_id'
+        sess['credentials'] = {'token': 'test_token'}
 
     response = client.get('/logout')
     
@@ -249,7 +233,7 @@ def test_logout(client):
     assert json_data['message'] == "Logged out successfully"
     
     with client.session_transaction() as sess:
-        assert 'user_id' not in sess
+        assert 'credentials' not in sess
 
 def test_cleanup_services(app):
     """

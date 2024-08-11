@@ -10,10 +10,12 @@ import redis
 from google.oauth2.credentials import Credentials
 from app.services.google_drive.core import DriveCore
 from config import Config
-from app.services.user.user_service import UserService
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+# Initialize Redis client
+redis_client = redis.StrictRedis.from_url(Config.REDIS_TOKEN_URL, decode_responses=True)
 
 def get_drive_core(session):
     """
@@ -41,13 +43,12 @@ def get_drive_core(session):
         raise ValueError("User not authenticated")
     
     try:
-        user_service = UserService()
-        user_data = user_service.get_user(user_id)
-        if not user_data or 'credentials' not in user_data:
+        credentials_json = redis_client.get(f'user:{user_id}:token')
+        if not credentials_json:
             logger.error(f"No credentials found in Redis for user {user_id}")
             raise ValueError("User credentials not found")
 
-        credentials_dict = user_data['credentials']
+        credentials_dict = json.loads(credentials_json)
         logger.debug(f"Credentials retrieved from Redis for user {user_id}")
         
         drive_core = DriveCore(credentials_dict)
