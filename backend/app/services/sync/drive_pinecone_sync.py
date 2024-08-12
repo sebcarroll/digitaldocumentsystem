@@ -5,17 +5,15 @@ It contains the DrivePineconeSync class which handles the synchronization proces
 including file and folder syncing, full and incremental syncs, and error handling.
 """
 
-from app.services.google_drive.google_drive_service import GoogleDriveService
+from app.services.google_drive.core import DriveCore
 from app.services.database.pinecone_manager_service import PineconeManager
 from database.schemas.document import DocumentSchema
 from database.schemas.folder import FolderSchema
 from database.schemas.sync_log import SyncLogSchema
-from database.schemas.embedding_job import EmbeddingJobSchema
 import logging
 from datetime import datetime, timezone
 import uuid
 from config import Config
-from google.oauth2.credentials import Credentials
 
 logger = logging.getLogger(__name__)
 
@@ -27,16 +25,16 @@ class DrivePineconeSync:
     performing full and incremental syncs, and handling file events.
     """
 
-    def __init__(self, user_id, drive_service):
+    def __init__(self, user_id, credentials):
         """
         Initialize the DrivePineconeSync instance.
 
         Args:
             user_id (str): The ID of the user.
-            drive_service (GoogleDriveService): An instance of the Google Drive service.
+            credentials (dict): The credentials for accessing Google Drive.
         """
         self.user_id = user_id
-        self.drive_service = drive_service
+        self.drive_core = DriveCore(credentials)
         self.pinecone_manager = PineconeManager(
             api_key=Config.PINECONE_API_KEY,
             environment=Config.PINECONE_ENVIRONMENT,
@@ -46,7 +44,6 @@ class DrivePineconeSync:
         self.document_schema = DocumentSchema()
         self.folder_schema = FolderSchema()
         self.sync_log_schema = SyncLogSchema()
-        self.embedding_job_schema = EmbeddingJobSchema()
 
     def sync_file(self, file_id):
         """
@@ -54,37 +51,69 @@ class DrivePineconeSync:
 
         Args:
             file_id (str): The ID of the file to synchronize.
+
+        Raises:
+            Exception: If there's an error during the sync process.
         """
         try:
-            file_metadata = self.drive_service.get_file_metadata(file_id)
-            file_content = self.drive_service.get_file_content(file_id)
+            file_metadata = self.drive_core.drive_service.files().get(fileId=file_id, fields='*').execute()
+            mime_type = file_metadata['mimeType']
+
+            # Handle different file types
+            if mime_type.startswith('text/') or mime_type in ['application/json', 'application/xml']:
+                try:
+                    file_content = self.drive_core.drive_service.files().get_media(fileId=file_id).execute()
+                    content = file_content.decode('utf-8')
+                except UnicodeDecodeError:
+                    content = "This file contains non-UTF-8 text content that couldn't be decoded."
+            else:
+                content = f"This is a file of type {mime_type}."
+
+            current_time = datetime.now(timezone.utc)
 
             document = {
                 'id': str(uuid.uuid4()),
                 'googleDriveId': file_id,
                 'title': file_metadata['name'],
-                'mimeType': file_metadata['mimeType'],
-                'createdAt': file_metadata['createdTime'],
-                'modifiedAt': file_metadata['modifiedTime'],
+                'mimeType': mime_type,
+                'createdAt': datetime.fromisoformat(file_metadata['createdTime'].rstrip('Z')).replace(tzinfo=timezone.utc),
+                'modifiedAt': datetime.fromisoformat(file_metadata['modifiedTime'].rstrip('Z')).replace(tzinfo=timezone.utc),
                 'ownerId': file_metadata['owners'][0]['emailAddress'],
                 'parentFolderId': file_metadata.get('parents', [None])[0],
-                'webViewLink': file_metadata.get('webViewLink'),
-                'lastSyncTime': datetime.now(timezone.utc).isoformat(),
+                'aiSuggestedCategories': [],
+                'userCategories': [],
+                'suggestedFolder': '',
+                'userSelectedFolder': '',
+                'metadata': {},
+                'summary': '',
+                'keywords': [],
+                'lastEmbeddingUpdate': current_time,
                 'version': 1,
                 'accessControl': {
                     'ownerId': file_metadata['owners'][0]['emailAddress'],
                     'readers': [user['emailAddress'] for user in file_metadata.get('permissions', []) if user.get('role') == 'reader'],
                     'writers': [user['emailAddress'] for user in file_metadata.get('permissions', []) if user.get('role') == 'writer']
                 },
-                'content': file_content
+                'sharedFolders': [],
+                'sourceUrl': file_metadata.get('webViewLink', ''),
+                'citations': [],
+                'webViewLink': file_metadata.get('webViewLink', ''),
+                'lastSyncTime': current_time,
+                'chunk_index': 1,
+                'total_chunks': 1,
+                'content': content
             }
 
             validated_document = self.document_schema.load(document)
-            self.pinecone_manager.upsert_document(validated_document)
+            result = self.pinecone_manager.upsert_document(validated_document)
+            if result['success']:
+                logger.info(f"Synced file {file_id} to Pinecone. Vectors upserted: {result['vectors_upserted']}")
+            else:
+                logger.error(f"Failed to sync file {file_id} to Pinecone: {result['error']}")
 
-            logger.info(f"Synced file {file_id} to Pinecone")
         except Exception as e:
             logger.error(f"Error syncing file {file_id}: {str(e)}")
+            raise
 
     def sync_folder(self, folder_id='root', depth=0, max_depth=10):
         """
@@ -94,44 +123,123 @@ class DrivePineconeSync:
             folder_id (str, optional): The ID of the folder to synchronize. Defaults to 'root'.
             depth (int): Current recursion depth.
             max_depth (int): Maximum allowed recursion depth.
+
+        Raises:
+            Exception: If there's an error during the sync process.
         """
         if depth > max_depth:
             logger.warning(f"Maximum folder depth reached for folder {folder_id}")
             return
 
         try:
-            folder_metadata = self.drive_service.get_folder_metadata(folder_id)
+            folder_metadata = self.drive_core.drive_service.files().get(fileId=folder_id, fields='*').execute()
             
-            folder = {
-                'id': str(uuid.uuid4()),
-                'googleDriveId': folder_id,
-                'name': folder_metadata['name'],
-                'parentFolderId': folder_metadata.get('parents', [None])[0],
-                'createdAt': folder_metadata['createdTime'],
-                'modifiedAt': folder_metadata['modifiedTime'],
-                'ownerId': folder_metadata['owners'][0]['emailAddress'],
-                'lastSyncTime': datetime.now(timezone.utc).isoformat(),
-                'accessControl': {
-                    'ownerId': folder_metadata['owners'][0]['emailAddress'],
-                    'readers': [user['emailAddress'] for user in folder_metadata.get('permissions', []) if user.get('role') == 'reader'],
-                    'writers': [user['emailAddress'] for user in folder_metadata.get('permissions', []) if user.get('role') == 'writer']
+            current_time = datetime.now(timezone.utc).isoformat()  # Convert to ISO format string
+
+            if folder_id == 'root':
+                folder_document = {
+                    'id': str(uuid.uuid4()),
+                    'googleDriveId': folder_id,
+                    'title': 'My Drive',  # Root folder is typically called "My Drive"
+                    'mimeType': 'application/vnd.google-apps.folder',
+                    'createdAt': current_time,
+                    'modifiedAt': current_time,
+                    'ownerId': folder_metadata['owners'][0]['emailAddress'] if 'owners' in folder_metadata else 'unknown',
+                    'parentFolderId': None,
+                    'aiSuggestedCategories': [],
+                    'userCategories': [],
+                    'suggestedFolder': '',
+                    'userSelectedFolder': '',
+                    'metadata': {'is_root': True},
+                    'summary': 'Root folder (My Drive)',
+                    'keywords': [],
+                    'lastEmbeddingUpdate': current_time,
+                    'version': 1,
+                    'accessControl': {
+                        'ownerId': folder_metadata['owners'][0]['emailAddress'] if 'owners' in folder_metadata else 'unknown',
+                        'readers': [],
+                        'writers': []
+                    },
+                    'sharedFolders': [],
+                    'sourceUrl': '',
+                    'citations': [],
+                    'webViewLink': '',
+                    'lastSyncTime': current_time,
+                    'chunk_index': 1,
+                    'total_chunks': 1,
+                    'content': 'This is the root folder (My Drive)'
                 }
-            }
+            else:
+                folder_document = {
+                    'id': str(uuid.uuid4()),
+                    'googleDriveId': folder_id,
+                    'title': folder_metadata['name'],
+                    'mimeType': folder_metadata['mimeType'],
+                    'createdAt': folder_metadata['createdTime'],
+                    'modifiedAt': folder_metadata['modifiedTime'],
+                    'ownerId': folder_metadata['owners'][0]['emailAddress'],
+                    'parentFolderId': folder_metadata.get('parents', [None])[0],
+                    'aiSuggestedCategories': [],
+                    'userCategories': [],
+                    'suggestedFolder': '',
+                    'userSelectedFolder': '',
+                    'metadata': {'is_folder': True},
+                    'summary': f"Folder: {folder_metadata['name']}",
+                    'keywords': [],
+                    'lastEmbeddingUpdate': current_time,
+                    'version': 1,
+                    'accessControl': {
+                        'ownerId': folder_metadata['owners'][0]['emailAddress'],
+                        'readers': [user['emailAddress'] for user in folder_metadata.get('permissions', []) if user.get('role') == 'reader'],
+                        'writers': [user['emailAddress'] for user in folder_metadata.get('permissions', []) if user.get('role') == 'writer']
+                    },
+                    'sharedFolders': [],
+                    'sourceUrl': folder_metadata.get('webViewLink', ''),
+                    'citations': [],
+                    'webViewLink': folder_metadata.get('webViewLink', ''),
+                    'lastSyncTime': current_time,
+                    'chunk_index': 1,
+                    'total_chunks': 1,
+                    'content': f"This is a folder named {folder_metadata['name']}"
+                }
 
-            validated_folder = self.folder_schema.load(folder)
-            # Store folder metadata if needed
+            validated_document = self.document_schema.load(folder_document)
+            
+            # Upsert the folder to Pinecone using the existing upsert_document method
+            result = self.pinecone_manager.upsert_document(validated_document)
+            if result['success']:
+                logger.info(f"Synced folder {folder_id} to Pinecone.")
+            else:
+                logger.error(f"Failed to sync folder {folder_id} to Pinecone: {result['error']}")
 
-            files = self.drive_service.list_folder_contents(folder_id)
+            files = self.drive_core.list_folder_contents(folder_id)
             for file in files:
                 if file['mimeType'] == 'application/vnd.google-apps.folder':
                     self.sync_folder(file['id'], depth=depth+1, max_depth=max_depth)
                 else:
                     self.sync_file(file['id'])
+
         except Exception as e:
             logger.error(f"Error syncing folder {folder_id}: {str(e)}")
-            
+            raise
+    def update_folder_categories(self, folder_id):
+        """
+        Update the categories of a folder based on its contents.
+        This is a placeholder method and should be implemented based on your specific requirements.
+        """
+        # Implement logic to:
+        # 1. Retrieve all documents in the folder
+        # 2. Aggregate their categories
+        # 3. Update the folder's categories in Pinecone
+        pass
+
     def full_sync(self):
-        """Perform a full synchronization of all files and folders."""
+        """
+        Perform a full synchronization of all files and folders.
+
+        Returns:
+            bool: True if the sync was successful, False otherwise.
+        """
         sync_log = {
             'id': str(uuid.uuid4()),
             'userId': self.user_id,
@@ -146,10 +254,13 @@ class DrivePineconeSync:
         except Exception as e:
             sync_log['status'] = 'failed'
             sync_log['errors'] = [str(e)]
+            logger.error(f"Full sync failed: {str(e)}")
         finally:
             sync_log['endTime'] = datetime.now(timezone.utc).isoformat()
             validated_sync_log = self.sync_log_schema.load(sync_log)
             self.store_sync_log(validated_sync_log)
+        
+        return sync_log['status'] == 'completed'
 
     def incremental_sync(self, last_sync_time):
         """
@@ -157,6 +268,9 @@ class DrivePineconeSync:
 
         Args:
             last_sync_time (datetime): The timestamp of the last synchronization.
+
+        Returns:
+            bool: True if the sync was successful, False otherwise.
         """
         sync_log = {
             'id': str(uuid.uuid4()),
@@ -167,7 +281,8 @@ class DrivePineconeSync:
         }
         
         try:
-            changed_files = self.drive_service.list_changed_files(last_sync_time)
+            query = f"modifiedTime > '{last_sync_time.isoformat()}'"
+            changed_files = self.drive_core.drive_service.files().list(q=query, fields='files(id)').execute().get('files', [])
             for file in changed_files:
                 self.sync_file(file['id'])
             sync_log['status'] = 'completed'
@@ -175,10 +290,13 @@ class DrivePineconeSync:
         except Exception as e:
             sync_log['status'] = 'failed'
             sync_log['errors'] = [str(e)]
+            logger.error(f"Incremental sync failed: {str(e)}")
         finally:
             sync_log['endTime'] = datetime.now(timezone.utc).isoformat()
             validated_sync_log = self.sync_log_schema.load(sync_log)
             self.store_sync_log(validated_sync_log)
+        
+        return sync_log['status'] == 'completed'
 
     def store_sync_log(self, sync_log):
         """
