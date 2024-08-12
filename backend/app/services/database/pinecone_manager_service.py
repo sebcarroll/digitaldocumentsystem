@@ -130,12 +130,3 @@ class PineconeManager:
             filter=filter
         )
         return results
-
-    def delete_document(self, document_id):
-        """
-        Delete a document from the Pinecone index.
-
-        Args:
-            document_id (str): The ID of the document to delete.
-        """
-        self.index.delete(filter={"id": {"$eq": document_id}})

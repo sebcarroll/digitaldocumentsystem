@@ -3,7 +3,7 @@ Main application module for the Google Drive Sync API.
 
 This module initializes and configures the Flask application, sets up blueprints,
 Celery, and Pinecone database connections. It also includes routes for home,
-Pinecone testing, and implements session management and synchronization logic.
+Pinecone testing, and implements session management logic.
 """
 
 from flask import Flask, session, jsonify
@@ -15,14 +15,13 @@ from app.routes.drive_file_operations_routes import drive_file_ops_bp
 from app.routes.drive_folder_operations_routes import drive_folder_ops_bp
 from app.routes.drive_permissions_routes import drive_permissions_bp
 from app.routes.drive_sharing_routes import drive_sharing_bp
-from app.routes.sync_routes import sync_bp
 from celery_app import init_celery
 from celery_app import celery_app
 from config import DevelopmentConfig, ProductionConfig
 import os
 from datetime import datetime, timedelta, timezone
 from app.services.database.db_service import init_db, get_db
-from app.services.sync.sync_service import SyncService
+# from app.services.sync.sync_service import SyncService
 import json
 import logging
 import redis
@@ -58,7 +57,6 @@ def create_app():
     app.register_blueprint(drive_folder_ops_bp)
     app.register_blueprint(drive_permissions_bp)
     app.register_blueprint(drive_sharing_bp)
-    app.register_blueprint(sync_bp)
 
     @app.route('/')
     def home():
@@ -111,13 +109,12 @@ def create_app():
         """
         Perform actions before each request is processed.
 
-        This function manages session lifetime, checks user authentication,
-        and initiates drive synchronization if necessary. It performs the following tasks:
+        This function manages session lifetime and checks user authentication.
+        It performs the following tasks:
         1. Sets the session to be permanent and updates its lifetime.
         2. Checks for user authentication by verifying the presence of user_id in the session.
         3. Verifies the presence of user credentials in Redis.
-        4. Checks the last active timestamp and initiates a sync if the user has been inactive.
-        5. Updates the last active timestamp for the current request.
+        4. Updates the last active timestamp for the current request.
 
         The function uses Redis to store and retrieve user credentials, and logs various
         steps and potential issues for debugging purposes.
@@ -136,14 +133,9 @@ def create_app():
                     try:
                         last_active = datetime.fromisoformat(session['last_active'])
                         if datetime.now(timezone.utc) - last_active > timedelta(minutes=2):
-                            logger.info("Initiating sync due to inactivity")
-                            try:
-                                result = SyncService.sync_user_drive(user_id)
-                                logger.info(f"Sync result: {result}")
-                            except Exception as e:
-                                logger.exception(f"Error during sync: {str(e)}")
+                            logger.info("User inactive for more than 2 minutes")
                         else:
-                            logger.info("Skipping sync due to recent activity")
+                            logger.info("User active within last 2 minutes")
                     except ValueError:
                         logger.warning("Invalid last_active timestamp in session")
                 else:
