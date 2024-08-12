@@ -37,7 +37,7 @@ class PineconeManager:
         self.index = self.pc.Index(index_name)
         
         # Initialize OpenAI embeddings
-        self.embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+        self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
@@ -52,11 +52,11 @@ class PineconeManager:
                 logger.info(f"Creating new index: {self.index_name}")
                 self.pc.create_index(
                     name=self.index_name,
-                    dimension=1536,  # OpenAI embeddings are 1536 dimensions
+                    dimension=1536, 
                     metric="cosine",
                     spec=ServerlessSpec(
                         cloud="aws",
-                        region=self.environment.split('-')[0]  # Extracts 'eu-west-1' from 'eu-west-1-aws'
+                        region=self.environment.split('-')[0]
                     )
                 )
             else:
@@ -71,26 +71,25 @@ class PineconeManager:
         Upsert a document into the Pinecone index.
 
         Args:
-            document: The document to upsert.
+            document (dict): The document to upsert.
 
         Returns:
             dict: A dictionary indicating success and the number of vectors upserted.
         """
         try:
-            logger.info(f"Starting upsert for document: {document.id}")
-            chunks = self.text_splitter.split_text(document.content)
+            logger.info(f"Starting upsert for document: {document['id']}")
+            chunks = self.text_splitter.split_text(document['content'])
             logger.info(f"Created {len(chunks)} chunks")
             
             embeddings = self.embeddings.embed_documents(chunks)
             logger.info(f"Created {len(embeddings)} embeddings")
             
-            metadata = self.document_schema.dump(document)
             vectors = []
             
             for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-                chunk_id = f"{str(document.id)}_{i}"
+                chunk_id = f"{str(document['id'])}_{i}"
                 chunk_metadata = {
-                    **metadata,
+                    **document,
                     "chunk_index": i,
                     "total_chunks": len(chunks),
                     "chunk_content": chunk
@@ -107,7 +106,7 @@ class PineconeManager:
             
             return {"success": True, "vectors_upserted": len(vectors)}
         except Exception as e:
-            logger.error(f"Error upserting document {document.id}: {str(e)}", exc_info=True)
+            logger.error(f"Error upserting document {document['id']}: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
         
     def query_similar_documents(self, query, top_k=5, filter=None):

@@ -1,76 +1,84 @@
+"""
+Unit tests for the SyncService class.
+
+This module contains pytest-based unit tests for the SyncService class,
+covering various scenarios including success cases and error handling.
+"""
+
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone
-from app.services.sync.sync_service import SyncService
-from google.oauth2.credentials import Credentials
+from app.services.sync.sync_service import SyncService, SyncError
 
 @pytest.fixture
-def mock_session():
-    return {
-        'credentials': {
-            'token': 'fake_token',
-            'refresh_token': 'fake_refresh_token',
-            'token_uri': 'https://oauth2.googleapis.com/token',
-            'client_id': 'fake_client_id',
-            'client_secret': 'fake_client_secret',
-            'scopes': ['https://www.googleapis.com/auth/drive']
-        },
-        'user_id': 'test_user_id',
-        'last_sync_time': '2023-01-01T00:00:00' 
-    }
+def mock_redis():
+    """Fixture to mock the redis client."""
+    with patch('app.services.sync.sync_service.redis_client') as mock:
+        yield mock
 
-@patch('app.services.sync.sync_service.UserService')
-@patch('app.services.sync.sync_service.GoogleDriveService')
-@patch('app.services.sync.sync_service.DrivePineconeSync')
-def test_sync_user_drive_full_sync(mock_drive_pinecone_sync, mock_google_drive_service, mock_user_service, mock_session):
-    # Set last_sync_time to None to trigger full sync
-    mock_session['last_sync_time'] = None
-    mock_user_service.return_value.get_user.return_value = mock_session
-    mock_sync_instance = Mock()
-    mock_drive_pinecone_sync.return_value = mock_sync_instance
+@pytest.fixture
+def mock_celery_task():
+    """Fixture to mock the Celery task."""
+    with patch('app.services.sync.sync_service.sync_drive_to_pinecone') as mock:
+        yield mock
 
-    result = SyncService.sync_user_drive('test_user_id')
+def test_start_sync_success(mock_redis, mock_celery_task):
+    """Test successful start of sync process."""
+    user_id = "test_user"
+    result = SyncService.start_sync(user_id)
+    
+    mock_redis.set.assert_called_once_with(f'user:{user_id}:sync_status', 'in_progress')
+    mock_celery_task.delay.assert_called_once_with(user_id)
+    assert result == {"message": "Sync process initiated"}
 
-    mock_google_drive_service.assert_called_once()
-    mock_drive_pinecone_sync.assert_called_once()
-    mock_sync_instance.full_sync.assert_called_once()  # Ensure full_sync was called
-    assert result == {"message": "Sync completed successfully"}
+def test_start_sync_failure(mock_redis):
+    """Test failure in starting sync process."""
+    user_id = "test_user"
+    mock_redis.set.side_effect = Exception("Redis error")
+    
+    with pytest.raises(SyncError):
+        SyncService.start_sync(user_id)
+    
+    mock_redis.set.assert_called_once_with(f'user:{user_id}:sync_status', 'in_progress')
 
-@patch('app.services.sync.sync_service.UserService')
-@patch('app.services.sync.sync_service.GoogleDriveService')
-@patch('app.services.sync.sync_service.DrivePineconeSync')
-def test_sync_user_drive_incremental_sync(mock_drive_pinecone_sync, mock_google_drive_service, mock_user_service, mock_session):
-    mock_user_service.return_value.get_user.return_value = mock_session
-    mock_sync_instance = Mock()
-    mock_drive_pinecone_sync.return_value = mock_sync_instance
+def test_get_sync_status_success(mock_redis):
+    """Test successful retrieval of sync status."""
+    user_id = "test_user"
+    mock_redis.get.return_value = 'in_progress'
+    
+    status = SyncService.get_sync_status(user_id)
+    
+    mock_redis.get.assert_called_once_with(f'user:{user_id}:sync_status')
+    assert status == 'in_progress'
 
-    result = SyncService.sync_user_drive(mock_session['user_id'])
+def test_get_sync_status_not_found(mock_redis):
+    """Test scenario where sync status is not found."""
+    user_id = "test_user"
+    mock_redis.get.return_value = None
+    
+    with pytest.raises(SyncError):
+        SyncService.get_sync_status(user_id)
 
-    mock_google_drive_service.assert_called_once()
-    mock_drive_pinecone_sync.assert_called_once()
-    mock_sync_instance.incremental_sync.assert_called_once_with('2023-01-01T00:00:00')
-    assert 'last_sync_time' in mock_session
-    assert result == {"message": "Sync completed successfully"}
+def test_is_sync_in_progress_true(mock_redis):
+    """Test when sync is in progress."""
+    user_id = "test_user"
+    mock_redis.get.return_value = 'in_progress'
+    
+    assert SyncService.is_sync_in_progress(user_id) is True
 
-@patch('app.services.sync.sync_service.UserService')
-def test_sync_user_drive_no_credentials(mock_user_service):
-    mock_user_service.return_value.get_user.return_value = None
-    result = SyncService.sync_user_drive('test_user_id')
-    assert result == {"error": "User not authenticated or user_id missing"}
+def test_is_sync_in_progress_false(mock_redis):
+    """Test when sync is not in progress."""
+    user_id = "test_user"
+    mock_redis.get.return_value = 'completed'
+    
+    assert SyncService.is_sync_in_progress(user_id) is False
 
-@patch('app.services.sync.sync_service.UserService')
-def test_sync_user_drive_invalid_credentials(mock_user_service):
-    mock_user_service.return_value.get_user.return_value = {
-        'credentials': 'invalid_format',
-        'user_id': 'test_user_id'
-    }
-    result = SyncService.sync_user_drive('test_user_id')
-    assert result == {"error": "Invalid credentials format"}
-
-@patch('app.services.sync.sync_service.UserService')
-def test_sync_user_drive_missing_credentials(mock_user_service):
-    mock_user_service.return_value.get_user.return_value = {
-        'user_id': 'test_user_id'
-    }
-    result = SyncService.sync_user_drive('test_user_id')
-    assert result == {"error": "Credentials missing"}
+def test_start_sync_if_not_in_progress_started(mock_redis, mock_celery_task):
+    """Test starting sync when not already in progress."""
+    user_id = "test_user"
+    mock_redis.get.return_value = 'completed'
+    
+    result = SyncService.start_sync_if_not_in_progress(user_id)
+    
+    assert result is True
+    mock_celery_task.delay.assert_called_once_with(user_id)

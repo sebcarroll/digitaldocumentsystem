@@ -25,7 +25,7 @@ class DrivePineconeSync:
     performing full and incremental syncs, and handling file events.
     """
 
-    def __init__(self, user_id, credentials):
+    def __init__(self, user_id, drive_core):
         """
         Initialize the DrivePineconeSync instance.
 
@@ -34,7 +34,7 @@ class DrivePineconeSync:
             credentials (dict): The credentials for accessing Google Drive.
         """
         self.user_id = user_id
-        self.drive_core = DriveCore(credentials)
+        self.drive_core = drive_core
         self.pinecone_manager = PineconeManager(
             api_key=Config.PINECONE_API_KEY,
             environment=Config.PINECONE_ENVIRONMENT,
@@ -48,6 +48,9 @@ class DrivePineconeSync:
     def sync_file(self, file_id):
         """
         Synchronize a single file from Google Drive to Pinecone.
+
+        This method retrieves the file metadata and content from Google Drive,
+        creates a document representation of the file, and upserts it to Pinecone.
 
         Args:
             file_id (str): The ID of the file to synchronize.
@@ -69,15 +72,15 @@ class DrivePineconeSync:
             else:
                 content = f"This is a file of type {mime_type}."
 
-            current_time = datetime.now(timezone.utc)
+            current_time = datetime.now(timezone.utc).isoformat()
 
             document = {
                 'id': str(uuid.uuid4()),
                 'googleDriveId': file_id,
                 'title': file_metadata['name'],
                 'mimeType': mime_type,
-                'createdAt': datetime.fromisoformat(file_metadata['createdTime'].rstrip('Z')).replace(tzinfo=timezone.utc),
-                'modifiedAt': datetime.fromisoformat(file_metadata['modifiedTime'].rstrip('Z')).replace(tzinfo=timezone.utc),
+                'createdAt': file_metadata['createdTime'],
+                'modifiedAt': file_metadata['modifiedTime'],
                 'ownerId': file_metadata['owners'][0]['emailAddress'],
                 'parentFolderId': file_metadata.get('parents', [None])[0],
                 'aiSuggestedCategories': [],
@@ -105,7 +108,8 @@ class DrivePineconeSync:
             }
 
             validated_document = self.document_schema.load(document)
-            result = self.pinecone_manager.upsert_document(validated_document)
+            document_dict = self.document_schema.dump(validated_document)
+            result = self.pinecone_manager.upsert_document(document_dict)
             if result['success']:
                 logger.info(f"Synced file {file_id} to Pinecone. Vectors upserted: {result['vectors_upserted']}")
             else:
@@ -119,9 +123,13 @@ class DrivePineconeSync:
         """
         Synchronize a folder and its contents from Google Drive to Pinecone.
 
+        This method retrieves the folder metadata from Google Drive, creates a document
+        representation of the folder, and upserts it to Pinecone. It then recursively
+        syncs all files and subfolders within the folder.
+
         Args:
             folder_id (str, optional): The ID of the folder to synchronize. Defaults to 'root'.
-            depth (int): Current recursion depth.
+            depth (int): Current recursion depth. Used to prevent excessive recursion.
             max_depth (int): Maximum allowed recursion depth.
 
         Raises:
@@ -134,13 +142,13 @@ class DrivePineconeSync:
         try:
             folder_metadata = self.drive_core.drive_service.files().get(fileId=folder_id, fields='*').execute()
             
-            current_time = datetime.now(timezone.utc).isoformat()  # Convert to ISO format string
+            current_time = datetime.now(timezone.utc).isoformat()
 
             if folder_id == 'root':
                 folder_document = {
                     'id': str(uuid.uuid4()),
                     'googleDriveId': folder_id,
-                    'title': 'My Drive',  # Root folder is typically called "My Drive"
+                    'title': 'My Drive',
                     'mimeType': 'application/vnd.google-apps.folder',
                     'createdAt': current_time,
                     'modifiedAt': current_time,
@@ -204,9 +212,9 @@ class DrivePineconeSync:
                 }
 
             validated_document = self.document_schema.load(folder_document)
+            document_dict = self.document_schema.dump(validated_document)
             
-            # Upsert the folder to Pinecone using the existing upsert_document method
-            result = self.pinecone_manager.upsert_document(validated_document)
+            result = self.pinecone_manager.upsert_document(document_dict)
             if result['success']:
                 logger.info(f"Synced folder {folder_id} to Pinecone.")
             else:
@@ -222,6 +230,7 @@ class DrivePineconeSync:
         except Exception as e:
             logger.error(f"Error syncing folder {folder_id}: {str(e)}")
             raise
+
     def update_folder_categories(self, folder_id):
         """
         Update the categories of a folder based on its contents.
