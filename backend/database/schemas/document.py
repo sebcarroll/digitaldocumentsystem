@@ -10,28 +10,23 @@ class DocumentSchema(Schema):
     modifiedAt = fields.Str(required=True) 
     ownerId = fields.Str(required=True)
     parentFolderId = fields.Str(allow_none=True)
-    aiSuggestedCategories = fields.List(fields.Str(), missing=[])
-    userCategories = fields.List(fields.Str(), missing=[])
-    suggestedFolder = fields.Str(allow_none=True)
-    userSelectedFolder = fields.Str(allow_none=True)
-    metadata = fields.Dict(missing={})
+    categories = fields.List(fields.Str(), load_default=[])
+    metadata = fields.Dict(load_default={})
     summary = fields.Str(allow_none=True)
-    keywords = fields.List(fields.Str(), missing=[])
-    lastEmbeddingUpdate = fields.Str(allow_none=True) 
-    version = fields.Int(missing=1)
-    accessControl = fields.Dict(missing={})
-    sharedFolders = fields.List(fields.Str(), missing=[])
+    keywords = fields.List(fields.Str(), load_default=[])
+    version = fields.Int(load_default=1)
+    accessControl = fields.Dict(load_default={})
+    sharedFolders = fields.List(fields.Str(), load_default=[])
     sourceUrl = fields.Str(allow_none=True)
-    citations = fields.List(fields.Str(), missing=[])
+    citations = fields.List(fields.Str(), load_default=[])
     webViewLink = fields.Str(allow_none=True)
-    lastSyncTime = fields.Str(allow_none=True) 
-    chunk_index = fields.Int(missing=1)
-    total_chunks = fields.Int(missing=1)
+    chunk_index = fields.Int(load_default=1)
+    total_chunks = fields.Int(load_default=1)
     content = fields.Str(required=True)
 
     @post_load
     def convert_dates(self, data, **kwargs):
-        for field in ['createdAt', 'modifiedAt', 'lastEmbeddingUpdate', 'lastSyncTime']:
+        for field in ['createdAt', 'modifiedAt']:
             if data.get(field):
                 data[field] = datetime.fromisoformat(data[field].rstrip('Z')).replace(tzinfo=timezone.utc)
         return data
