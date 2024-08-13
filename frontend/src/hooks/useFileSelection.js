@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import * as driveApi from '../services/api/drive';
+import * as driveApi from '../services/drive_service';
 
 /**
  * Custom hook for file selection and related actions in Google Drive.

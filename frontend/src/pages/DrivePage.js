@@ -29,7 +29,7 @@ const DrivePage = () => {
   const [error, setError] = useState(null);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInitialQuery, setChatInitialQuery] = useState('');
   const navigate = useNavigate();
 
   /**
@@ -132,26 +132,14 @@ const DrivePage = () => {
   useEffect(() => {
     getDriveFiles(currentFolder.id);
   }, [currentFolder.id, getDriveFiles]);
-
+  
   /**
    * Handles opening the chat interface
    * @param {string} [query=''] - The initial query for the chat
    */
   const handleOpenChat = (query = '') => {
-    console.log('Opening chat, isChatOpen:', isChatOpen);
     setIsChatOpen(true);
-    if (query) {
-      console.log('Adding initial message:', query);
-      addChatMessage(query, true);
-    }
-  };
-  /**
-   * Adds a new message to the chat
-   * @param {string} text - The message text
-   * @param {boolean} isUser - Whether the message is from the user
-   */
-  const addChatMessage = (text, isUser) => {
-    setChatMessages(prevMessages => [...prevMessages, { text, isUser }]);
+    setChatInitialQuery(query);
   };
 
   /**
@@ -159,8 +147,7 @@ const DrivePage = () => {
    */
   const handleCloseChat = () => {
     setIsChatOpen(false);
-    // Optionally, you might want to clear the chat messages when closing
-    // setChatMessages([]);
+    setChatInitialQuery('');
   };
 
   /**
@@ -187,28 +174,6 @@ const DrivePage = () => {
     console.log('isChatOpen changed:', isChatOpen);
   }, [isChatOpen]);
 
-  /**
-   * Gets the appropriate icon for a file based on its MIME type
-   * @param {string} mimeType - The MIME type of the file
-   * @returns {string} The emoji representing the file type
-   */
-  const getFileIcon = (mimeType) => {
-    if (mimeType === 'application/vnd.google-apps.folder') return '📁';
-    if (mimeType.includes('image')) return '🖼️';
-    if (mimeType.includes('video')) return '🎥';
-    if (mimeType.includes('audio')) return '🎵';
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('spreadsheet')) return '📊';
-    if (mimeType.includes('presentation')) return '📽️';
-    if (mimeType.includes('document')) return '📝';
-    return '📄';
-  };
-
-  // Filter drive content based on active view options
-  const filteredDriveContent = driveContent.filter(file => {
-    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
-    return (filesActive && !isFolder) || (foldersActive && isFolder);
-  });
 
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
@@ -258,12 +223,10 @@ const DrivePage = () => {
         </div>
         <main className="main-content">
           <DriveContent 
-            filteredDriveContent={filteredDriveContent}
             listLayoutActive={listLayoutActive}
             handleFileClick={handleFileClick}
             handleFileSelect={handleFileSelect}
             handleMoreClick={handleMoreClick}
-            getFileIcon={getFileIcon}
             selectedFiles={selectedFiles}
             showActionMenu={showActionMenu}
           />
@@ -325,11 +288,10 @@ const DrivePage = () => {
         handleFolderClick={handleFileClick}
         handleBreadcrumbClick={handleBreadcrumbClick}
       />
-        {isChatOpen && (
-  <ChatInterface
-    messages={chatMessages}
-    addMessage={addChatMessage}
-    onClose={handleCloseChat}
+      {isChatOpen && (
+        <ChatInterface
+          initialQuery={chatInitialQuery}
+          onClose={handleCloseChat}
         />
       )}
     </div>

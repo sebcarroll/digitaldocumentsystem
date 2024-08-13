@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import * as driveApi from '../services/api/drive';
+import * as driveApi from '../services/drive_service';
 import { useFolderNavigation } from './useFolderNavigation';
 
 /**

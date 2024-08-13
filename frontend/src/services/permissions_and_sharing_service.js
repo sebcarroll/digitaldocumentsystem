@@ -6,6 +6,34 @@
 const API_URL = process.env.REACT_APP_API_URL;
 
 /**
+ * Makes an API call to the specified endpoint with the given method and data.
+ * @param {string} endpoint - The API endpoint to call.
+ * @param {string} method - The HTTP method to use (GET, POST, PUT, DELETE).
+ * @param {Object} [data] - The data to send with the request (for POST, PUT).
+ * @returns {Promise<any>} The response data from the API.
+ * @throws {Error} If the API call fails.
+ */
+async function apiCall(endpoint, method, data = null) {
+  const url = `${API_URL}${endpoint}`;
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    throw new Error(`API call failed: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+/**
  * Retrieves the list of people with access to a specific file.
  * @param {string} fileId - The ID of the file.
  * @returns {Promise<Array>} An array of people with access to the file.
@@ -13,7 +41,7 @@ const API_URL = process.env.REACT_APP_API_URL;
  */
 export const getPeopleWithAccess = async (fileId) => {
   try {
-    const data = await api.getPeopleWithAccess(fileId);
+    const data = await apiCall(`/files/${fileId}/permissions`, 'GET');
     return data.permissions || [];
   } catch (error) {
     console.error('Error getting people with access:', error);
@@ -31,7 +59,7 @@ export const getPeopleWithAccess = async (fileId) => {
  */
 export const shareFile = async (fileId, emails, role) => {
   try {
-    const result = await api.shareFile(fileId, emails, role);
+    const result = await apiCall(`/files/${fileId}/share`, 'POST', { emails, role });
     return result;
   } catch (error) {
     console.error('Error sharing file:', error);
@@ -47,7 +75,7 @@ export const shareFile = async (fileId, emails, role) => {
  */
 export const getCurrentUserRole = async (fileId) => {
   try {
-    const { role, id } = await api.getCurrentUserRole(fileId);
+    const { role, id } = await apiCall(`/files/${fileId}/user-role`, 'GET');
     return { role, id };
   } catch (error) {
     console.error('Error getting current user role:', error);
@@ -65,7 +93,7 @@ export const getCurrentUserRole = async (fileId) => {
  */
 export const updatePermission = async (fileId, permissionId, role) => {
   try {
-    const result = await api.updatePermission(fileId, permissionId, role);
+    const result = await apiCall(`/files/${fileId}/permissions/${permissionId}`, 'PUT', { role });
     return result;
   } catch (error) {
     console.error('Error updating permission:', error);
@@ -82,7 +110,7 @@ export const updatePermission = async (fileId, permissionId, role) => {
  */
 export const removePermission = async (fileId, permissionId) => {
   try {
-    const result = await api.removePermission(fileId, permissionId);
+    const result = await apiCall(`/files/${fileId}/permissions/${permissionId}`, 'DELETE');
     return result;
   } catch (error) {
     console.error('Error removing permission:', error);
@@ -100,7 +128,7 @@ export const removePermission = async (fileId, permissionId) => {
  */
 export const updateGeneralAccess = async (fileId, newAccess, linkRole) => {
   try {
-    const result = await api.updateGeneralAccess(fileId, newAccess, linkRole);
+    const result = await apiCall(`/files/${fileId}/general-access`, 'PUT', { newAccess, linkRole });
     return result;
   } catch (error) {
     console.error('Error updating general access:', error);

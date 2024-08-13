@@ -1,18 +1,35 @@
-// DriveContent.js
 import React from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import './driveContent.css';
 
 const DriveContent = ({ 
-  filteredDriveContent, 
+  driveContent, 
   listLayoutActive, 
   handleFileClick, 
   handleFileSelect,
   handleMoreClick, 
-  getFileIcon,
   selectedFiles,
-  showActionMenu
+  showActionMenu,
+  filesActive,
+  foldersActive
 }) => {
+  const getFileIcon = (mimeType) => {
+    if (mimeType === 'application/vnd.google-apps.folder') return '📁';
+    if (mimeType.includes('image')) return '🖼️';
+    if (mimeType.includes('video')) return '🎥';
+    if (mimeType.includes('audio')) return '🎵';
+    if (mimeType.includes('pdf')) return '📄';
+    if (mimeType.includes('spreadsheet')) return '📊';
+    if (mimeType.includes('presentation')) return '📽️';
+    if (mimeType.includes('document')) return '📝';
+    return '📄';
+  };
+
+  const filteredDriveContent = driveContent.filter(file => {
+    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+    return (filesActive && !isFolder) || (foldersActive && isFolder);
+  });
+
   return (
     <div className="drive-content">
       {filteredDriveContent.length === 0 ? (
