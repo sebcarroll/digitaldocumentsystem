@@ -6,22 +6,23 @@ import MaximiseButton from './searchbarSubComponents/searchbarMaximiseButton.js'
 import SendButton from './searchbarSubComponents/searchbarSendButton.js';
 import WelcomeText from './searchbarSubComponents/searchbarWelcomeText.js';
 
-const SearchBar = ({ onSearch, onOpenChat }) => {
+const SearchBar = ({ onOpenChat }) => {
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      onSearch(query);
+      console.log('Submitting query:', query);
       onOpenChat(query);
       setQuery('');
     }
   };
-
+  
   const handleMaximize = () => {
+    console.log('Maximize button clicked');
     onOpenChat();
   };
-
+  
   return (
     <SearchbarBackground>
       <div className="maximise-button-container">

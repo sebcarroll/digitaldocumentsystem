@@ -16,14 +16,26 @@ import StyledPopup from '../components/drivePage/folderAndRenamePopup.js';
 import SharePopup from '../components/drivePage/sharePopup.js';
 import MovePopup from '../components/drivePage/movePopup.js';
 import { useMovePopup } from '../hooks/useMovePopup';
+import ChatInterface from './chatInterface.js';
 
+/**
+ * DrivePage component
+ * Renders the main drive page with file management functionality
+ * @returns {JSX.Element} The rendered DrivePage component
+ */
 const DrivePage = () => {
   const [driveContent, setDriveContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
   const navigate = useNavigate();
 
+  /**
+   * Fetches drive files from the server
+   * @param {string} folderId - The ID of the folder to fetch files from
+   */
   const getDriveFiles = useCallback(async (folderId) => {
     try {
       setLoading(true);
@@ -117,16 +129,43 @@ const DrivePage = () => {
     handleMove: handleMoveFiles,
   } = useMovePopup(selectedFiles, handleMove, setError);
 
-
   useEffect(() => {
     getDriveFiles(currentFolder.id);
   }, [currentFolder.id, getDriveFiles]);
 
-  const handleSearch = (query) => {
-    console.log('Searching for:', query);
-    // Implement your search logic here
+  /**
+   * Handles opening the chat interface
+   * @param {string} [query=''] - The initial query for the chat
+   */
+  const handleOpenChat = (query = '') => {
+    console.log('Opening chat, isChatOpen:', isChatOpen);
+    setIsChatOpen(true);
+    if (query) {
+      console.log('Adding initial message:', query);
+      addChatMessage(query, true);
+    }
+  };
+  /**
+   * Adds a new message to the chat
+   * @param {string} text - The message text
+   * @param {boolean} isUser - Whether the message is from the user
+   */
+  const addChatMessage = (text, isUser) => {
+    setChatMessages(prevMessages => [...prevMessages, { text, isUser }]);
   };
 
+  /**
+   * Handles closing the chat interface
+   */
+  const handleCloseChat = () => {
+    setIsChatOpen(false);
+    // Optionally, you might want to clear the chat messages when closing
+    // setChatMessages([]);
+  };
+
+  /**
+   * Handles the share functionality
+   */
   const handleShare = () => {
     if (selectedFiles.length > 0) {
       setIsSharePopupOpen(true);
@@ -135,13 +174,24 @@ const DrivePage = () => {
     }
   };
 
-
+  /**
+   * Handles closing the share popup
+   */
   const handleCloseSharePopup = useCallback(() => {
     setIsSharePopupOpen(false);
     setShowActionMenu(false);
     setSelectedFiles([]);
   }, []);
 
+  useEffect(() => {
+    console.log('isChatOpen changed:', isChatOpen);
+  }, [isChatOpen]);
+
+  /**
+   * Gets the appropriate icon for a file based on its MIME type
+   * @param {string} mimeType - The MIME type of the file
+   * @returns {string} The emoji representing the file type
+   */
   const getFileIcon = (mimeType) => {
     if (mimeType === 'application/vnd.google-apps.folder') return '📁';
     if (mimeType.includes('image')) return '🖼️';
@@ -154,6 +204,7 @@ const DrivePage = () => {
     return '📄';
   };
 
+  // Filter drive content based on active view options
   const filteredDriveContent = driveContent.filter(file => {
     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
     return (filesActive && !isFolder) || (foldersActive && isFolder);
@@ -182,7 +233,7 @@ const DrivePage = () => {
       </div>
       <div className="main-area">
         <div className="search-bar-container">
-          <SearchBar onSearch={handleSearch} />
+          <SearchBar onOpenChat={handleOpenChat} />
         </div>
         <div className="view-options-container">
         <ViewOptions
@@ -233,36 +284,36 @@ const DrivePage = () => {
         initialValue={fileToRename ? fileToRename.name : ''}
       />
 
-{isSharePopupOpen && (
-  currentUserRole === null ? (
-    <div>Loading user permissions...</div>
-  ) : (
-    <SharePopup
-      isOpen={true}
-      onClose={handleCloseSharePopup}
-      items={selectedFiles}
-      email={email}
-      searchResults={searchResults}
-      peopleWithAccess={peopleWithAccess}
-      generalAccess={generalAccess}
-      isLoading={isSharingLoading} 
-      error={sharingError}   
-      pendingEmails={pendingEmails}
-      currentUserRole={currentUserRole}
-      linkAccessRole={linkAccessRole}
-      onEmailChange={handleEmailChange}
-      onAddPendingEmail={handleAddPendingEmail}
-      onRemovePendingEmail={handleRemovePendingEmail}
-      onAccessLevelChange={handleAccessLevelChange}
-      onRemoveAccess={handleRemoveAccess}
-      onGeneralAccessChange={handleGeneralAccessChange}
-      onCopyLink={handleCopyLink}
-      onShareWithPendingEmails={handleShareWithPendingEmails}
-      onLinkAccessChange={handleLinkAccessRoleChange}
-      currentUserId={currentUserId}
-    />
-  )
-)}
+      {isSharePopupOpen && (
+        currentUserRole === null ? (
+          <div>Loading user permissions...</div>
+        ) : (
+          <SharePopup
+            isOpen={true}
+            onClose={handleCloseSharePopup}
+            items={selectedFiles}
+            email={email}
+            searchResults={searchResults}
+            peopleWithAccess={peopleWithAccess}
+            generalAccess={generalAccess}
+            isLoading={isSharingLoading} 
+            error={sharingError}   
+            pendingEmails={pendingEmails}
+            currentUserRole={currentUserRole}
+            linkAccessRole={linkAccessRole}
+            onEmailChange={handleEmailChange}
+            onAddPendingEmail={handleAddPendingEmail}
+            onRemovePendingEmail={handleRemovePendingEmail}
+            onAccessLevelChange={handleAccessLevelChange}
+            onRemoveAccess={handleRemoveAccess}
+            onGeneralAccessChange={handleGeneralAccessChange}
+            onCopyLink={handleCopyLink}
+            onShareWithPendingEmails={handleShareWithPendingEmails}
+            onLinkAccessChange={handleLinkAccessRoleChange}
+            currentUserId={currentUserId}
+          />
+        )
+      )}
       <MovePopup
         isOpen={isMovePopupOpen}
         onClose={handleCloseMovePopup}
@@ -274,6 +325,13 @@ const DrivePage = () => {
         handleFolderClick={handleFileClick}
         handleBreadcrumbClick={handleBreadcrumbClick}
       />
+        {isChatOpen && (
+  <ChatInterface
+    messages={chatMessages}
+    addMessage={addChatMessage}
+    onClose={handleCloseChat}
+        />
+      )}
     </div>
   );
 };

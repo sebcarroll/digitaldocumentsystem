@@ -43,25 +43,17 @@
   text-overflow: ellipsis;
 }
 
-/*
 
-.icon-container {
+.settings-icon-container {
   display: flex;
+  flex-direction: row; 
   align-items: center;
+  justify-content: flex-end; 
   margin-left: auto;
   position: relative;
   z-index: 11; 
-  overflow: visible;
+  overflow: hidden;
 }
-
-.icon-wrapper {
-  margin-left: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-*/
 
 .icon {
   color: #7a52f4;
@@ -72,6 +64,7 @@
   position: relative;
   z-index: 12; 
   transition: fill 0.3s ease;
+  padding: 0 10px
 }
 
 
@@ -139,8 +132,8 @@
     line-height: normal;
   }
 
-  .icon-wrapper {
-    margin-left: 15px;
+  .settings-icon-container {
+    margin-left: 20px;
   }
 
   .icon {
@@ -154,7 +147,7 @@
     font-size: 14px;
   }
 
-  .icon-wrapper {
+  .settings-icon-container {
     margin-left: 10px;
   }
 

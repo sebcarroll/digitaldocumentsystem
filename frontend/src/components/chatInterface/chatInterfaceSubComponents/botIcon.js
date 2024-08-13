@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../chatInterface.css'
+import '../../../pages/chatInterface.css';
 
 const IconComponent = () => (
   <svg className="bot-icon" viewBox="0 0 640 512">
