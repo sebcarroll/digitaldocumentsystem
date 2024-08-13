@@ -130,3 +130,14 @@ class PineconeManager:
             filter=filter
         )
         return results
+    
+    def delete_document(self, document_id):
+        """
+        Delete a document from the Pinecone index once a query has been completed and the interface has been closed.
+        
+        Args:
+        document_id (str): The ID of the document that is to be deleted.
+
+        Returns:
+
+        """

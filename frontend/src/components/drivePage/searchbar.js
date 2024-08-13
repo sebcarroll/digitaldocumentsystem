@@ -1,24 +1,31 @@
-// SearchBar.js
 import React, { useState } from 'react';
 import './searchbar.css';
-import SearchbarBackground from './searchbarSubComponents/searchbarBackground';
-import InputField from './searchbarSubComponents/searchbarInputField';
-import MaximiseButton from './searchbarSubComponents/searchbarMaximiseButton';
-import SendButton from './searchbarSubComponents/searchbarSendButton';
-import WelcomeText from './searchbarSubComponents/searchbarWelcomeText';
+import SearchbarBackground from './searchbarSubComponents/searchbarBackground.js';
+import InputField from './searchbarSubComponents/searchbarInputField.js';
+import MaximiseButton from './searchbarSubComponents/searchbarMaximiseButton.js';
+import SendButton from './searchbarSubComponents/searchbarSendButton.js';
+import WelcomeText from './searchbarSubComponents/searchbarWelcomeText.js';
 
-const SearchBar = ({ onSearch }) => {
+const SearchBar = ({ onSearch, onOpenChat }) => {
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSearch(query);
+    if (query.trim()) {
+      onSearch(query);
+      onOpenChat(query);
+      setQuery('');
+    }
+  };
+
+  const handleMaximize = () => {
+    onOpenChat();
   };
 
   return (
     <SearchbarBackground>
       <div className="maximise-button-container">
-        <MaximiseButton />
+        <MaximiseButton onClick={handleMaximize} />
       </div>
       <WelcomeText />
       <form onSubmit={handleSubmit} className="search-form">
