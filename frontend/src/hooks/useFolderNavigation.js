@@ -1,26 +1,32 @@
-// useFolderNavigation.js
-import { useState, useCallback } from 'react';
-import { openDriveFile } from '../services/api';  // Import the openDriveFile function
+/**
+ * useFolderNavigation.js
+ * This custom hook manages folder navigation in Google Drive.
+ */
 
-export const useFolderNavigation = (setError) => {
+import { useState, useCallback } from 'react';
+
+/**
+ * Custom hook for folder navigation in Google Drive.
+ * @returns {Object} An object containing folder navigation functions and state.
+ */
+export const useFolderNavigation = () => {
+  // State to keep track of the current folder
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'Home' });
+  // State to maintain the navigation history
   const [folderStack, setFolderStack] = useState([]);
 
-  const handleFileClick = useCallback(async (file) => {
-    if (file.mimeType === 'application/vnd.google-apps.folder') {
-      setFolderStack(prev => [...prev, currentFolder]);
-      setCurrentFolder({ id: file.id, name: file.name });
-    } else {
-      try {
-        const response = await openDriveFile(file.id);
-        window.open(response.webViewLink, '_blank');
-      } catch (error) {
-        console.error('Failed to open file:', error);
-        setError('Failed to open file.');
-      }
-    }
-  }, [currentFolder, setError]);
+  /**
+   * Handle navigation to a folder.
+   * @param {Object} folder - The folder to navigate to.
+   */
+  const navigateToFolder = useCallback((folder) => {
+    setFolderStack(prev => [...prev, currentFolder]);
+    setCurrentFolder(folder);
+  }, [currentFolder]);
 
+  /**
+   * Handle navigation to the previous folder.
+   */
   const handleBackClick = useCallback(() => {
     if (folderStack.length > 0) {
       const previousFolder = folderStack[folderStack.length - 1];
@@ -29,6 +35,10 @@ export const useFolderNavigation = (setError) => {
     }
   }, [folderStack]);
 
+  /**
+   * Handle clicks on breadcrumb items for navigation.
+   * @param {number} index - The index of the clicked breadcrumb item.
+   */
   const handleBreadcrumbClick = useCallback((index) => {
     if (index < folderStack.length) {
       const newStack = folderStack.slice(0, index);
@@ -40,7 +50,8 @@ export const useFolderNavigation = (setError) => {
   return {
     currentFolder,
     folderStack,
-    handleFileClick,
+    setCurrentFolder,
+    navigateToFolder,
     handleBackClick,
     handleBreadcrumbClick
   };
