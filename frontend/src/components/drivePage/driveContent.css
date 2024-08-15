@@ -1,70 +1,193 @@
+/* Main container for drive content */
 .drive-content {
-    padding: 20px;
+  padding: 16px;
+  max-width: 1200px; /* Limit maximum width */
+  margin: 0 auto; /* Center the content */
+}
+
+/* Styles for loading, error, and no files messages */
+.loading, .error, .no-files {
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+}
+
+/* Grid layout for file items */
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Always 4 columns */
+  gap: 16px;
+}
+
+/* Individual file item styles */
+.file-item {
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hover effect for file items */
+.file-item:hover {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+/* Header section of file item */
+.file-header {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #dadce0;
+}
+
+/* File type icon styles */
+.file-type-icon {
+  font-size: 18px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* File name styles */
+.file-name {
+  font-weight: bold;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+
+/* File size styles */
+.file-size {
+  font-size: 11px;
+  color: #5f6368;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* More options icon styles */
+.more-options {
+  cursor: pointer;
+  color: #5f6368;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Thumbnail section styles */
+.file-thumbnail {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background-color: #f8f9fa;
+  min-height: 100px;
+}
+
+/* Thumbnail image styles */
+.file-thumbnail img {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+}
+
+/* Default icon styles (when no thumbnail) */
+.default-icon {
+  font-size: 48px;
+  color: #5f6368;
+}
+
+/* Selected file item styles */
+.file-item.selected {
+  background-color: #e8f0fe;
+}
+
+/* Responsive styles for larger tablets */
+@media screen and (max-width: 1024px) {
+  .file-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
   }
-  
-  .loading, .error, .no-files {
-    text-align: center;
-    padding: 20px;
+}
+
+/* Responsive styles for smaller tablets and larger phones */
+@media screen and (max-width: 768px) {
+  .file-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+  }
+
+  .file-header {
+    padding: 6px;
+  }
+
+  .file-type-icon {
+    font-size: 16px;
+    margin-right: 4px;
+  }
+
+  .file-name {
+    font-size: 13px;
+  }
+
+  .file-size {
+    font-size: 10px;
+    margin-right: 4px;
+  }
+
+  .more-options {
     font-size: 16px;
   }
-  
+}
+
+/* Responsive styles for smaller phones (e.g., iPhone SE) */
+@media screen and (max-width: 375px) {
+  .drive-content {
+    padding: 12px;
+  }
+
   .file-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
+    grid-template-columns: 1fr; /* 1 column */
+    gap: 12px;
   }
-  
-  .file-item {
-    background-color: #fff;
-    border: 1px solid #dadce0;
-    border-radius: 4px;
-    padding: 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+
+  .file-header {
+    flex-wrap: wrap;
+    padding: 4px;
   }
-  
-  .file-actions {
-    cursor: pointer;
-  }
-  
-  .file-item:hover {
-    background-color: #f1f3f4;
-  }
-  
-  .file-icon {
-    font-size: 48px;
-    margin-bottom: 8px;
-  }
-  
+
   .file-name {
+    width: calc(100% - 24px); /* Adjust for icon width */
+    margin-bottom: 2px;
+    font-size: 12px;
+  }
+
+  .file-type-icon {
     font-size: 14px;
-    word-break: break-word;
+    margin-right: 2px;
   }
-  
-  .file-item.selected {
-    background-color: #F2EEFF;
+
+  .file-size {
+    font-size: 9px;
+    margin-right: 2px;
   }
-  
-  @media screen and (max-width: 768px) {
-    .file-grid {
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
+
+  .more-options {
+    font-size: 14px;
   }
-  
-  @media screen and (max-width: 480px) {
-    .file-grid {
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    }
-  
-    .file-icon {
-      font-size: 36px;
-    }
-  
-    .file-name {
-      font-size: 12px;
-    }
+
+  .file-thumbnail {
+    padding: 8px;
+    min-height: 80px;
   }
+
+  .file-thumbnail img {
+    max-height: 90px;
+  }
+
+  .default-icon {
+    font-size: 36px;
+  }
+}

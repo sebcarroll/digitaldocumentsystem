@@ -4,39 +4,40 @@ import { fetchDriveFiles } from '../../services/drive_service.js';
 import { checkAuth } from '../../services/authorisation_service.js';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import './driveContent.css';
+import { useFileSelection } from '../../hooks/useFileSelection.js';
+import { useFolderNavigation } from '../../hooks/useFolderNavigation.js';
 
 /**
  * DriveContent component
  * Renders the content of the drive, including files and folders
  * @param {Object} props - Component props
- * @param {Object} props.currentFolder - The current folder being displayed
  * @param {boolean} props.listLayoutActive - Whether the list layout is active
- * @param {Function} props.handleFileClick - Function to handle file click
- * @param {Function} props.handleFileSelect - Function to handle file selection
- * @param {Function} props.handleMoreClick - Function to handle more options click
- * @param {Array} props.selectedFiles - Array of selected files
- * @param {boolean} props.showActionMenu - Whether to show the action menu
  * @param {boolean} props.filesActive - Whether files are active in the view
  * @param {boolean} props.foldersActive - Whether folders are active in the view
  * @param {Function} props.setError - Function to set error state
  * @param {Function} props.setIsLoading - Function to set loading state
+ * @param {Function} props.onFolderChange - Callback for when the current folder changes
+ * @param {Function} props.onSelectionChange - Callback for when the file selection changes
+ * @param {Function} props.onActionMenuChange - Callback for when the action menu state changes
  * @returns {JSX.Element} The rendered DriveContent component
  */
 const DriveContent = ({ 
-  currentFolder,
-  listLayoutActive, 
-  handleFileClick, 
-  handleFileSelect,
-  handleMoreClick, 
-  selectedFiles,
-  showActionMenu,
+  listLayoutActive,
   filesActive,
   foldersActive,
   setError,
-  setIsLoading
+  setIsLoading,
+  onFolderChange,
+  onSelectionChange,
+  onActionMenuChange
 }) => {
   const [driveContent, setDriveContent] = useState([]);
   const navigate = useNavigate();
+
+  const {
+    currentFolder,
+    navigateToFolder,
+  } = useFolderNavigation();
 
   /**
    * Fetches drive files from the server
@@ -61,9 +62,46 @@ const DriveContent = ({
     }
   }, [navigate, setError, setIsLoading]);
 
+  const {
+    showActionMenu,
+    selectedFiles,
+    handleFileSelect,
+    handleMoreClick,
+  } = useFileSelection(getDriveFiles, currentFolder, setError);
+
   useEffect(() => {
     getDriveFiles(currentFolder.id);
   }, [currentFolder.id, getDriveFiles]);
+
+  useEffect(() => {
+    onFolderChange(currentFolder);
+  }, [currentFolder, onFolderChange]);
+
+  useEffect(() => {
+    onSelectionChange(selectedFiles);
+  }, [selectedFiles, onSelectionChange]);
+
+  useEffect(() => {
+    onActionMenuChange(showActionMenu);
+  }, [showActionMenu, onActionMenuChange]);
+
+  /**
+   * Handles file click event
+   * @param {Object} file - The file that was clicked
+   */
+  const handleFileClick = useCallback((file) => {
+    if (file.mimeType === 'application/vnd.google-apps.folder') {
+      navigateToFolder(file);
+    } else {
+      handleFileSelect(file);
+    }
+  }, [navigateToFolder, handleFileSelect]);
+
+  // Filter the drive content based on active view (files or folders)
+  const filteredDriveContent = driveContent.filter(file => {
+    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+    return (filesActive && !isFolder) || (foldersActive && isFolder);
+  });
 
   /**
    * Gets the appropriate icon for a file based on its MIME type
@@ -82,10 +120,31 @@ const DriveContent = ({
     return '📄';
   };
 
-  const filteredDriveContent = driveContent.filter(file => {
-    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
-    return (filesActive && !isFolder) || (foldersActive && isFolder);
-  });
+  /**
+   * Formats the file size into a human-readable string
+   * @param {string|number} size - The file size in bytes
+   * @returns {string} The formatted file size
+   */
+  const formatFileSize = (size) => {
+    if (size == null || isNaN(size)) {
+      return 'N/A'; // Return 'N/A' for null, undefined, or NaN values
+    }
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let unitIndex = 0;
+    let fileSize = Number(size);
+
+    if (fileSize === 0) {
+      return '0 B';
+    }
+
+    while (fileSize >= 1024 && unitIndex < units.length - 1) {
+      fileSize /= 1024;
+      unitIndex++;
+    }
+
+    return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
+  };
 
   return (
     <div className="drive-content">
@@ -97,17 +156,23 @@ const DriveContent = ({
             <div 
               key={file.id} 
               className={`file-item ${selectedFiles.some(f => f.id === file.id) ? 'selected' : ''}`}
-              onClick={() => showActionMenu ? handleFileSelect(file) : handleFileClick(file)}
+              onClick={() => handleFileClick(file)}
             >
-              <div>
-                <div className="file-icon">{getFileIcon(file.mimeType)}</div>
-                <div className="file-name">{file.name}</div>
+              <div className="file-header">
+                <span className="file-type-icon">{getFileIcon(file.mimeType)}</span>
+                <span className="file-name">{file.name}</span>
+                <span className="file-size">{formatFileSize(file.size)}</span>
+                <MoreVertIcon 
+                  className="more-options"
+                  onClick={(e) => handleMoreClick(e, file)}
+                />
               </div>
-              <div className="file-actions">
-                <MoreVertIcon onClick={(e) => {
-                  e.stopPropagation();
-                  handleMoreClick(e, file);
-                }} />
+              <div className="file-thumbnail">
+                {file.hasThumbnail ? (
+                  <img src={file.thumbnailLink} alt={file.name} />
+                ) : (
+                  <span className="default-icon">{getFileIcon(file.mimeType)}</span>
+                )}
               </div>
             </div>
           ))}

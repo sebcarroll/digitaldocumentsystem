@@ -1,33 +1,40 @@
+/**
+ * SharePopup.js
+ * This component renders a popup for sharing files or folders with other users.
+ */
+
 import React from 'react';
 import './popup.css';
+import { useFileSharing } from '../../hooks/useFileSharing.js';
 
-const SharePopup = ({ 
-  isOpen, 
-  onClose, 
-  items = [], 
-  onCopyLink,
-  email,
-  searchResults,
-  peopleWithAccess,
-  generalAccess,
-  isLoading,
-  error,
-  pendingEmails,
-  onEmailChange,
-  onAddPendingEmail,
-  onRemovePendingEmail,
-  onAccessLevelChange,
-  onRemoveAccess,
-  onGeneralAccessChange,
-  onShareWithPendingEmails,
-  currentUserRole,
-  linkAccessRole,
-  onLinkAccessChange,
-  currentUserId
-}) => {
-  if (!isOpen) return null;
-
-  const currentUserAccess = peopleWithAccess.find(person => person.id === currentUserId);
+/**
+ * SharePopup component
+ * @param {Object} props - Component props
+ * @param {Array} props.items - Files or folders to be shared
+ * @param {Function} props.onClose - Function to call when closing the popup
+ * @returns {React.ReactElement} SharePopup component
+ */
+const SharePopup = ({ items, onClose }) => {
+  const {
+    email,
+    searchResults,
+    peopleWithAccess,
+    generalAccess,
+    pendingEmails,
+    currentUserRole,
+    linkAccessRole,
+    currentUserId,
+    handleEmailChange,
+    handleAddPendingEmail,
+    handleRemovePendingEmail,
+    handleAccessLevelChange,
+    handleRemoveAccess,
+    handleGeneralAccessChange,
+    handleShareWithPendingEmails,
+    handleLinkAccessRoleChange,
+    isSharingLoading,
+    sharingError,
+  } = useFileSharing(items);
 
   const title = items.length > 1 
     ? `Share ${items.length} items` 
@@ -39,17 +46,17 @@ const SharePopup = ({
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
       if (email.trim()) {
-        onAddPendingEmail(email.trim());
+        handleAddPendingEmail(email.trim());
       }
     }
   };
 
   const handleDone = () => {
-    onShareWithPendingEmails();
+    handleShareWithPendingEmails();
     onClose();
   };
 
-  const canEditPermissions = ['writer', 'owner'].includes(currentUserRole.toLowerCase());
+  const canEditPermissions = ['writer', 'owner'].includes(currentUserRole?.toLowerCase());
 
   return (
     <div className="share-popup-overlay">
@@ -60,13 +67,13 @@ const SharePopup = ({
             {pendingEmails.map((pendingEmail, index) => (
               <span key={index} className="pending-email">
                 {pendingEmail}
-                <button onClick={() => onRemovePendingEmail(pendingEmail)}>&times;</button>
+                <button onClick={() => handleRemovePendingEmail(pendingEmail)}>&times;</button>
               </span>
             ))}
             <input
               type="text"
               value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
+              onChange={(e) => handleEmailChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Add people and groups"
             />
@@ -75,7 +82,7 @@ const SharePopup = ({
         {searchResults.length > 0 && canEditPermissions && (
           <ul className="search-results">
             {searchResults.map(person => (
-              <li key={person.id} onClick={() => onAddPendingEmail(person.email)}>
+              <li key={person.id} onClick={() => handleAddPendingEmail(person.email)}>
                 <img src={person.photoUrl} alt={person.name} />
                 {person.name} ({person.email})
               </li>
@@ -83,8 +90,8 @@ const SharePopup = ({
           </ul>
         )}
         <h3>People with access</h3>
-        {isLoading && <p>Loading...</p>}
-        {error && <p className="error">{error}</p>}
+        {isSharingLoading && <p>Loading...</p>}
+        {sharingError && <p className="error">{sharingError}</p>}
         <ul className="people-with-access">
           {peopleWithAccess.map(person => (
             <li key={person.id}>
@@ -95,11 +102,8 @@ const SharePopup = ({
               </div>
               <select
                 value={person.role}
-                onChange={(e) => onAccessLevelChange(person.id, e.target.value)}
-                disabled={
-                  !canEditPermissions ||
-                  person.role.toLowerCase() === 'owner'
-                }
+                onChange={(e) => handleAccessLevelChange(person.id, e.target.value)}
+                disabled={!canEditPermissions || person.role.toLowerCase() === 'owner'}
               >
                 <option value="viewer">Viewer</option>
                 <option value="commenter">Commenter</option>
@@ -107,7 +111,7 @@ const SharePopup = ({
                 {person.role.toLowerCase() === 'owner' && <option value="owner">Owner</option>}
               </select>
               {canEditPermissions && person.role.toLowerCase() !== 'owner' && (
-                <button onClick={() => onRemoveAccess(person.id)}>Remove access</button>
+                <button onClick={() => handleRemoveAccess(person.id)}>Remove access</button>
               )}
             </li>
           ))}
@@ -116,7 +120,7 @@ const SharePopup = ({
           <h3>General access</h3>
           <select
             value={generalAccess}
-            onChange={(e) => onGeneralAccessChange(e.target.value)}
+            onChange={(e) => handleGeneralAccessChange(e.target.value)}
             disabled={!canEditPermissions}
           >
             <option value="Restricted">Restricted</option>
@@ -125,7 +129,7 @@ const SharePopup = ({
           {generalAccess === "Anyone with the link" && (
             <select
               value={linkAccessRole}
-              onChange={(e) => onLinkAccessChange(e.target.value)}
+              onChange={(e) => handleLinkAccessRoleChange(e.target.value)}
               disabled={!canEditPermissions}
             >
               <option value="viewer">Viewer</option>
@@ -135,11 +139,6 @@ const SharePopup = ({
           )}
         </div>
         <div className="popup-actions">
-          {canEditPermissions && (
-            <button onClick={() => items.length > 0 && onCopyLink(items[0])} disabled={items.length === 0}>
-              Copy link
-            </button>
-          )}
           <button onClick={handleDone}>Done</button>
         </div>
       </div>

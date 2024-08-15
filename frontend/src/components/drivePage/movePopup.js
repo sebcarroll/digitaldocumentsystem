@@ -1,21 +1,38 @@
-// MovePopup.js
+/**
+ * MovePopup.js
+ * This component renders a popup for moving files or folders to a different location.
+ */
+
 import React from 'react';
 import './popup.css';
+import { useMovePopup } from '../../hooks/useMovePopup.js';
 
-const MovePopup = ({
-  isOpen,
-  onClose,
-  onMove,
-  selectedFiles,
-  activeTab,
-  currentFolder,
-  folderStack,
-  folders,
-  suggestedFolders,
-  handleTabClick,
-  handleFolderClick,
-  handleBreadcrumbClick,
-}) => {
+/**
+ * MovePopup component
+ * @param {Object} props - Component props
+ * @param {Array} props.initialSelectedFiles - Initially selected files for moving
+ * @param {Function} props.onMoveConfirm - Callback function to execute when move is confirmed
+ * @param {Function} props.setError - Function to set error messages
+ * @returns {React.ReactElement} MovePopup component
+ */
+const MovePopup = ({ initialSelectedFiles, onMoveConfirm, setError }) => {
+  const {
+    isOpen,
+    activeTab,
+    currentFolder,
+    folderStack,
+    folders,
+    suggestedFolders,
+    selectedFiles,
+    handleOpen,
+    handleClose,
+    handleTabClick,
+    handleFolderClick,
+    handleBreadcrumbClick,
+    handleBackClick,
+    handleMoveConfirm,
+  } = useMovePopup(initialSelectedFiles, onMoveConfirm, setError);
+
   if (!isOpen) return null;
 
   const title = selectedFiles.length === 1
@@ -70,10 +87,10 @@ const MovePopup = ({
           }
         </div>
         <div className="popup-actions">
-          <button className="cancel-button" onClick={onClose}>Cancel</button>
+          <button className="cancel-button" onClick={handleClose}>Cancel</button>
           <button
             className="ok-button"
-            onClick={onMove}
+            onClick={handleMoveConfirm}
             disabled={currentFolder.id === 'root'}
           >
             Move

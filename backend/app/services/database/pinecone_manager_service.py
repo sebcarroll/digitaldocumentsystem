@@ -1,6 +1,5 @@
 """Module for managing Pinecone database operations."""
 
-import pinecone
 from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter

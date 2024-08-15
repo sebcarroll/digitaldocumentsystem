@@ -13,7 +13,7 @@ from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain_openai import OpenAIEmbeddings
-from langchain_pinecone import Pinecone
+from langchain_pinecone import PineconeVectorStore as Pinecone
 from pinecone import Pinecone as PineconeClient
 from openai import RateLimitError
 import os
