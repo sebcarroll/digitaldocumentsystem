@@ -9,94 +9,120 @@ html, body, #root {
 .drive-page {
   font-family: Arial, sans-serif;
   color: #202124;
-  display: grid;
-  grid-template-areas:
-    "header header"
-    "sidebar main-area";
-  grid-template-columns: 250px 1fr;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
 
 .drive-header {
-  grid-area: header;
   position: sticky;
   top: 0;
   z-index: 1000;
   background-color: #fff;
   border-bottom: 1px solid #dadce0;
+  padding: 10px;
 }
 
 .sidebar {
-  grid-area: sidebar;
+  display: none; /* Hidden by default on mobile */
 }
 
 .main-area {
-  grid-area: main-area;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  height: calc(100vh - 80px); 
+  height: calc(100vh - 60px); /* Adjust based on header height */
 }
 
 .search-bar-container {
   background-color: #ffffff;
-  padding: 16px 24px;
+  padding: 10px;
   border-bottom: 1px solid #dadce0;
 }
 
 .view-options-container {
   background-color: #ffffff;
   position: sticky;
-  top: 80px;
+  top: 60px; /* Adjust based on header height */
   z-index: 999;
+  padding: 10px;
 }
 
 .main-content {
   flex-grow: 1;
+  padding: 10px;
 }
 
 .drive-header button {
   background-color: #fff;
   border: 1px solid #dadce0;
   border-radius: 4px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
+  margin: 2px;
 }
 
 .drive-header button:hover {
   background-color: #f1f3f4;
 }
 
-@media screen and (max-width: 768px) {
+.chat-interface-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.3s ease-in-out;
+}
+
+@media screen and (min-width: 768px) {
   .drive-page {
+    display: grid;
     grid-template-areas:
-      "header"
-      "sidebar"
-      "main-area";
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto 1fr;
+      "header header"
+      "sidebar main-area";
+    grid-template-columns: 250px 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .drive-header {
+    grid-area: header;
+    padding: 16px;
   }
 
   .sidebar {
-    border-right: none;
-    border-bottom: 1px solid #dadce0;
+    grid-area: sidebar;
+    display: block;
+    border-right: 1px solid #dadce0;
   }
 
   .main-area {
-    height: auto;
+    grid-area: main-area;
+    height: calc(100vh - 80px); 
   }
-}
 
-@media screen and (max-width: 480px) {
-  .drive-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .search-bar-container {
+    padding: 16px 24px;
+  }
+
+  .view-options-container {
+    top: 80px; 
+    padding: 16px;
+  }
+
+  .main-content {
+    padding: 16px;
   }
 
   .drive-header button {
-    margin-top: 10px;
+    padding: 8px 16px;
+    font-size: 14px;
+    margin: 0 5px;
   }
 }

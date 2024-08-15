@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { fetchDriveFiles, checkAuth } from '../services/api';
+import React, { useState, useCallback, useEffect } from 'react';
 import './DrivePage.css';
+import '../services/drive_service.js';
+import '../services/authorisation_service.js';
+import '../services/permissions_and_sharing_service.js'
+import '../services/users_service.js'
 import Sidebar from '../components/drivePage/sidebar.js';
 import Header from '../components/drivePage/header.js';
 import SearchBar from '../components/drivePage/searchbar.js';
@@ -24,38 +26,17 @@ import ChatInterface from './chatInterface.js';
  * @returns {JSX.Element} The rendered DrivePage component
  */
 const DrivePage = () => {
-  const [driveContent, setDriveContent] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false); 
   const [chatInitialQuery, setChatInitialQuery] = useState('');
-  const navigate = useNavigate();
 
-  /**
-   * Fetches drive files from the server
-   * @param {string} folderId - The ID of the folder to fetch files from
-   */
-  const getDriveFiles = useCallback(async (folderId) => {
-    try {
-      setLoading(true);
-      const authStatus = await checkAuth();
-      if (!authStatus.authenticated) {
-        navigate('/login');
-        return;
-      }
-
-      const content = await fetchDriveFiles(folderId);
-      setDriveContent(content.files || []);
-    } catch (error) {
-      console.error('Failed to fetch drive files:', error);
-      setError('Failed to load Google Drive files.');
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate]);
-
-  const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation();
+  const { currentFolder,
+    folderStack,
+    handleBackClick,
+    handleBreadcrumbClick,
+    handleFileClick } = useFolderNavigation();
   
   const {
     showActionMenu,
@@ -75,7 +56,7 @@ const DrivePage = () => {
     setShowActionMenu,
     setIsRenamePopupOpen,
     setSelectedFiles,
-  } = useFileSelection(getDriveFiles, currentFolder, setError);
+  } = useFileSelection(currentFolder, setError, setIsLoading);
 
   const {
     isNewFolderPopupOpen,
@@ -86,7 +67,7 @@ const DrivePage = () => {
     handleCreateDoc,
     handleCreateSheet,
     setIsNewFolderPopupOpen
-  } = useFileOperations(currentFolder, getDriveFiles, setError);
+  } = useFileOperations(currentFolder, setError, setIsLoading);
 
   const { 
     filesActive, 
@@ -103,7 +84,6 @@ const DrivePage = () => {
     searchResults,
     peopleWithAccess,
     generalAccess,
-    isLoading,
     pendingEmails,
     currentUserRole,
     linkAccessRole,
@@ -120,35 +100,31 @@ const DrivePage = () => {
     fetchPeopleWithAccess,
     isSharingLoading,  
     sharingError,    
-  } = useFileSharing(selectedFiles);
+  } = useFileSharing(selectedFiles, setError, setIsLoading);
 
   const {
     isOpen: isMovePopupOpen,
     handleOpen: handleOpenMovePopup,
     handleClose: handleCloseMovePopup,
     handleMove: handleMoveFiles,
-  } = useMovePopup(selectedFiles, handleMove, setError);
+  } = useMovePopup(selectedFiles, handleMove, setError, setIsLoading);
 
-  useEffect(() => {
-    getDriveFiles(currentFolder.id);
-  }, [currentFolder.id, getDriveFiles]);
-  
   /**
    * Handles opening the chat interface
-   * @param {string} [query=''] - The initial query for the chat
+   * @param {string} query - The initial query for the chat
    */
-  const handleOpenChat = (query = '') => {
+  const handleOpenChat = useCallback((query) => {
     setIsChatOpen(true);
     setChatInitialQuery(query);
-  };
+  }, []);
 
   /**
    * Handles closing the chat interface
    */
-  const handleCloseChat = () => {
+  const handleCloseChat = useCallback(() => {
     setIsChatOpen(false);
     setChatInitialQuery('');
-  };
+  }, []);
 
   /**
    * Handles the share functionality
@@ -168,18 +144,17 @@ const DrivePage = () => {
     setIsSharePopupOpen(false);
     setShowActionMenu(false);
     setSelectedFiles([]);
-  }, []);
+  }, [setShowActionMenu, setSelectedFiles]);
 
   useEffect(() => {
     console.log('isChatOpen changed:', isChatOpen);
   }, [isChatOpen]);
 
-
-  if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return (
     <div className="drive-page">
+      {isLoading && <div className="loading-overlay">Loading...</div>}
       <div className="drive-header">
         <Header 
           folderStack={folderStack}
@@ -201,34 +176,39 @@ const DrivePage = () => {
           <SearchBar onOpenChat={handleOpenChat} />
         </div>
         <div className="view-options-container">
-        <ViewOptions
-          filesActive={filesActive}
-          foldersActive={foldersActive}
-          listLayoutActive={listLayoutActive}
-          onFilesClick={handleFilesClick}
-          onFoldersClick={handleFoldersClick}
-          onListLayoutClick={handleListLayoutClick}
-          onGridLayoutClick={handleGridLayoutClick}
-          showActionMenu={showActionMenu}
-          selectedFiles={selectedFiles}
-          onMove={handleOpenMovePopup}
-          onDelete={handleDelete}
-          onCopyLink={handleCopyLink}
-          onRename={openRenamePopup}
-          onMakeCopy={handleMakeCopy}
-          onCloseActionMenu={handleCloseActionMenu}
-          onShare={handleShare}
-          isFolder={isFolder}
-        />
+          <ViewOptions
+            filesActive={filesActive}
+            foldersActive={foldersActive}
+            listLayoutActive={listLayoutActive}
+            onFilesClick={handleFilesClick}
+            onFoldersClick={handleFoldersClick}
+            onListLayoutClick={handleListLayoutClick}
+            onGridLayoutClick={handleGridLayoutClick}
+            showActionMenu={showActionMenu}
+            selectedFiles={selectedFiles}
+            onMove={handleOpenMovePopup}
+            onDelete={handleDelete}
+            onCopyLink={handleCopyLink}
+            onRename={openRenamePopup}
+            onMakeCopy={handleMakeCopy}
+            onCloseActionMenu={handleCloseActionMenu}
+            onShare={handleShare}
+            isFolder={isFolder}
+          />
         </div>
         <main className="main-content">
           <DriveContent 
+            currentFolder={currentFolder}
             listLayoutActive={listLayoutActive}
             handleFileClick={handleFileClick}
             handleFileSelect={handleFileSelect}
             handleMoreClick={handleMoreClick}
             selectedFiles={selectedFiles}
             showActionMenu={showActionMenu}
+            filesActive={filesActive}
+            foldersActive={foldersActive}
+            setError={setError}
+            setIsLoading={setIsLoading}
           />
         </main>
       </div>
@@ -246,7 +226,6 @@ const DrivePage = () => {
         title="Rename"
         initialValue={fileToRename ? fileToRename.name : ''}
       />
-
       {isSharePopupOpen && (
         currentUserRole === null ? (
           <div>Loading user permissions...</div>
@@ -284,15 +263,16 @@ const DrivePage = () => {
         selectedFiles={selectedFiles}
         currentFolder={currentFolder}
         folderStack={folderStack}
-        folders={driveContent.filter(item => item.mimeType === 'application/vnd.google-apps.folder')}
         handleFolderClick={handleFileClick}
         handleBreadcrumbClick={handleBreadcrumbClick}
       />
       {isChatOpen && (
-        <ChatInterface
-          initialQuery={chatInitialQuery}
-          onClose={handleCloseChat}
-        />
+        <div className="chat-interface-container">
+          <ChatInterface
+            initialQuery={chatInitialQuery}
+            onClose={handleCloseChat}
+          />
+        </div>
       )}
     </div>
   );

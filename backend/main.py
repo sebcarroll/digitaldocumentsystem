@@ -15,6 +15,7 @@ from app.routes.drive_file_operations_routes import drive_file_ops_bp
 from app.routes.drive_folder_operations_routes import drive_folder_ops_bp
 from app.routes.drive_permissions_routes import drive_permissions_bp
 from app.routes.drive_sharing_routes import drive_sharing_bp
+from app.routes.chat_interface_routes import chat_bp
 # from celery_app import init_celery
 # from celery_app import celery_app
 from config import DevelopmentConfig, ProductionConfig
@@ -57,6 +58,7 @@ def create_app():
     app.register_blueprint(drive_folder_ops_bp)
     app.register_blueprint(drive_permissions_bp)
     app.register_blueprint(drive_sharing_bp)
+    app.register_blueprint(chat_bp)
 
     @app.route('/')
     def home():
