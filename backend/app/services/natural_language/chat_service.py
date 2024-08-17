@@ -21,6 +21,7 @@ import os
 logger = logging.getLogger(__name__)
 
 def retry_with_exponential_backoff(
+
     func,
     initial_delay: float = 1,
     exponential_base: float = 2,

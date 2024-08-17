@@ -2,7 +2,7 @@ import React from 'react';
 import '../header.css';
 
 const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
-  const getBreadcrumbs = () => {
+  const renderBreadcrumbs = () => {
     let breadcrumbs = [...folderStack, currentFolder];
     if (breadcrumbs.length > 3) {
       breadcrumbs = [{ id: '...', name: '...' }, ...breadcrumbs.slice(-2)];
@@ -29,7 +29,7 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
 
   return (
     <div className="breadcrumbs">
-      {getBreadcrumbs()}
+      {renderBreadcrumbs()}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useDrive } from '../../contexts/driveContext';
 import '../sidebar.css';
 
 import FileUploadIcon from '@mui/icons-material/FileUpload';
@@ -8,7 +9,15 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
-const NewItemButton = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, onCreateSheet }) => {
+const NewItemButton = () => {
+  const {
+    handleCreateFolder,
+    handleUploadFile,
+    handleUploadFolder,
+    handleCreateDoc,
+    handleCreateSheet
+  } = useDrive();
+
   const [isOpen, setIsOpen] = useState(false);
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -39,7 +48,7 @@ const NewItemButton = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateD
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      onUploadFile(file);
+      handleUploadFile(file);
     }
     event.target.value = '';
     setIsOpen(false);
@@ -48,7 +57,7 @@ const NewItemButton = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateD
   const handleFolderChange = (event) => {
     const files = event.target.files;
     if (files.length > 0) {
-      onUploadFolder(files);
+      handleUploadFolder(files);
     }
     event.target.value = '';
     setIsOpen(false);
@@ -66,14 +75,13 @@ const NewItemButton = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateD
   };
 
   const menuItems = [
-    { icon: <CreateNewFolderIcon />, text: 'New Folder', action: onCreateFolder },
+    { icon: <CreateNewFolderIcon />, text: 'New Folder', action: handleCreateFolder },
     { icon: <FileUploadIcon />, text: 'Upload File', action: () => fileInputRef.current.click() },
     { icon: <DriveFolderUploadIcon />, text: 'Upload Folder', action: () => folderInputRef.current.click() },
-    { icon: <DescriptionIcon />, text: 'New Google Doc', action: onCreateDoc },
-    { icon: <TableChartIcon />, text: 'New Google Sheet', action: onCreateSheet },
+    { icon: <DescriptionIcon />, text: 'New Google Doc', action: handleCreateDoc },
+    { icon: <TableChartIcon />, text: 'New Google Sheet', action: handleCreateSheet },
   ];
   
-
   return (
     <div className="new-item-button-container" ref={containerRef}>
       <button className="new-item-button" onClick={handleButtonClick}>+ New</button>

@@ -1,104 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { fetchDriveFiles } from '../../services/drive_service.js';
-import { checkAuth } from '../../services/authorisation_service.js';
+// src/components/drivePage/DriveContent.js
+
+import React, { useEffect } from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import './driveContent.css';
-import { useFileSelection } from '../../hooks/useFileSelection.js';
-import { useFolderNavigation } from '../../hooks/useFolderNavigation.js';
+import { useDrive } from '../../contexts/driveContext';
 
 /**
  * DriveContent component
  * Renders the content of the drive, including files and folders
- * @param {Object} props - Component props
- * @param {boolean} props.listLayoutActive - Whether the list layout is active
- * @param {boolean} props.filesActive - Whether files are active in the view
- * @param {boolean} props.foldersActive - Whether folders are active in the view
- * @param {Function} props.setError - Function to set error state
- * @param {Function} props.setIsLoading - Function to set loading state
- * @param {Function} props.onFolderChange - Callback for when the current folder changes
- * @param {Function} props.onSelectionChange - Callback for when the file selection changes
- * @param {Function} props.onActionMenuChange - Callback for when the action menu state changes
- * @returns {JSX.Element} The rendered DriveContent component
  */
-const DriveContent = ({ 
-  listLayoutActive,
-  filesActive,
-  foldersActive,
-  setError,
-  setIsLoading,
-  onFolderChange,
-  onSelectionChange,
-  onActionMenuChange
-}) => {
-  const [driveContent, setDriveContent] = useState([]);
-  const navigate = useNavigate();
-
+const DriveContent = () => {
   const {
+    driveFiles,
     currentFolder,
-    navigateToFolder,
-  } = useFolderNavigation();
-
-  /**
-   * Fetches drive files from the server
-   * @param {string} folderId - The ID of the folder to fetch files from
-   */
-  const getDriveFiles = useCallback(async (folderId) => {
-    try {
-      setIsLoading(true);
-      const authStatus = await checkAuth();
-      if (!authStatus.authenticated) {
-        navigate('/login');
-        return;
-      }
-
-      const content = await fetchDriveFiles(folderId);
-      setDriveContent(content.files || []);
-    } catch (error) {
-      console.error('Failed to fetch drive files:', error);
-      setError('Failed to load Google Drive files.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigate, setError, setIsLoading]);
-
-  const {
-    showActionMenu,
     selectedFiles,
-    handleFileSelect,
+    handleFileClick,
     handleMoreClick,
-  } = useFileSelection(getDriveFiles, currentFolder, setError);
+    getDriveFiles,
+    listLayoutActive,
+    filesActive,
+    foldersActive,
+  } = useDrive();
 
   useEffect(() => {
     getDriveFiles(currentFolder.id);
   }, [currentFolder.id, getDriveFiles]);
 
-  useEffect(() => {
-    onFolderChange(currentFolder);
-  }, [currentFolder, onFolderChange]);
-
-  useEffect(() => {
-    onSelectionChange(selectedFiles);
-  }, [selectedFiles, onSelectionChange]);
-
-  useEffect(() => {
-    onActionMenuChange(showActionMenu);
-  }, [showActionMenu, onActionMenuChange]);
-
-  /**
-   * Handles file click event
-   * @param {Object} file - The file that was clicked
-   */
-  const handleFileClick = useCallback((file) => {
-    if (file.mimeType === 'application/vnd.google-apps.folder') {
-      navigateToFolder(file);
-    } else {
-      handleFileSelect(file);
-    }
-  }, [navigateToFolder, handleFileSelect]);
-
   // Filter the drive content based on active view (files or folders)
-  const filteredDriveContent = driveContent.filter(file => {
+  const filteredDriveContent = driveFiles.filter(file => {
     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
     return (filesActive && !isFolder) || (foldersActive && isFolder);
   });
@@ -127,7 +56,7 @@ const DriveContent = ({
    */
   const formatFileSize = (size) => {
     if (size == null || isNaN(size)) {
-      return 'N/A'; // Return 'N/A' for null, undefined, or NaN values
+      return 'N/A';
     }
 
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -164,7 +93,10 @@ const DriveContent = ({
                 <span className="file-size">{formatFileSize(file.size)}</span>
                 <MoreVertIcon 
                   className="more-options"
-                  onClick={(e) => handleMoreClick(e, file)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoreClick(e, file);
+                  }}
                 />
               </div>
               <div className="file-thumbnail">

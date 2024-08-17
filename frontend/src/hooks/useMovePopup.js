@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import * as driveApi from '../services/drive_service';
-import { useFolderNavigation } from './useFolderNavigation';
+import { useFolderNavigation } from './useFolderNavigation.js';
 
 /**
  * Custom hook for managing the move file/folder popup UI.

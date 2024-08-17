@@ -21,7 +21,7 @@ const FolderAndRenamePopup = ({ currentFolder, getDriveFiles, setError }) => {
     isNewFolderPopupOpen, 
     handleCreateFolder, 
     setIsNewFolderPopupOpen 
-  } = useFileOperations(currentFolder, getDriveFiles, setError);
+  } = useFileOperations(currentFolder || { id: 'root' }, getDriveFiles, setError);
 
   const {
     isRenamePopupOpen,
@@ -29,7 +29,7 @@ const FolderAndRenamePopup = ({ currentFolder, getDriveFiles, setError }) => {
     handleRename,
     setIsRenamePopupOpen,
     isFolder
-  } = useFileSelection(getDriveFiles, currentFolder, setError);
+  } = useFileSelection(getDriveFiles, currentFolder || { id: 'root' }, setError);
 
   const [inputValue, setInputValue] = useState('');
   const [error, setInputError] = useState('');

@@ -12,7 +12,7 @@ import logging
 drive_bp = Blueprint('drive', __name__)
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @drive_bp.route('/drive')

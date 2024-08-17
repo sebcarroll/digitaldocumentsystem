@@ -1,46 +1,39 @@
-// Sidebar.js
+// src/components/Sidebar.js
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import NewItemButton from './sidebarSubComponents/newItemButton.js';
+import { useDrive } from '../../contexts/driveContext';
+import NewItemButton from '../drivePage/sidebarSubComponents/newItemButton';
+import SidebarButton from '../drivePage/sidebarSubComponents/sidebarPageButton';
 import './sidebar.css';
-import SidebarButton from './sidebarSubComponents/sidebarPageButton.js';
 
-const Sidebar = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, onCreateSheet }) => {
-    const location = useLocation();
-  
-    const sidebarItems = [
-      { path: '/', label: 'Home' },
-      { path: '/my-archive', label: 'My Archive' },
-      { path: '/shared-with-me', label: 'Shared with me' },
-      { path: '/recent', label: 'Recent' },
-      { path: '/bin', label: 'Bin' }
-    ];
-  
-    return (
-      <aside className="sidebar">
-        <div className="new-button-container">
-          <NewItemButton
-            onCreateFolder={onCreateFolder}
-            onUploadFile={onUploadFile}
-            onUploadFolder={onUploadFolder}
-            onCreateDoc={onCreateDoc}
-            onCreateSheet={onCreateSheet}
+const Sidebar = () => {
+  const location = useLocation();
+  const {
+    sidebarItems,
+    openCreateFolderPopup,
+    handleUploadFile,
+    handleUploadFolder,
+    handleCreateDoc,
+    handleCreateSheet
+  } = useDrive();
+
+  return (
+    <aside className="sidebar">
+      <div className="new-button-container">
+        <NewItemButton />
+      </div>
+      <nav className="sidebar-nav">
+        {sidebarItems.map((item) => (
+          <SidebarButton
+            key={item.path}
+            to={item.path}
+            label={item.label}
+            isActive={location.pathname === item.path}
           />
-        </div>
-        <nav className="sidebar-nav">
-          {sidebarItems.map((item) => {
-            return (
-              <SidebarButton
-                key={item.path}
-                to={item.path}
-                label={item.label}
-                isActive={location.pathname === item.path}
-              />
-            );
-          })}
-        </nav>
-      </aside>
-    );
-  };
-  
-  export default Sidebar;
+        ))}
+      </nav>
+    </aside>
+  );
+};
+
+export default Sidebar;

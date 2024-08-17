@@ -4,12 +4,12 @@
  */
 
 import { useState, useCallback } from 'react';
-import * as driveApi from '../services/drive_service.js'
+import * as driveApi from '../services/drive_service.js';
 
 /**
  * Custom hook for file operations in Google Drive.
  * @param {Object} currentFolder - The current folder object.
- * @param {Function} getDriveFiles - Function to refresh the file list.
+ * @param {Function} getDriveFiles - Function to fetch drive files.
  * @param {Function} setError - Function to set error messages.
  * @returns {Object} An object containing file operation functions and state.
  */
@@ -97,6 +97,6 @@ export const useFileOperations = (currentFolder, getDriveFiles, setError) => {
     handleUploadFolder,
     handleCreateDoc,
     handleCreateSheet,
-    setIsNewFolderPopupOpen
+    setIsNewFolderPopupOpen,
   };
 };
