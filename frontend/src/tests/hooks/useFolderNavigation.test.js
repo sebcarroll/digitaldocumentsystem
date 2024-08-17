@@ -1,108 +1,118 @@
-// useFolderNavigation.test.js
+// src/hooks/__tests__/useFolderNavigation.test.js
+
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useFolderNavigation } from '../../hooks/useFolderNavigation';
 import { openDriveFile } from '../../services/drive_service';
 
-// Mock the drive_service
-jest.mock('../../services/drive_service', () => ({
-  openDriveFile: jest.fn(),
-}));
+jest.mock('../../services/drive_service');
 
-/**
- * Test suite for the useFolderNavigation hook.
- * These tests cover the main functionality of the hook, including
- * initialization, navigation, file opening, and error handling.
- */
 describe('useFolderNavigation', () => {
   let setError;
+  let fetchDriveFiles;
+  let windowOpenSpy;
 
   beforeEach(() => {
     setError = jest.fn();
-    window.open = jest.fn();
+    fetchDriveFiles = jest.fn().mockResolvedValue();
+    windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
   });
 
-  /**
-   * Test case: Initialization
-   * Ensures that the hook initializes with the root folder and an empty stack.
-   */
-  it('should initialize with root folder', () => {
-    const { result } = renderHook(() => useFolderNavigation(setError));
+  afterEach(() => {
+    jest.clearAllMocks();
+    windowOpenSpy.mockRestore();
+  });
+
+  test('should initialize with root folder', () => {
+    const { result } = renderHook(() => useFolderNavigation(setError, fetchDriveFiles));
     expect(result.current.currentFolder).toEqual({ id: 'root', name: 'Home' });
     expect(result.current.folderStack).toEqual([]);
   });
 
-  /**
-   * Test case: Folder navigation
-   * Verifies that clicking on a folder updates the current folder and stack correctly.
-   */
-  it('should handle folder click', () => {
-    const { result } = renderHook(() => useFolderNavigation(setError));
-    act(() => {
-      result.current.handleFileClick({ id: 'folder1', name: 'Folder 1', mimeType: 'application/vnd.google-apps.folder' });
+  test('should handle folder click', async () => {
+    const { result } = renderHook(() => useFolderNavigation(setError, fetchDriveFiles));
+    const folder = { id: 'folder1', name: 'Folder 1', mimeType: 'application/vnd.google-apps.folder' };
+
+    await act(async () => {
+      await result.current.handleFileClick(folder);
     });
+
     expect(result.current.currentFolder).toEqual({ id: 'folder1', name: 'Folder 1' });
     expect(result.current.folderStack).toEqual([{ id: 'root', name: 'Home' }]);
+    expect(fetchDriveFiles).toHaveBeenCalledWith('folder1');
   });
 
-  /**
-   * Test case: File opening
-   * Checks if clicking on a file triggers the openDriveFile function and opens the file in a new tab.
-   */
-  it('should handle file click', async () => {
+  test('should handle file click', async () => {
     openDriveFile.mockResolvedValue({ webViewLink: 'https://example.com' });
-    const { result } = renderHook(() => useFolderNavigation(setError));
+    const { result } = renderHook(() => useFolderNavigation(setError, fetchDriveFiles));
+    const file = { id: 'file1', name: 'File 1', mimeType: 'application/pdf' };
+
     await act(async () => {
-      await result.current.handleFileClick({ id: 'file1', name: 'File 1', mimeType: 'application/pdf' });
+      await result.current.handleFileClick(file);
     });
+
     expect(openDriveFile).toHaveBeenCalledWith('file1');
-    expect(window.open).toHaveBeenCalledWith('https://example.com', '_blank');
+    expect(windowOpenSpy).toHaveBeenCalledWith('https://example.com', '_blank');
   });
 
-  /**
-   * Test case: Error handling
-   * Ensures that errors during file opening are caught and the error state is updated.
-   */
-  it('should handle file open error', async () => {
-    openDriveFile.mockRejectedValue(new Error('Failed to open'));
-    const { result } = renderHook(() => useFolderNavigation(setError));
+  test('should handle back click', async () => {
+    const { result } = renderHook(() => useFolderNavigation(setError, fetchDriveFiles));
+    const folder1 = { id: 'folder1', name: 'Folder 1', mimeType: 'application/vnd.google-apps.folder' };
+    const folder2 = { id: 'folder2', name: 'Folder 2', mimeType: 'application/vnd.google-apps.folder' };
+
     await act(async () => {
-      await result.current.handleFileClick({ id: 'file1', name: 'File 1', mimeType: 'application/pdf' });
+      await result.current.handleFileClick(folder1);
+      await result.current.handleFileClick(folder2);
     });
+
+    await act(async () => {
+      await result.current.handleBackClick();
+    });
+
+    expect(result.current.currentFolder).toEqual({ id: 'folder1', name: 'Folder 1' });
+    expect(result.current.folderStack).toEqual([{ id: 'root', name: 'Home' }]);
+    expect(fetchDriveFiles).toHaveBeenCalledWith('folder1');
+  });
+
+  test('should handle breadcrumb click', async () => {
+    const { result } = renderHook(() => useFolderNavigation(setError, fetchDriveFiles));
+    const folder1 = { id: 'folder1', name: 'Folder 1', mimeType: 'application/vnd.google-apps.folder' };
+    const folder2 = { id: 'folder2', name: 'Folder 2', mimeType: 'application/vnd.google-apps.folder' };
+
+    await act(async () => {
+      await result.current.handleFileClick(folder1);
+      await result.current.handleFileClick(folder2);
+    });
+
+    await act(async () => {
+      await result.current.handleBreadcrumbClick(0);
+    });
+
+    expect(result.current.currentFolder).toEqual({ id: 'root', name: 'Home' });
+    expect(result.current.folderStack).toEqual([]);
+    expect(fetchDriveFiles).toHaveBeenCalledWith('root');
+  });
+
+  test('should handle fetch folder contents error', async () => {
+    fetchDriveFiles.mockRejectedValue(new Error('Fetch error'));
+    const { result } = renderHook(() => useFolderNavigation(setError, fetchDriveFiles));
+    const folder = { id: 'folder1', name: 'Folder 1', mimeType: 'application/vnd.google-apps.folder' };
+
+    await act(async () => {
+      await result.current.handleFileClick(folder);
+    });
+
+    expect(setError).toHaveBeenCalledWith('Failed to fetch folder contents.');
+  });
+
+  test('should handle open file error', async () => {
+    openDriveFile.mockRejectedValue(new Error('Open file error'));
+    const { result } = renderHook(() => useFolderNavigation(setError, fetchDriveFiles));
+    const file = { id: 'file1', name: 'File 1', mimeType: 'application/pdf' };
+
+    await act(async () => {
+      await result.current.handleFileClick(file);
+    });
+
     expect(setError).toHaveBeenCalledWith('Failed to open file.');
-  });
-
-  /**
-   * Test case: Back navigation
-   * Verifies that the back functionality correctly returns to the previous folder.
-   */
-  it('should handle back click', () => {
-    const { result } = renderHook(() => useFolderNavigation(setError));
-    act(() => {
-      result.current.handleFileClick({ id: 'folder1', name: 'Folder 1', mimeType: 'application/vnd.google-apps.folder' });
-    });
-    act(() => {
-      result.current.handleBackClick();
-    });
-    expect(result.current.currentFolder).toEqual({ id: 'root', name: 'Home' });
-    expect(result.current.folderStack).toEqual([]);
-  });
-
-  /**
-   * Test case: Breadcrumb navigation
-   * Checks if clicking on a breadcrumb correctly navigates to the specified folder in the hierarchy.
-   */
-  it('should handle breadcrumb click', () => {
-    const { result } = renderHook(() => useFolderNavigation(setError));
-    act(() => {
-      result.current.handleFileClick({ id: 'folder1', name: 'Folder 1', mimeType: 'application/vnd.google-apps.folder' });
-    });
-    act(() => {
-      result.current.handleFileClick({ id: 'folder2', name: 'Folder 2', mimeType: 'application/vnd.google-apps.folder' });
-    });
-    act(() => {
-      result.current.handleBreadcrumbClick(0);
-    });
-    expect(result.current.currentFolder).toEqual({ id: 'root', name: 'Home' });
-    expect(result.current.folderStack).toEqual([]);
   });
 });

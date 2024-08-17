@@ -64,7 +64,7 @@ def drive():
         return jsonify({"error": f"An error occurred: {error}"}), 500
     finally:
         logger.info("Exiting drive() function")
-
+        
 @drive_bp.route('/drive/<file_id>/open')
 def open_file(file_id):
     """
@@ -84,8 +84,8 @@ def open_file(file_id):
     logger.info(f"Entering open_file() function for file ID: {file_id}")
     try:
         drive_core = get_drive_core(session)
-        web_view_link, mime_type = drive_core.get_file_web_view_link(file_id)
-        logger.info(f"Successfully retrieved web view link for file ID: {file_id}")
+        web_view_link, mime_type = drive_core.get_file_details(file_id)
+        logger.info(f"Successfully retrieved web view link and MIME type for file ID: {file_id}")
         return jsonify({"webViewLink": web_view_link, "mimeType": mime_type})
     except ValueError as e:
         logger.error(f"ValueError occurred: {str(e)}")

@@ -1,6 +1,6 @@
 /**
- * drive.js
- * This file contains Google Drive-related API calls.
+ * drive_service.js
+ * This file contains functions for interacting with the Google Drive API via our backend.
  */
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -16,7 +16,8 @@ export const fetchDriveFiles = async (folderId = 'root') => {
     credentials: 'include',
   });
   if (!response.ok) {
-    throw new Error('Failed to fetch drive files');
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch drive files: ${response.status} ${response.statusText} - ${errorText}`);
   }
   return response.json();
 };
@@ -24,7 +25,7 @@ export const fetchDriveFiles = async (folderId = 'root') => {
 /**
  * Opens a specific file in Google Drive.
  * @param {string} fileId - The ID of the file to open.
- * @returns {Promise<Object>} The file's details and open status.
+ * @returns {Promise<Object>} An object containing the webViewLink and mimeType of the file.
  * @throws {Error} If opening the file fails.
  */
 export const openDriveFile = async (fileId) => {
@@ -32,7 +33,8 @@ export const openDriveFile = async (fileId) => {
     credentials: 'include',
   });
   if (!response.ok) {
-    throw new Error('Failed to open drive file');
+    const errorText = await response.text();
+    throw new Error(`Failed to open drive file: ${response.status} ${response.statusText} - ${errorText}`);
   }
   return response.json();
 };

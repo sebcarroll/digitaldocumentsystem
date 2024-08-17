@@ -1,6 +1,6 @@
 // src/contexts/DriveContext.js
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { useFileSelection } from '../hooks/useFileSelection';
 import { useFileSharing } from '../hooks/useFileSharing';
 import { useFolderNavigation } from '../hooks/useFolderNavigation';
@@ -24,9 +24,29 @@ export const DriveProvider = ({ children }) => {
   // State for drive files
   const [driveFiles, setDriveFiles] = useState([]);
 
+  // State for folder and rename popup
+  const [isNewFolderPopupOpen, setIsNewFolderPopupOpen] = useState(false);
+  const [isRenamePopupOpen, setIsRenamePopupOpen] = useState(false);
+  const [fileToRename, setFileToRename] = useState(null);
+
   // Custom hooks
   const getDriveFiles = useGetDriveFiles(setError, setIsLoading);
-  const folderNavigation = useFolderNavigation(setError);
+
+  const fetchDriveFiles = useCallback(async (folderId) => {
+    try {
+      setIsLoading(true);
+      const files = await getDriveFiles(folderId);
+      setDriveFiles(files);
+      return files;
+    } catch (err) {
+      setError("Failed to fetch drive files");
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getDriveFiles, setError, setIsLoading]);
+
+  const folderNavigation = useFolderNavigation(setError, fetchDriveFiles);
   const fileSelection = useFileSelection(getDriveFiles, folderNavigation.currentFolder, setError);
   const fileSharing = useFileSharing(fileSelection.selectedFiles);
   const movePopup = useMovePopup(fileSelection.selectedFiles, fileSelection.handleMove, setError);
@@ -53,35 +73,10 @@ export const DriveProvider = ({ children }) => {
     { path: '/bin', label: 'Bin' }
   ]);
 
-  /**
-   * Fetch drive files
-   * @param {string} folderId - ID of the folder to fetch files from
-   */
-  const fetchDriveFiles = useCallback(async (folderId) => {
-    try {
-      setIsLoading(true);
-      const files = await getDriveFiles(folderId);
-      setDriveFiles(files);
-      return files;
-    } catch (err) {
-      setError("Failed to fetch drive files");
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  }, [getDriveFiles, setError, setIsLoading]);
-
-  /**
-   * Handle file click
-   * @param {Object} file - File object that was clicked
-   */
-  const handleFileClick = useCallback((file) => {
-    if (file.mimeType === 'application/vnd.google-apps.folder') {
-      folderNavigation.navigateToFolder(file);
-    } else {
-      fileSelection.handleFileSelect(file);
-    }
-  }, [folderNavigation, fileSelection]);
+  // Effect to fetch new folder contents when the current folder changes
+  useEffect(() => {
+    fetchDriveFiles(folderNavigation.currentFolder.id);
+  }, [folderNavigation.currentFolder, fetchDriveFiles]);
 
   /**
    * Close action menu
@@ -92,7 +87,7 @@ export const DriveProvider = ({ children }) => {
   }, [fileSelection]);
 
   // Context value
-  const value = {
+  const value = useMemo(() => ({
     error,
     setError,
     isLoading,
@@ -100,7 +95,6 @@ export const DriveProvider = ({ children }) => {
     getDriveFiles: fetchDriveFiles,
     driveFiles,
     sidebarItems,
-    handleFileClick,
     handleCloseActionMenu,
     filesActive,
     foldersActive,
@@ -109,12 +103,24 @@ export const DriveProvider = ({ children }) => {
     handleFoldersClick,
     handleListLayoutClick,
     handleGridLayoutClick,
+    isNewFolderPopupOpen,
+    setIsNewFolderPopupOpen,
+    isRenamePopupOpen,
+    setIsRenamePopupOpen,
+    fileToRename,
+    setFileToRename,
     ...folderNavigation,
     ...fileSelection,
     ...fileSharing,
     ...movePopup,
     ...fileOperations,
-  };
+  }), [
+    error, isLoading, driveFiles, sidebarItems, filesActive, foldersActive, listLayoutActive,
+    folderNavigation, fileSelection, fileSharing, movePopup, fileOperations,
+    isNewFolderPopupOpen, isRenamePopupOpen, fileToRename,
+    fetchDriveFiles, handleCloseActionMenu, handleFilesClick,
+    handleFoldersClick, handleListLayoutClick, handleGridLayoutClick,
+  ]);
 
   return <DriveContext.Provider value={value}>{children}</DriveContext.Provider>;
 };

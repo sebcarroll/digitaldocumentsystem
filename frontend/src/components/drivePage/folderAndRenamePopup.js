@@ -1,47 +1,36 @@
-/**
- * FolderAndRenamePopup.js
- * This component renders a popup for creating a new folder or renaming an existing item.
- */
+// src/components/FolderAndRenamePopup.js
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useFileOperations } from '../../hooks/useFileOperations.js';
-import { useFileSelection } from '../../hooks/useFileSelection.js';
+import { useDrive } from '../../contexts/driveContext';
 import './popup.css';
 
 /**
  * FolderAndRenamePopup component
- * @param {Object} props - Component props
- * @param {Object} props.currentFolder - The current folder object
- * @param {Function} props.getDriveFiles - Function to refresh the file list
- * @param {Function} props.setError - Function to set error messages
  * @returns {React.ReactElement} FolderAndRenamePopup component
  */
-const FolderAndRenamePopup = ({ currentFolder, getDriveFiles, setError }) => {
-  const { 
-    isNewFolderPopupOpen, 
-    handleCreateFolder, 
-    setIsNewFolderPopupOpen 
-  } = useFileOperations(currentFolder || { id: 'root' }, getDriveFiles, setError);
-
+const FolderAndRenamePopup = () => {
   const {
+    isNewFolderPopupOpen,
+    setIsNewFolderPopupOpen,
     isRenamePopupOpen,
-    fileToRename,
-    handleRename,
     setIsRenamePopupOpen,
-    isFolder
-  } = useFileSelection(getDriveFiles, currentFolder || { id: 'root' }, setError);
+    fileToRename,
+    currentFolder,
+    handleCreateFolder,
+    handleRename,
+    setError
+  } = useDrive();
 
+  // Local state
   const [inputValue, setInputValue] = useState('');
   const [error, setInputError] = useState('');
   const inputRef = useRef(null);
 
   const isOpen = isNewFolderPopupOpen || isRenamePopupOpen;
   const actionType = isNewFolderPopupOpen ? 'create' : 'rename';
-  const itemType = isNewFolderPopupOpen || isFolder ? 'folder' : 'file';
+  const itemType = isNewFolderPopupOpen || fileToRename?.mimeType === 'application/vnd.google-apps.folder' ? 'folder' : 'file';
 
-  /**
-   * Effect to set initial input value and focus on input when popup opens
-   */
+  // Effect to set initial input value and focus on input when popup opens
   useEffect(() => {
     if (isOpen) {
       setInputValue(isNewFolderPopupOpen ? 'Untitled Folder' : fileToRename?.name || '');
@@ -79,10 +68,11 @@ const FolderAndRenamePopup = ({ currentFolder, getDriveFiles, setError }) => {
       if (isNewFolderPopupOpen) {
         handleCreateFolder(inputValue.trim());
       } else {
-        handleRename(inputValue.trim());
+        handleRename(fileToRename.id, inputValue.trim());
       }
+      handleClose();
     }
-  }, [inputValue, isNewFolderPopupOpen, handleCreateFolder, handleRename, validateInput]);
+  }, [inputValue, isNewFolderPopupOpen, handleCreateFolder, handleRename, validateInput, fileToRename]);
 
   /**
    * Handles input change

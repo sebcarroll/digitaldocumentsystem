@@ -1,4 +1,7 @@
-import React from 'react';
+// src/components/drivePage/header.js
+
+import React, { useEffect, useMemo } from 'react';
+import { useDrive } from '../../contexts/driveContext';
 import HeaderBackground from './headerSubComponents/headerBackground';
 import CurrentPageText from './headerSubComponents/currentPageText';
 import HeaderQuestionIcon from './headerSubComponents/questionIcon';
@@ -7,8 +10,19 @@ import HeaderProfileIcon from './headerSubComponents/profileIcon';
 import logoImage from '../../assets/images/proprietary_images/diganise_logo_july_2024.png';
 import './header.css';
 
-const Header = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
-  const isRootFolder = currentFolder.id === 'root' && folderStack.length === 0;
+const Header = () => {
+  const { currentFolder, folderStack, handleBreadcrumbClick, updateTrigger } = useDrive();
+
+  console.log('Header render:', { currentFolder, folderStack });
+
+  const isRootFolder = useMemo(() => 
+    currentFolder.id === 'root' && folderStack.length === 0, 
+    [currentFolder.id, folderStack.length]
+  );
+
+  useEffect(() => {
+    console.log('Header re-rendered:', { currentFolder, folderStack, updateTrigger });
+  }, [currentFolder, folderStack, updateTrigger]);
 
   return (
     <HeaderBackground>
@@ -20,21 +34,17 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
           {isRootFolder ? (
             <span className="text">Welcome to Diganise</span>
           ) : (
-            <CurrentPageText
-              folderStack={folderStack}
-              currentFolder={currentFolder}
-              onBreadcrumbClick={onBreadcrumbClick}
-            />
+            <CurrentPageText />
           )}
         </div>
         <div className="settings-icon-container">
-            <HeaderQuestionIcon />
-            <HeaderSettingIcon />
-            <HeaderProfileIcon />
-          </div>
+          <HeaderQuestionIcon />
+          <HeaderSettingIcon />
+          <HeaderProfileIcon />
+        </div>
       </div>
     </HeaderBackground>
   );
 };
 
-export default Header;
+export default React.memo(Header);

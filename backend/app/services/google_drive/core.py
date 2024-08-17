@@ -96,3 +96,35 @@ class DriveCore:
         except Exception as e:
             logger.exception(f"Unexpected error while listing folder contents: {e}")
             raise
+
+    def get_file_details(self, file_id):
+        """
+        Get the web view link and MIME type for a specific file.
+
+        Args:
+            file_id (str): The ID of the file to get details for.
+
+        Returns:
+            tuple: A tuple containing the web view link and MIME type.
+
+        Raises:
+            HttpError: If there's an error calling the Drive API.
+        """
+        logger.debug(f"Getting details for file: {file_id}")
+        try:
+            file = self.drive_service.files().get(
+                fileId=file_id,
+                fields='webViewLink,mimeType'
+            ).execute()
+            
+            web_view_link = file.get('webViewLink', '')
+            mime_type = file.get('mimeType', '')
+            
+            logger.info(f"Retrieved details for file {file_id}")
+            return web_view_link, mime_type
+        except HttpError as e:
+            logger.error(f"HTTP error occurred while getting file details: {e}")
+            raise
+        except Exception as e:
+            logger.exception(f"Unexpected error while getting file details: {e}")
+            raise

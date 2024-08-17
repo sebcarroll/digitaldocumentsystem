@@ -1,30 +1,23 @@
-// useFolderNavigation.js
+// src/hooks/useFolderNavigation.js
+
 import { useState, useCallback } from 'react';
 import { openDriveFile } from '../services/drive_service';
 
-/**
- * A custom hook for managing folder navigation in a file system-like structure.
- * 
- * @param {Function} setError - A function to set error messages.
- * @returns {Object} An object containing the current folder, folder stack, and navigation functions.
- */
-export const useFolderNavigation = (setError) => {
-  // State for the current folder
+export const useFolderNavigation = (setError, fetchDriveFiles) => {
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'Home' });
-  // State for the folder navigation stack
   const [folderStack, setFolderStack] = useState([]);
 
-  /**
-   * Handles clicking on a file or folder.
-   * If it's a folder, navigate into it. If it's a file, attempt to open it.
-   */
   const handleFileClick = useCallback(async (file) => {
     if (file.mimeType === 'application/vnd.google-apps.folder') {
-      // If it's a folder, update the stack and current folder
       setFolderStack(prev => [...prev, currentFolder]);
       setCurrentFolder({ id: file.id, name: file.name });
+      try {
+        await fetchDriveFiles(file.id);
+      } catch (error) {
+        console.error('Failed to fetch folder contents:', error);
+        setError('Failed to fetch folder contents.');
+      }
     } else {
-      // If it's a file, try to open it
       try {
         const response = await openDriveFile(file.id);
         window.open(response.webViewLink, '_blank');
@@ -33,31 +26,32 @@ export const useFolderNavigation = (setError) => {
         setError('Failed to open file.');
       }
     }
-  }, [currentFolder, setError]);
+  }, [currentFolder, setError, fetchDriveFiles]);
 
-  /**
-   * Handles navigating back to the previous folder.
-   */
   const handleBackClick = useCallback(() => {
     if (folderStack.length > 0) {
       const previousFolder = folderStack[folderStack.length - 1];
       setFolderStack(prev => prev.slice(0, -1));
       setCurrentFolder(previousFolder);
+      fetchDriveFiles(previousFolder.id).catch(error => {
+        console.error('Failed to fetch previous folder contents:', error);
+        setError('Failed to fetch previous folder contents.');
+      });
     }
-  }, [folderStack]);
+  }, [folderStack, fetchDriveFiles, setError]);
 
-  /**
-   * Handles clicking on a breadcrumb to navigate to a specific folder in the hierarchy.
-   * 
-   * @param {number} index - The index of the folder in the stack to navigate to.
-   */
   const handleBreadcrumbClick = useCallback((index) => {
     if (index < folderStack.length) {
       const newStack = folderStack.slice(0, index);
       setFolderStack(newStack);
-      setCurrentFolder(folderStack[index]);
+      const clickedFolder = index === folderStack.length ? currentFolder : folderStack[index];
+      setCurrentFolder(clickedFolder);
+      fetchDriveFiles(clickedFolder.id).catch(error => {
+        console.error('Failed to fetch folder contents:', error);
+        setError('Failed to fetch folder contents.');
+      });
     }
-  }, [folderStack]);
+  }, [folderStack, currentFolder, fetchDriveFiles, setError]);
 
   return {
     currentFolder,

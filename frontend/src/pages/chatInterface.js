@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './chatInterface.css';
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
 import { sendQuery, uploadDocument } from '../services/chat_service';
+import SendButton from '../components/drivePage/searchbarSubComponents/searchbarSendButton.js';
+import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
 
 /**
  * ChatInterface component
@@ -127,7 +129,7 @@ const ChatInterface = ({ initialQuery, onClose }) => {
       )}
       <form onSubmit={handleSubmit} className="input-area">
         <label htmlFor="file-upload" className="file-upload-label">
-          📎
+          <AttachFileSharpIcon />
         </label>
         <input
           id="file-upload"
@@ -144,7 +146,7 @@ const ChatInterface = ({ initialQuery, onClose }) => {
           className="message-input"
         />
         <button type="submit" className="send-button">
-          Send
+          <SendButton />
         </button>
       </form>
     </div>

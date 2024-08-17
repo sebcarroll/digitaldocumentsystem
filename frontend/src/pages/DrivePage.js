@@ -1,3 +1,5 @@
+// src/components/DrivePage.js
+
 import React, { useState, useCallback } from 'react';
 import { useDrive } from '../contexts/driveContext';
 import './DrivePage.css';
@@ -8,9 +10,13 @@ import ViewOptions from '../components/drivePage/viewOptions';
 import DriveContent from '../components/drivePage/driveContent';
 import FolderAndRenamePopup from '../components/drivePage/folderAndRenamePopup';
 import SharePopup from '../components/drivePage/sharePopup';
-import MovePopup from '../components/drivePage/movePopup';
+import MovePopup from '../components/drivePage//movePopup';
 import ChatInterface from './chatInterface';
 
+/**
+ * DrivePage component
+ * @returns {React.ReactElement} DrivePage component
+ */
 const DrivePage = () => {
   const {
     error,
@@ -18,14 +24,6 @@ const DrivePage = () => {
     currentFolder,
     folderStack,
     handleBreadcrumbClick,
-    isNewFolderPopupOpen,
-    setIsNewFolderPopupOpen,
-    handleCreateFolder,
-    isRenamePopupOpen,
-    setIsRenamePopupOpen,
-    handleRename,
-    fileToRename,
-    isFolder,
     selectedFiles,
     setSelectedFiles,
     showActionMenu,
@@ -34,22 +32,35 @@ const DrivePage = () => {
     handleDelete,
     handleMakeCopy,
     openRenamePopup,
+    isNewFolderPopupOpen,
+    isRenamePopupOpen,
   } = useDrive();
 
+  // Local state
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialQuery, setChatInitialQuery] = useState('');
 
+  /**
+   * Handle opening the chat interface
+   * @param {string} query - Initial query for the chat
+   */
   const handleOpenChat = useCallback((query) => {
     setIsChatOpen(true);
     setChatInitialQuery(query);
   }, []);
 
+  /**
+   * Handle closing the chat interface
+   */
   const handleCloseChat = useCallback(() => {
     setIsChatOpen(false);
     setChatInitialQuery('');
   }, []);
 
+  /**
+   * Handle closing the share popup
+   */
   const handleCloseSharePopup = useCallback(() => {
     setIsSharePopupOpen(false);
     setShowActionMenu(false);
@@ -63,9 +74,6 @@ const DrivePage = () => {
       {isLoading && <div className="loading-overlay">Loading...</div>}
       <div className="drive-header">
         <Header 
-          currentFolder={currentFolder}
-          folderStack={folderStack}
-          onBreadcrumbClick={handleBreadcrumbClick}
         />
       </div>
       <div className="sidebar">
@@ -90,17 +98,7 @@ const DrivePage = () => {
           <DriveContent />
         </main>
       </div>
-      <FolderAndRenamePopup
-        isNewFolderPopupOpen={isNewFolderPopupOpen}
-        currentFolder={currentFolder}
-        setIsNewFolderPopupOpen={setIsNewFolderPopupOpen}
-        handleCreateFolder={handleCreateFolder}
-        isRenamePopupOpen={isRenamePopupOpen}
-        setIsRenamePopupOpen={setIsRenamePopupOpen}
-        handleRename={handleRename}
-        fileToRename={fileToRename}
-        isFolder={isFolder}
-      />
+      {(isNewFolderPopupOpen || isRenamePopupOpen) && <FolderAndRenamePopup />}
       {isSharePopupOpen && (
         <SharePopup
           items={selectedFiles}
