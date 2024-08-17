@@ -71,11 +71,11 @@ class ChatService:
         self.pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
 
-        self.llm = ChatOpenAI(temperature=0, 
-                              model_name="gpt-40-mini",
-                              max_tokens=None,
-                              timeout=None,
-                              max_retries=2,)
+        self.llm = ChatOpenAI(temperature=0.2, 
+                            model_name="gpt-4o-mini",
+                            max_tokens=None,
+                            timeout=None,
+                            max_retries=2,)
         
         # Initialize Pinecone client
         pc = PineconeClient(api_key=self.pinecone_api_key, environment=self.pinecone_environment)
