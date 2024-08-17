@@ -8,11 +8,18 @@ query processing and document management in the vector store.
 from flask import Blueprint, request, jsonify
 from app.services.natural_language.chat_service import ChatService
 import logging
+from app.services.google_drive.core import DriveCore
 
 logger = logging.getLogger(__name__)
 
 chat_bp = Blueprint('chat', __name__)
-chat_service = ChatService()
+chat_service = None
+
+@chat_bp.before_request
+def initialize_chat_service():
+    global chat_service
+    if chat_service is None:
+        chat_service = ChatService()
 
 @chat_bp.route('/query', methods=['POST'])
 def query_llm():
