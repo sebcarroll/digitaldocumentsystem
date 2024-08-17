@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useDrive } from '../../contexts/driveContext';
+import { useDrive } from '../../../contexts/driveContext';
 import '../sidebar.css';
 
 import FileUploadIcon from '@mui/icons-material/FileUpload';
