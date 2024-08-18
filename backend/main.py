@@ -154,32 +154,11 @@ def create_app():
             credentials = session.get('credentials')
             if credentials:
                 logger.info(f"Credentials found in session for user {user_id}")
-                if 'last_active' in session:
-                    try:
-                        last_active = datetime.fromisoformat(session['last_active'])
-                        if datetime.now(timezone.utc) - last_active > timedelta(minutes=2):
-                            logger.info("User inactive for more than 2 minutes")
-                        else:
-                            logger.info("User active within last 2 minutes")
-                    except ValueError:
-                        logger.warning("Invalid last_active timestamp in session")
-                else:
-                    logger.warning("No last_active timestamp in session")
             else:
                 logger.warning(f"No credentials found in session for user {user_id}")
         else:
-            logger.warning("No user_id in session")
+            logger.warning("No user_id found in session")
         
-        # Update the last active timestamp
-        session['last_active'] = datetime.now(timezone.utc).isoformat()
-        
-        # Generate a new session_id if one doesn't exist
-        if 'session_id' not in session:
-            session['session_id'] = str(uuid.uuid4())
-            logger.info(f"Generated new session_id: {session['session_id']}")
-        
-        logger.debug(f"Full session contents after update: {dict(session)}")
-    
     return app
 
 # Create the application instance

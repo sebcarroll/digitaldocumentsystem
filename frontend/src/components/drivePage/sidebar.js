@@ -10,11 +10,6 @@ const Sidebar = () => {
   const location = useLocation();
   const {
     sidebarItems,
-    openCreateFolderPopup,
-    handleUploadFile,
-    handleUploadFolder,
-    handleCreateDoc,
-    handleCreateSheet
   } = useDrive();
 
   return (

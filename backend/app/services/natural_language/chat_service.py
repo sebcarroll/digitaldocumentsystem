@@ -181,16 +181,13 @@ class ChatService:
 
         logger.info(f"Processing file: {file_name} with ID: {file_id} for session {session_id}")
         try:
-            # Extract text using FileExtractor
             extracted_text = self.file_extractor.extract_text_from_file(file_id, file_name)
             
-            # Create document structure
             document = {
                 "id": file_id,
                 "content": extracted_text
             }
-            
-            # Use PineconeManager to upsert the document
+        
             result = self.pinecone_manager.upsert_document(document, session_id)
             
             if result['success']:
@@ -226,16 +223,3 @@ class ChatService:
         except Exception as e:
             logger.error(f"Error deleting document: {str(e)}", exc_info=True)
             return False
-
-    def clear_session(self, session_id):
-        """
-        Clear all vectors associated with a specific session.
-
-        Args:
-            session_id (str): The ID of the session to clear.
-
-        Returns:
-            dict: A dictionary indicating success and the number of vectors deleted.
-        """
-        logger.info(f"Clearing session: {session_id}")
-        return self.pinecone_manager.clear_session_vectors(session_id)
