@@ -2,7 +2,8 @@
 This module provides the ChatService class for managing chat operations and document handling.
 
 It integrates with OpenAI's language models, Pinecone vector store, and Google Drive
-for processing queries and handling documents.
+for processing queries and handling documents. The ChatService acts as a coordinator,
+utilizing FileExtractor for text extraction and PineconeManager for vector operations.
 """
 
 import logging
@@ -14,15 +15,12 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore as Pinecone
-from pinecone import Pinecone as PineconeClient
 from openai import RateLimitError
 import os
-from flask import session
 from app.services.natural_language.file_extractor import FileExtractor
-from app.utils.drive_utils import get_drive_core
+from app.services.database.pinecone_manager_service import PineconeManager
 
 logger = logging.getLogger(__name__)
-
 
 def retry_with_exponential_backoff(
     func,
@@ -32,7 +30,23 @@ def retry_with_exponential_backoff(
     max_retries: int = 3,
     errors: tuple = (RateLimitError,),
 ):
-    """Retry a function with exponential backoff."""
+    """
+    Retry a function with exponential backoff.
+
+    This decorator retries the function with an exponential backoff strategy
+    if it raises specified errors.
+
+    Args:
+        func (callable): The function to be decorated.
+        initial_delay (float): The initial delay between retries in seconds.
+        exponential_base (float): The base for the exponential backoff.
+        jitter (bool): Whether to add random jitter to the delay.
+        max_retries (int): The maximum number of retries.
+        errors (tuple): A tuple of error types to catch and retry on.
+
+    Returns:
+        callable: The decorated function.
+    """
     def wrapper(*args, **kwargs):
         num_retries = 0
         delay = initial_delay
@@ -58,15 +72,19 @@ class ChatService:
 
     This class initializes and manages the components needed for
     processing queries and handling documents using a language model
-    and vector store.
+    and vector store. It coordinates operations between FileExtractor
+    and PineconeManager.
     """
 
-    def __init__(self):
+    def __init__(self, drive_core=None):
         """
         Initialize the ChatService with necessary components.
 
         Sets up the language model, vector store, and conversation chain
         using environment variables for API keys and configuration.
+
+        Args:
+            drive_core (DriveCore, optional): An instance of DriveCore for Google Drive operations.
         """
         logger.info("Initializing ChatService")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -74,21 +92,24 @@ class ChatService:
         self.pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
 
-        # Obtain DriveCore instance using the utility function
-        self.drive_core = get_drive_core(session)
+        self.drive_core = drive_core
 
         self.llm = ChatOpenAI(temperature=0.2, 
                             model_name="gpt-4o-mini",
                             max_tokens=None,
                             timeout=None,
-                            max_retries=2,)
+                            max_retries=2)
         
-        # Initialize Pinecone client
-        pc = PineconeClient(api_key=self.pinecone_api_key, environment=self.pinecone_environment)
-        self.index = pc.Index(self.pinecone_index_name)
+        # Initialize PineconeManager
+        self.pinecone_manager = PineconeManager(
+            api_key=self.pinecone_api_key,
+            environment=self.pinecone_environment,
+            index_name=self.pinecone_index_name,
+            openai_api_key=self.openai_api_key
+        )
         
         self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
-        self.vectorstore = Pinecone(self.index, self.embeddings, "text")
+        self.vectorstore = Pinecone(self.pinecone_manager.index, self.embeddings, "text")
         
         self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
         
@@ -97,18 +118,20 @@ class ChatService:
             retriever=self.vectorstore.as_retriever(),
             memory=self.memory
         )
+
+        # Initialize FileExtractor
+        self.file_extractor = FileExtractor(drive_core=self.drive_core) if self.drive_core else None
+
         logger.info("ChatService initialized successfully")
 
-        # Initialize FileExtractor with DriveCore instance
-        self.file_extractor = FileExtractor(drive_core=self.drive_core)
-
     @retry_with_exponential_backoff
-    def query(self, question):
+    def query(self, question, session_id):
         """
         Process a query and return a response.
 
         Args:
             question (str): The query string.
+            session_id (str): The ID of the current session.
 
         Returns:
             str: The response from the language model.
@@ -116,9 +139,9 @@ class ChatService:
         Raises:
             Exception: If an error occurs during query processing.
         """
-        logger.info(f"Processing query: {question}")
+        logger.info(f"Processing query for session {session_id}: {question}")
         try:
-            result = self.qa.invoke({"question": question})  # Using invoke instead of __call__
+            result = self.qa.invoke({"question": question})
             logger.info(f"Query processed successfully, result: {result['answer']}")
             return result['answer']
         except Exception as e:
@@ -138,67 +161,81 @@ class ChatService:
         """
         return self.embeddings.embed_query(text)
 
-    def add_document(self, document):
-        """
-        Add a document to the vector store.
-
-        Args:
-            document (dict): The document to add, containing 'id' and 'content'.
-
-        Returns:
-            bool: True if successful, False otherwise.
-        """
-        logger.info(f"Adding document: {document['id']}")
-        try:
-            texts = [document['content']]
-            metadatas = [{"source": document['id']}]
-            self.vectorstore.add_texts(texts=texts, metadatas=metadatas)
-            logger.info(f"Document {document['id']} added successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Error adding document: {str(e)}", exc_info=True)
-            return False
-
-    def delete_document(self, document_id):
-        """
-        Delete a document from the vector store.
-
-        Args:
-            document_id (str): The ID of the document to delete.
-
-        Returns:
-            bool: True if successful, False otherwise.
-        """
-        logger.info(f"Deleting document: {document_id}")
-        try:
-            self.vectorstore.delete(ids=[document_id])
-            logger.info(f"Document {document_id} deleted successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Error deleting document: {str(e)}", exc_info=True)
-            return False
-
-    def process_and_add_file(self, file_id, file_name):
+    def process_and_add_file(self, file_id, file_name, session_id):
         """
         Process a file by extracting its text and then add it to the vector store.
 
         Args:
             file_id (str): The ID of the file in Google Drive.
             file_name (str): The name of the file to be processed.
+            session_id (str): The ID of the current session.
 
         Returns:
             bool: True if successful, False otherwise.
+
+        Raises:
+            ValueError: If Drive functionality is not available.
         """
-        logger.info(f"Processing file: {file_name} with ID: {file_id}")
+        if not self.file_extractor:
+            raise ValueError("Drive functionality is not available. Please authenticate with Google Drive.")
+
+        logger.info(f"Processing file: {file_name} with ID: {file_id} for session {session_id}")
         try:
             # Extract text using FileExtractor
-            extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
+            extracted_text = self.file_extractor.extract_text_from_file(file_id, file_name)
+            
+            # Create document structure
             document = {
                 "id": file_id,
                 "content": extracted_text
             }
-            # Add the extracted text to the vector store
-            return self.add_document(document)
+            
+            # Use PineconeManager to upsert the document
+            result = self.pinecone_manager.upsert_document(document, session_id)
+            
+            if result['success']:
+                logger.info(f"File {file_name} processed and added successfully")
+                return True
+            else:
+                logger.error(f"Failed to process and add file: {result.get('error', 'Unknown error')}")
+                return False
         except Exception as e:
             logger.error(f"Error processing and adding file {file_name} with ID {file_id}: {str(e)}", exc_info=True)
             return False
+
+    def delete_document(self, document_id, session_id):
+        """
+        Delete a document from the vector store.
+
+        Args:
+            document_id (str): The ID of the document to delete.
+            session_id (str): The ID of the current session.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        logger.info(f"Deleting document: {document_id} for session {session_id}")
+        try:
+            result = self.pinecone_manager.clear_session_vectors(session_id)
+            if result['success']:
+                logger.info(f"Document {document_id} deleted successfully")
+                return True
+            else:
+                logger.error(f"Failed to delete document: {result.get('error', 'Unknown error')}")
+                return False
+        except Exception as e:
+            logger.error(f"Error deleting document: {str(e)}", exc_info=True)
+            return False
+
+    def clear_session(self, session_id):
+        """
+        Clear all vectors associated with a specific session.
+
+        Args:
+            session_id (str): The ID of the session to clear.
+
+        Returns:
+            dict: A dictionary indicating success and the number of vectors deleted.
+        """
+        logger.info(f"Clearing session: {session_id}")
+        return self.pinecone_manager.clear_session_vectors(session_id)

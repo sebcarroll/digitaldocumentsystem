@@ -6,6 +6,7 @@ This module defines configuration classes for different environments
 
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -36,18 +37,12 @@ class Config:
     # OpenAI configuration
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-    # Celery configuration
-    # broker_url = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
-    # result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/1')
-
-    @classmethod
-    def init_app(cls, app):
-        """Initialize the Flask application with configuration."""
-        # app.config.update(
-        #     broker_url=cls.broker_url,
-        #     result_backend=cls.result_backend
-        # )
-        pass
+    # Session configuration
+    SESSION_TYPE = 'redis'
+    SESSION_PERMANENT = True
+    SESSION_USE_SIGNER = True
+    SESSION_KEY_PREFIX = 'diganise_session:'
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
 
 class DevelopmentConfig(Config):
     """Configuration for development environment."""
@@ -57,7 +52,8 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Configuration for production environment."""
 
-    pass
+    # You might want to adjust session lifetime for production
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
 
 class TestingConfig(Config):
     """Configuration for testing environment."""
@@ -72,6 +68,3 @@ class TestingConfig(Config):
     # For OpenAI, you might still want to use a test key or mock it
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     
-    # Use in-memory broker for Celery in testing
-    # broker_url = 'memory://'
-    # result_backend = 'memory://'

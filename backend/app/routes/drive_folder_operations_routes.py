@@ -26,7 +26,7 @@ def create_folder():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         folder_ops = DriveFolderOperations(drive_core)
         data = request.json
         parent_folder_id = data.get('parentFolderId', 'root')
@@ -53,7 +53,7 @@ def upload_folder():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         folder_ops = DriveFolderOperations(drive_core)
         parent_folder_id = request.form.get('parentFolderId', 'root')
         files = request.files.getlist('files')
@@ -79,7 +79,7 @@ def fetch_folders():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         folder_ops = DriveFolderOperations(drive_core)
         parent_id = request.args.get('parent_id', 'root')
         result = folder_ops.fetch_folders(parent_id)

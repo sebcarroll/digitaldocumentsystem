@@ -19,7 +19,7 @@ def get_drive_permissions_service():
         DrivePermissionsService or None: The service instance if authenticated, None otherwise.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         return DrivePermissionsService(
             drive_core,
             session.get('user_email'),

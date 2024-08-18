@@ -27,7 +27,7 @@ def share_item(item_id):
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         service = DriveSharingService(drive_core)
         
         data = request.json
@@ -64,7 +64,7 @@ def update_general_access(item_id):
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         service = DriveSharingService(drive_core)
         
         data = request.json

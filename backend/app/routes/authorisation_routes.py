@@ -7,23 +7,39 @@ It uses Flask sessions for maintaining user state and interacts with various
 services to manage user data and Google Drive operations.
 """
 
-from flask import Blueprint, redirect, request, session, url_for, jsonify
+from flask import Blueprint, redirect, request, session, url_for, jsonify, current_app
 from datetime import datetime, timezone
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 from app.services.google_drive.auth_service import AuthService
 from app.services.google_drive.core import DriveCore
+from app.services.natural_language.file_extractor import FileExtractor
+from app.services.natural_language.chat_service import ChatService
 from googleapiclient.errors import Error as GoogleApiError
 from google.auth.exceptions import RefreshError
-import redis
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from config import Config
-import json
 import logging
+import requests
 
-redis_client = redis.StrictRedis.from_url(Config.REDIS_TOKEN_URL, decode_responses=True)
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 auth_service = AuthService(Config)
+
+@auth_bp.before_request
+def before_request():
+    """
+    Perform actions before each request to the auth blueprint.
+
+    This function ensures the session is marked as permanent and modified,
+    and updates the last active timestamp for authenticated users.
+    """
+    session.permanent = True
+    session.modified = True
+    user_id = session.get('user_id')
+    if user_id:
+        session['last_active'] = datetime.now(timezone.utc).isoformat()
 
 @auth_bp.route('/login')
 def login():
@@ -46,14 +62,14 @@ def login():
     session['last_active'] = datetime.now(timezone.utc).isoformat()
     return redirect(authorization_url)
 
-
 @auth_bp.route('/oauth2callback')
 def oauth2callback():
     """
     Handle the OAuth2 callback from Google.
 
     This function processes the authorization response from Google's OAuth2 service,
-    retrieves user information, stores the credentials in Redis, and updates the session.
+    retrieves user information, stores the credentials in the session, and updates the session.
+    It also initializes or updates the ChatService with Drive functionality.
 
     Returns:
         flask.Response: A redirect response to the auth success page on success,
@@ -93,18 +109,30 @@ def oauth2callback():
 
         user_id = user_info.get('id')
         user_email = user_info.get('email')
-        
+
         if not user_id:
             logger.error("User ID not found in user info")
             return jsonify({"error": "Failed to retrieve user ID"}), 500
 
-        logger.info(f"Setting Redis key for user {user_id}")
-        redis_client.set(f'user:{user_id}:token', json.dumps(credentials_dict))
-
         logger.info("Updating session")
+        session.permanent = True
         session['user_email'] = user_email
         session['user_id'] = user_id
+        session['credentials'] = credentials_dict
         session['last_active'] = datetime.now(timezone.utc).isoformat()
+        session.modified = True
+
+        logger.debug(f"Session after update: {session}")
+
+        # Initialize or update ChatService with Drive functionality
+        chat_service = current_app.extensions.get('chat_service')
+        if chat_service:
+            chat_service.drive_core = drive_core
+            chat_service.file_extractor = FileExtractor(drive_core=drive_core)
+            logger.info("Updated existing ChatService with Drive functionality")
+        else:
+            current_app.extensions['chat_service'] = ChatService(drive_core)
+            logger.info("Created new ChatService with Drive functionality")
 
         logger.info("Redirecting to success page")
         return redirect('http://localhost:3000/auth-success')
@@ -124,40 +152,77 @@ def oauth2callback():
     except Exception as e:
         logger.exception(f"Unexpected error in oauth2callback: {str(e)}")
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
-    
+
 @auth_bp.route('/check-auth')
 def check_auth():
     """
     Check the authentication status of the current user.
 
     This function verifies if the user is authenticated by checking the session
-    and attempting to retrieve the user's DriveCore instance. It updates the
+    for user_id and credentials. It validates the credentials and updates the
     last active timestamp if the user is authenticated.
 
     Returns:
         flask.Response: A JSON response indicating the authentication status.
     """
     user_id = session.get('user_id')
-    if user_id:
+    credentials_dict = session.get('credentials')
+    if user_id and credentials_dict:
         try:
-            credentials_dict = json.loads(redis_client.get(f'user:{user_id}:token'))
-            drive_core = DriveCore(credentials_dict)
-            if drive_core:
+            credentials = Credentials(**credentials_dict)
+            if credentials and not credentials.expired:
                 session['last_active'] = datetime.now(timezone.utc).isoformat()
                 return jsonify({"authenticated": True})
+            else:
+                session.clear()
         except Exception as e:
-            logger.error(f"Error getting drive core: {str(e)}")
+            logger.error(f"Error validating credentials: {str(e)}")
     return jsonify({"authenticated": False})
+
+@auth_bp.route('/refresh-token')
+def refresh_token():
+    """
+    Refresh the user's OAuth2 token.
+
+    This function attempts to refresh the user's OAuth2 token if it has expired.
+    If successful, it updates the session with the new credentials.
+
+    Returns:
+        flask.Response: A JSON response indicating the result of the refresh attempt.
+    """
+    credentials_dict = session.get('credentials')
+    if credentials_dict:
+        try:
+            credentials = Credentials(**credentials_dict)
+            if credentials.expired and credentials.refresh_token:
+                credentials.refresh(Request())
+                session['credentials'] = auth_service.credentials_to_dict(credentials)
+                session.modified = True
+                return jsonify({"message": "Token refreshed successfully"})
+        except Exception as e:
+            logger.error(f"Error refreshing token: {str(e)}")
+    return jsonify({"error": "Failed to refresh token"}), 401
 
 @auth_bp.route('/logout')
 def logout():
     """
     Log out the current user.
 
-    This function clears the session, effectively logging out the user.
+    This function revokes the user's OAuth2 token if it's valid,
+    then clears the session, effectively logging out the user.
 
     Returns:
         flask.Response: A JSON response confirming successful logout.
     """
+    credentials_dict = session.get('credentials')
+    if credentials_dict:
+        try:
+            credentials = Credentials(**credentials_dict)
+            if credentials.valid:
+                requests.post('https://oauth2.googleapis.com/revoke',
+                              params={'token': credentials.token},
+                              headers={'content-type': 'application/x-www-form-urlencoded'})
+        except Exception as e:
+            logger.error(f"Error revoking token: {str(e)}")
     session.clear()
     return jsonify({"message": "Logged out successfully"})

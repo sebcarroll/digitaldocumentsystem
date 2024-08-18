@@ -1,10 +1,11 @@
-"""Module for managing Pinecone database operations."""
+"""
+This module provides the PineconeManager class for handling operations with the Pinecone vector database.
+"""
 
+import logging
 from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from database.schemas.document import DocumentSchema
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +26,10 @@ class PineconeManager:
         self.environment = environment
         self.index_name = index_name
         self.openai_api_key = openai_api_key
-        self.document_schema = DocumentSchema()         
+        
         # Initialize Pinecone
         self.pc = Pinecone(api_key=api_key)
-        
-        # Ensure index exists
-        self.ensure_index_exists()
-        
+
         # Get the index
         self.index = self.pc.Index(index_name)
         
@@ -43,40 +41,23 @@ class PineconeManager:
             length_function=len
         )
 
-    def ensure_index_exists(self):
-        """Ensure that the specified Pinecone index exists, creating it if necessary."""
-        try:
-            existing_indexes = self.pc.list_indexes().names()
-            if self.index_name not in existing_indexes:
-                logger.info(f"Creating new index: {self.index_name}")
-                self.pc.create_index(
-                    name=self.index_name,
-                    dimension=1536, 
-                    metric="cosine",
-                    spec=ServerlessSpec(
-                        cloud="aws",
-                        region=self.environment.split('-')[0]
-                    )
-                )
-            else:
-                logger.info(f"Index {self.index_name} already exists")
-        except Exception as e:
-            error_message = f"Error ensuring index exists: {str(e)}"
-            logger.error(error_message)
-            raise Exception(error_message)
+        # Dictionary to keep track of vector IDs added in each session
+        self.session_vectors = {}
 
-    def upsert_document(self, document):
+    def upsert_document(self, document, session_id):
         """
-        Upsert a document into the Pinecone index.
+        Upsert a document into the Pinecone index for the current session.
 
         Args:
-            document (dict): The document to upsert.
+            document (dict): The document to upsert, containing 'id' and 'content'.
+            session_id (str): The ID of the current session.
 
         Returns:
             dict: A dictionary indicating success and the number of vectors upserted.
         """
         try:
-            logger.info(f"Starting upsert for document: {document['id']}")
+            logger.info(f"Starting upsert for document: {document['id']} in session: {session_id}")
+            
             chunks = self.text_splitter.split_text(document['content'])
             logger.info(f"Created {len(chunks)} chunks")
             
@@ -84,14 +65,17 @@ class PineconeManager:
             logger.info(f"Created {len(embeddings)} embeddings")
             
             vectors = []
+            vector_ids = []
             
             for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-                chunk_id = f"{str(document['id'])}_{i}"
+                chunk_id = f"{session_id}_{document['id']}_{i}"
+                vector_ids.append(chunk_id)
+                
                 chunk_metadata = {
-                    **document,
+                    "document_id": str(document['id']),
                     "chunk_index": i,
                     "total_chunks": len(chunks),
-                    "chunk_content": chunk
+                    "session_id": session_id
                 }
                 vectors.append({
                     "id": chunk_id,
@@ -103,40 +87,34 @@ class PineconeManager:
             upsert_response = self.index.upsert(vectors=vectors)
             logger.info(f"Upsert response: {upsert_response}")
             
+            # Keep track of vector IDs added in this session
+            self.session_vectors[session_id] = self.session_vectors.get(session_id, []) + vector_ids
+            
             return {"success": True, "vectors_upserted": len(vectors)}
         except Exception as e:
             logger.error(f"Error upserting document {document['id']}: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
-        
-    def query_similar_documents(self, query, top_k=5, filter=None):
+
+    def clear_session_vectors(self, session_id):
         """
-        Query the Pinecone index for similar documents.
+        Clear all vectors associated with a specific session.
 
         Args:
-            query (str): The query string.
-            top_k (int): The number of top results to return.
-            filter (dict): An optional filter for the query.
+            session_id (str): The ID of the session to clear.
 
         Returns:
-            dict: The query results from Pinecone.
+            dict: A dictionary indicating success and the number of vectors deleted.
         """
-        query_embedding = self.embeddings.embed_query(query)
-        results = self.index.query(
-            vector=query_embedding,
-            top_k=top_k,
-            include_values=True,
-            include_metadata=True,
-            filter=filter
-        )
-        return results
-    
-    def delete_document(self, document_id):
-        """
-        Delete a document from the Pinecone index once a query has been completed and the interface has been closed.
-        
-        Args:
-        document_id (str): The ID of the document that is to be deleted.
-
-        Returns:
-
-        """
+        try:
+            vectors_to_delete = self.session_vectors.get(session_id, [])
+            if vectors_to_delete:
+                self.index.delete(ids=vectors_to_delete)
+                del self.session_vectors[session_id]
+                logger.info(f"Cleared {len(vectors_to_delete)} vectors for session {session_id}")
+                return {"success": True, "vectors_deleted": len(vectors_to_delete)}
+            else:
+                logger.info(f"No vectors to clear for session {session_id}")
+                return {"success": True, "vectors_deleted": 0}
+        except Exception as e:
+            logger.error(f"Error clearing vectors for session {session_id}: {str(e)}", exc_info=True)
+            return {"success": False, "error": str(e)}

@@ -27,7 +27,7 @@ def open_file(file_id):
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         return jsonify(drive_ops.open_file(file_id))
     except ValueError as e:
@@ -50,7 +50,7 @@ def upload_file():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         file = request.files['file']
         folder_id = request.form.get('folderId', 'root')
@@ -75,7 +75,7 @@ def create_doc():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         data = request.json
         folder_id = data.get('folderId', 'root')
@@ -100,7 +100,7 @@ def create_sheet():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         data = request.json
         folder_id = data.get('folderId', 'root')
@@ -125,7 +125,7 @@ def move_files():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         data = request.json
         return jsonify(drive_ops.move_files(data['fileIds'], data['newFolderId']))
@@ -149,7 +149,7 @@ def delete_files():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         data = request.json
         return jsonify(drive_ops.delete_files(data['fileIds']))
@@ -173,7 +173,7 @@ def copy_files():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         data = request.json
         return jsonify(drive_ops.copy_files(data['fileIds']))
@@ -197,7 +197,7 @@ def rename_file():
         Exception: For any other unexpected errors during the process.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_ops = DriveFileOperations(drive_core)
         data = request.json
         return jsonify(drive_ops.rename_file(data['fileId'], data['newName']))

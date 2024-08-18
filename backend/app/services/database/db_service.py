@@ -1,7 +1,6 @@
-"""Database service module for managing Pinecone connections."""
-
 from flask import current_app
 from app.services.database.pinecone_manager_service import PineconeManager
+from pinecone import Pinecone, ServerlessSpec
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -11,7 +10,7 @@ pinecone_manager = None
 
 def init_db(app):
     """
-    Initialize the Pinecone database connection.
+    Initialize the Pinecone database connection and ensure the index exists.
 
     Args:
         app (Flask): The Flask application instance.
@@ -31,6 +30,11 @@ def init_db(app):
     logger.info(f"OPENAI_API_KEY: {'set' if app.config['OPENAI_API_KEY'] else 'not set'}")
 
     try:
+        # Initialize Pinecone
+        pc = Pinecone(api_key=app.config['PINECONE_API_KEY'])
+        logger.info("Pinecone initialized successfully")
+
+        # Initialize PineconeManager
         pinecone_manager = PineconeManager(
             api_key=app.config['PINECONE_API_KEY'],
             environment=app.config['PINECONE_ENVIRONMENT'],

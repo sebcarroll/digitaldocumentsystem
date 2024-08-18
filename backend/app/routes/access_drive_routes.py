@@ -35,7 +35,7 @@ def drive():
     logger.info("Entering drive() function")
     try:
         logger.debug("Attempting to get drive_core")
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         logger.debug("drive_core obtained successfully")
         
         folder_id = request.args.get('folder_id', 'root')
@@ -83,7 +83,7 @@ def open_file(file_id):
     """
     logger.info(f"Entering open_file() function for file ID: {file_id}")
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         web_view_link, mime_type = drive_core.get_file_details(file_id)
         logger.info(f"Successfully retrieved web view link and MIME type for file ID: {file_id}")
         return jsonify({"webViewLink": web_view_link, "mimeType": mime_type})

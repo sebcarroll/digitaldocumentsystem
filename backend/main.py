@@ -8,6 +8,8 @@ Pinecone testing, and implements session management logic.
 
 from flask import Flask, session, jsonify
 from flask_cors import CORS
+from flask_session import Session
+from redis import Redis
 from app.routes.authorisation_routes import auth_bp
 from app.routes.access_drive_routes import drive_bp
 from app.routes.drive_core_routes import drive_core_bp
@@ -16,16 +18,13 @@ from app.routes.drive_folder_operations_routes import drive_folder_ops_bp
 from app.routes.drive_permissions_routes import drive_permissions_bp
 from app.routes.drive_sharing_routes import drive_sharing_bp
 from app.routes.chat_interface_routes import chat_bp
-# from celery_app import init_celery
-# from celery_app import celery_app
 from config import DevelopmentConfig, ProductionConfig
 import os
 from datetime import datetime, timedelta, timezone
 from app.services.database.db_service import init_db, get_db
-# from app.services.sync.sync_service import SyncService
 import json
 import logging
-import redis
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +40,14 @@ def create_app():
     CORS(app, supports_credentials=True)
     app.config.from_object(DevelopmentConfig if app.debug else ProductionConfig)
 
-    # Initialize Celery
-#   init_celery(app)
+    # Configure Redis for session
+    app.config['SESSION_REDIS'] = Redis.from_url(app.config['REDIS_TOKEN_URL'])
+    
+    # Initialize Flask-Session
+    Session(app)
 
     # Initialize Pinecone
     init_db(app)
-
-    # Initialize Redis client
-    redis_client = redis.StrictRedis.from_url(app.config['REDIS_TOKEN_URL'], decode_responses=True)
 
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -106,6 +105,25 @@ def create_app():
                 "error": str(e)
             }), 500
 
+    def check_session_expiration():
+        """
+        Check if the current session has expired and clear associated vectors if it has.
+        """
+        user_id = session.get('user_id')
+        last_active = session.get('last_active')
+        session_id = session.get('session_id')
+
+        if user_id and last_active and session_id:
+            last_active_time = datetime.fromisoformat(last_active)
+            if datetime.now(timezone.utc) - last_active_time > app.permanent_session_lifetime:
+                # Session has expired
+                pinecone_manager = app.extensions.get('pinecone_manager_service')
+                if pinecone_manager:
+                    result = pinecone_manager.clear_session_vectors(session_id)
+                    logger.info(f"Cleared expired session vectors: {result}")
+                session.clear()
+                logger.info(f"Cleared expired session for user {user_id}")
+
     @app.before_request
     def before_request():
         """
@@ -115,12 +133,17 @@ def create_app():
         It performs the following tasks:
         1. Sets the session to be permanent and updates its lifetime.
         2. Checks for user authentication by verifying the presence of user_id in the session.
-        3. Verifies the presence of user credentials in Redis.
+        3. Verifies the presence of user credentials in the session.
         4. Updates the last active timestamp for the current request.
+        5. Checks for session expiration and clears expired sessions.
+        6. Generates a new session_id if one doesn't exist.
 
-        The function uses Redis to store and retrieve user credentials, and logs various
-        steps and potential issues for debugging purposes.
+        The function logs various steps and potential issues for debugging purposes.
         """
+        logger.debug(f"Full session contents: {dict(session)}")
+        
+        check_session_expiration()
+        
         session.permanent = True
         app.permanent_session_lifetime = timedelta(minutes=30)
         session.modified = True
@@ -128,9 +151,9 @@ def create_app():
         user_id = session.get('user_id')
         if user_id:
             logger.info(f"Session contains user_id: {user_id}")
-            credentials_json = redis_client.get(f'user:{user_id}:token')
-            if credentials_json:
-                logger.info(f"Credentials found in Redis for user {user_id}")
+            credentials = session.get('credentials')
+            if credentials:
+                logger.info(f"Credentials found in session for user {user_id}")
                 if 'last_active' in session:
                     try:
                         last_active = datetime.fromisoformat(session['last_active'])
@@ -143,13 +166,20 @@ def create_app():
                 else:
                     logger.warning("No last_active timestamp in session")
             else:
-                logger.warning(f"No credentials found in Redis for user {user_id}")
+                logger.warning(f"No credentials found in session for user {user_id}")
         else:
             logger.warning("No user_id in session")
         
         # Update the last active timestamp
         session['last_active'] = datetime.now(timezone.utc).isoformat()
         
+        # Generate a new session_id if one doesn't exist
+        if 'session_id' not in session:
+            session['session_id'] = str(uuid.uuid4())
+            logger.info(f"Generated new session_id: {session['session_id']}")
+        
+        logger.debug(f"Full session contents after update: {dict(session)}")
+    
     return app
 
 # Create the application instance

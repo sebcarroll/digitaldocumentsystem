@@ -36,7 +36,7 @@ def list_folder_contents(folder_id):
         500: Internal server error for any other unexpected issues.
     """
     try:
-        drive_core = get_drive_core(session)
+        drive_core = get_drive_core()
         drive_service = drive_core.drive_service
         
         results = []

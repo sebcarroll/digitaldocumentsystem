@@ -55,12 +55,19 @@ class FileExtractor:
         Extract text from a PDF file.
         """
         try:
+            logger.info(f"Starting text extraction from PDF: {file_path}")
             with open(file_path, 'rb') as file:
                 reader = PyPDF2.PdfReader(file)
-                full_text = [page.extract_text() for page in reader.pages]
-            return '\n'.join(full_text)
+                full_text = []
+                for i, page in enumerate(reader.pages):
+                    text = page.extract_text()
+                    full_text.append(text)
+                    logger.debug(f"Extracted text from page {i+1}")
+            result = '\n'.join(full_text)
+            logger.info(f"Successfully extracted text from PDF: {file_path}")
+            return result
         except Exception as e:
-            logger.error(f"Error extracting text from PDF file {file_path}: {e}")
+            logger.error(f"Error extracting text from PDF file {file_path}: {e}", exc_info=True)
             raise
 
     def extract_text_from_excel(self, file_path):
@@ -228,4 +235,34 @@ class FileExtractor:
             return "\n".join(text_runs)
         except Exception as e:
             logger.error(f"Error extracting text from PPTX file {file_path}: {e}")
+            raise
+    def extract_text_from_file(self, file_id, file_name):
+        """
+        Extract text from any supported file type.
+        """
+        try:
+            local_path = self.download_file_from_google_drive(file_id, file_name)
+            _, file_extension = os.path.splitext(local_path)
+            
+            extraction_methods = {
+                '.pdf': self.extract_text_from_pdf,
+                '.docx': self.extract_text_from_docx,
+                '.doc': self.extract_text_from_doc,
+                '.xls': self.extract_text_from_excel,
+                '.xlsx': self.extract_text_from_excel,
+                '.txt': self.extract_text_from_txt,
+                '.md': self.extract_text_from_md,
+                '.rtf': self.extract_text_from_rtf,
+                '.html': self.extract_text_from_html,
+                '.pptx': self.extract_text_from_pptx,
+                '.ppt': self.extract_text_from_pptx,
+                '.csv': self.extract_text_from_csv
+            }
+            
+            if file_extension in extraction_methods:
+                return extraction_methods[file_extension](local_path)
+            else:
+                raise ValueError(f"Unsupported file type: {file_extension}")
+        except Exception as e:
+            logger.error(f"Error extracting text from file {file_name}: {e}")
             raise
