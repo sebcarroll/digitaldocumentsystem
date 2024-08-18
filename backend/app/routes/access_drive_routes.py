@@ -8,6 +8,7 @@ logging out, and cleaning up services after requests.
 from flask import Blueprint, session, jsonify, request, g
 from app.utils.drive_utils import get_drive_core
 import logging
+from app.services.google_drive.drive_service import DriveService
 
 drive_bp = Blueprint('drive', __name__)
 
@@ -84,7 +85,8 @@ def open_file(file_id):
     logger.info(f"Entering open_file() function for file ID: {file_id}")
     try:
         drive_core = get_drive_core(session)
-        web_view_link, mime_type = drive_core.get_file_web_view_link(file_id)
+        drive_service = DriveService(drive_core)
+        web_view_link, mime_type = drive_service.get_file_web_view_link(file_id)
         logger.info(f"Successfully retrieved web view link for file ID: {file_id}")
         return jsonify({"webViewLink": web_view_link, "mimeType": mime_type})
     except ValueError as e:

@@ -16,7 +16,9 @@ export const useFolderNavigation = (setError) => {
         window.open(response.webViewLink, '_blank');
       } catch (error) {
         console.error('Failed to open file:', error);
-        setError('Failed to open file.');
+        if (setError) {
+          setError('Failed to open file.');
+        }
       }
     }
   }, [currentFolder, setError]);

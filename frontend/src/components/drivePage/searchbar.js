@@ -6,21 +6,26 @@ import MaximiseButton from './searchbarSubComponents/searchbarMaximiseButton.js'
 import SendButton from './searchbarSubComponents/searchbarSendButton.js';
 import WelcomeText from './searchbarSubComponents/searchbarWelcomeText.js';
 
+/**
+ * SearchBar component
+ * Renders a search bar with chat functionality
+ * @param {Object} props - Component props
+ * @param {Function} props.onOpenChat - Function to open the chat interface
+ * @returns {JSX.Element} The rendered SearchBar component
+ */
 const SearchBar = ({ onOpenChat }) => {
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      console.log('Submitting query:', query);
       onOpenChat(query);
       setQuery('');
     }
   };
   
   const handleMaximize = () => {
-    console.log('Maximize button clicked');
-    onOpenChat();
+    onOpenChat(query);
   };
   
   return (

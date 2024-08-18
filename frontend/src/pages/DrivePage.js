@@ -29,7 +29,7 @@ const DrivePage = () => {
   const [error, setError] = useState(null);
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInitialQuery, setChatInitialQuery] = useState('');
   const navigate = useNavigate();
 
   /**
@@ -55,7 +55,7 @@ const DrivePage = () => {
     }
   }, [navigate]);
 
-  const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation();
+  const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation(setError);
   
   const {
     showActionMenu,
@@ -138,20 +138,8 @@ const DrivePage = () => {
    * @param {string} [query=''] - The initial query for the chat
    */
   const handleOpenChat = (query = '') => {
-    console.log('Opening chat, isChatOpen:', isChatOpen);
     setIsChatOpen(true);
-    if (query) {
-      console.log('Adding initial message:', query);
-      addChatMessage(query, true);
-    }
-  };
-  /**
-   * Adds a new message to the chat
-   * @param {string} text - The message text
-   * @param {boolean} isUser - Whether the message is from the user
-   */
-  const addChatMessage = (text, isUser) => {
-    setChatMessages(prevMessages => [...prevMessages, { text, isUser }]);
+    setChatInitialQuery(query);
   };
 
   /**
@@ -159,8 +147,7 @@ const DrivePage = () => {
    */
   const handleCloseChat = () => {
     setIsChatOpen(false);
-    // Optionally, you might want to clear the chat messages when closing
-    // setChatMessages([]);
+    setChatInitialQuery('');
   };
 
   /**
@@ -325,15 +312,13 @@ const DrivePage = () => {
         handleFolderClick={handleFileClick}
         handleBreadcrumbClick={handleBreadcrumbClick}
       />
-        {isChatOpen && (
-  <ChatInterface
-    messages={chatMessages}
-    addMessage={addChatMessage}
-    onClose={handleCloseChat}
-        />
-      )}
-    </div>
+      {isChatOpen && (
+        <ChatInterface
+          initialQuery={chatInitialQuery}
+          onClose={handleCloseChat}
+          />
+        )}
+        </div>
   );
 };
-
 export default DrivePage;

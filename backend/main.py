@@ -15,8 +15,8 @@ from app.routes.drive_file_operations_routes import drive_file_ops_bp
 from app.routes.drive_folder_operations_routes import drive_folder_ops_bp
 from app.routes.drive_permissions_routes import drive_permissions_bp
 from app.routes.drive_sharing_routes import drive_sharing_bp
-from celery_app import init_celery
-from celery_app import celery_app
+# from celery_app import init_celery
+# from celery_app import celery_app
 from config import DevelopmentConfig, ProductionConfig
 import os
 from datetime import datetime, timedelta, timezone
@@ -41,7 +41,7 @@ def create_app():
     app.config.from_object(DevelopmentConfig if app.debug else ProductionConfig)
 
     # Initialize Celery
-    init_celery(app)
+#   init_celery(app)
 
     # Initialize Pinecone
     init_db(app)

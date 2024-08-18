@@ -1,9 +1,17 @@
+"""Configuration module for the application.
+
+This module defines configuration classes for different environments
+(development, production, testing) and loads environment variables.
+"""
+
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 class Config:
+    """Base configuration class."""
+
     SECRET_KEY = os.getenv('SECRET_KEY')
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
@@ -29,23 +37,31 @@ class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
     # Celery configuration
-    broker_url = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
-    result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/1')
+    # broker_url = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+    # result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/1')
 
     @classmethod
     def init_app(cls, app):
-        app.config.update(
-            broker_url=cls.broker_url,
-            result_backend=cls.result_backend
-        )
+        """Initialize the Flask application with configuration."""
+        # app.config.update(
+        #     broker_url=cls.broker_url,
+        #     result_backend=cls.result_backend
+        # )
+        pass
 
 class DevelopmentConfig(Config):
+    """Configuration for development environment."""
+
     DEBUG = True
 
 class ProductionConfig(Config):
+    """Configuration for production environment."""
+
     pass
 
 class TestingConfig(Config):
+    """Configuration for testing environment."""
+
     TESTING = True
     
     # Use the real Pinecone API key and environment for testing
@@ -57,5 +73,5 @@ class TestingConfig(Config):
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     
     # Use in-memory broker for Celery in testing
-    broker_url = 'memory://'
-    result_backend = 'memory://'
+    # broker_url = 'memory://'
+    # result_backend = 'memory://'

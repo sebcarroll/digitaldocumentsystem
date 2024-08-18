@@ -1,20 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './chatInterface.css';
-import '../components/chatInterface/chatInterfaceSubComponents/botIcon.js'
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
 
-const ChatInterface = ({ messages, addMessage, onClose }) => {
+/**
+ * ChatInterface component
+ * Renders a self-contained chat interface with message history and input
+ * @param {Object} props - Component props
+ * @param {string} props.initialQuery - Initial query to start the chat
+ * @param {Function} props.onClose - Function to close the chat interface
+ * @returns {JSX.Element} The rendered ChatInterface component
+ */
+const ChatInterface = ({ initialQuery, onClose }) => {
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [documents, setDocuments] = useState([]);
 
+  /**
+   * Adds a new message to the chat
+   * @param {string} text - The message text
+   * @param {boolean} isUser - Whether the message is from the user
+   */
+  const addMessage = useCallback((text, isUser) => {
+    setMessages(prevMessages => [...prevMessages, { text, isUser }]);
+  }, []);
+
+  useEffect(() => {
+    if (initialQuery) {
+      addMessage(initialQuery, true);
+    }
+  }, [initialQuery, addMessage]);
+
+  /**
+   * Handles form submission
+   * @param {Event} e - The form submit event
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
       addMessage(input, true);
       setInput('');
+      // Here you would typically call an API to get the bot's response
+      // For now, we'll just simulate a response
+      setTimeout(() => {
+        addMessage("I'm a simulated response from the AI.", false);
+      }, 1000);
     }
   };
 
+  /**
+   * Handles file input change
+   * @param {Event} e - The file input change event
+   */
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setDocuments([...documents, ...files]);
@@ -30,7 +66,7 @@ const ChatInterface = ({ messages, addMessage, onClose }) => {
           <div key={index} className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}>
             {!message.isUser && (
               <div className="bot-icon-background">
-                {BotIcon}
+                <BotIcon />
               </div>
             )}
             <div className="message-text">{message.text}</div>
