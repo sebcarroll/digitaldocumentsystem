@@ -22,8 +22,8 @@ const SharePopup = ({
   onShareWithPendingEmails,
   currentUserRole,
   linkAccessRole,
+  currentUserId,
   onLinkAccessChange,
-  currentUserId
 }) => {
   if (!isOpen) return null;
 
@@ -113,7 +113,8 @@ const SharePopup = ({
           ))}
         </ul>
         <div className="general-access">
-          <h3>General access</h3>
+        <h3>General access</h3>
+        <div className="access-controls">
           <select
             value={generalAccess}
             onChange={(e) => onGeneralAccessChange(e.target.value)}
@@ -130,10 +131,20 @@ const SharePopup = ({
             >
               <option value="viewer">Viewer</option>
               <option value="commenter">Commenter</option>
-              <option value="writer">Editor</option>
+              <option value="editor">Editor</option>
             </select>
           )}
         </div>
+        {generalAccess === "Anyone with the link" && (
+          <p className="access-description">
+            Anyone on the Internet with the link can {
+            linkAccessRole === 'viewer' ? 'view' :
+            linkAccessRole === 'commenter' ? 'comment' :
+            linkAccessRole === 'editor' ? 'edit' : 'access'
+      }
+          </p>
+        )}
+      </div>
         <div className="popup-actions">
           {canEditPermissions && (
             <button onClick={() => items.length > 0 && onCopyLink(items[0])} disabled={items.length === 0}>

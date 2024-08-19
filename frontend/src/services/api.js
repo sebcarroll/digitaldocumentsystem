@@ -272,7 +272,7 @@ export const updateGeneralAccess = async (fileId, newAccess, linkRole) => {
   });
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to update general access');
+    throw new Error(errorData.error || `Failed to update general access: ${response.statusText}`);
   }
   return response.json();
 };
@@ -283,6 +283,70 @@ export const fetchFolders = async (folderId = 'root') => {
   });
   if (!response.ok) {
     throw new Error('Failed to fetch folders');
+  }
+  return response.json();
+};
+
+export const sendQuery = async (query) => {
+  const response = await fetch(`${API_URL}/chat/query`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ query }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to process query');
+  }
+  return response.json();
+};
+
+export const addDocument = async (document) => {
+  const response = await fetch(`${API_URL}/chat/document`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ document }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to add document');
+  }
+  return response.json();
+};
+
+export const updateDocument = async (document) => {
+  const response = await fetch(`${API_URL}/chat/document`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ document }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update document');
+  }
+  return response.json();
+};
+
+export const deleteDocument = async (documentId) => {
+  const response = await fetch(`${API_URL}/chat/document`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ document_id: documentId }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to delete document');
   }
   return response.json();
 };

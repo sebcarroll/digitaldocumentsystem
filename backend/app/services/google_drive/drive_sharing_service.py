@@ -7,6 +7,14 @@ class DriveSharingService:
         self.drive_core = drive_core
         self.drive_service = drive_core.drive_service
 
+    def _map_role(self, frontend_role):
+        role_mapping = {
+            'viewer': 'reader',
+            'commenter': 'commenter',
+            'editor': 'writer',
+        }
+        return role_mapping.get(frontend_role, 'reader')  # Default to 'reader' if unknown
+
     def share_item(self, item_id, emails, role):
         shared_with = []
         errors = []
@@ -41,7 +49,7 @@ class DriveSharingService:
             if new_access == 'Anyone with the link':
                 permission = {
                     'type': 'anyone',
-                    'role': link_role,
+                    'role': self._map_role(link_role),
                     'allowFileDiscovery': False
                 }
                 self.drive_core.drive_service.permissions().create(

@@ -130,24 +130,28 @@ export const useFileSharing = (items) => {
     }
   }, [items, fetchPeopleWithAccess, currentUserRole]);
 
-  const handleGeneralAccessChange = useCallback(async (newAccess) => {
+  const handleGeneralAccessChange = async (newAccess, newLinkRole = linkAccessRole) => {
     if (currentUserRole !== 'writer' && currentUserRole !== 'owner') return;
-    setIsSharingLoading(true);
+    setIsLoading(true);
     setSharingError(null);
     try {
-      await Promise.all(items.map(item => updateGeneralAccess(item.id, newAccess, linkAccessRole)));
+      await Promise.all(items.map(item => updateGeneralAccess(item.id, newAccess, newLinkRole)));
       setGeneralAccess(newAccess);
+      setLinkAccessRole(newLinkRole);
     } catch (err) {
       setSharingError('Failed to update general access');
       console.error(err);
     } finally {
-      setIsSharingLoading(false);
+      setIsLoading(false);
     }
-  }, [items, currentUserRole, linkAccessRole]);
-
-  const handleLinkAccessRoleChange = useCallback((newRole) => {
+  };
+  
+const handleLinkAccessChange = (newRole) => {
     setLinkAccessRole(newRole);
-  }, []);
+    // If you need to update this on the backend immediately:
+    handleGeneralAccessChange(generalAccess, newRole);
+  };
+
 
   return {
     email,
@@ -167,7 +171,7 @@ export const useFileSharing = (items) => {
     handleRemoveAccess,
     handleGeneralAccessChange,
     handleShareWithPendingEmails,
-    handleLinkAccessRoleChange,
+    handleLinkAccessChange,
     fetchCurrentUserRole,
     fetchPeopleWithAccess,
     isSharingLoading,

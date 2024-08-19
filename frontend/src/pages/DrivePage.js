@@ -115,7 +115,7 @@ const DrivePage = () => {
     handleRemoveAccess,
     handleGeneralAccessChange,
     handleShareWithPendingEmails,
-    handleLinkAccessRoleChange,
+    handleLinkAccessChange,
     fetchCurrentUserRole,
     fetchPeopleWithAccess,
     isSharingLoading,  
@@ -296,7 +296,7 @@ const DrivePage = () => {
             onGeneralAccessChange={handleGeneralAccessChange}
             onCopyLink={handleCopyLink}
             onShareWithPendingEmails={handleShareWithPendingEmails}
-            onLinkAccessChange={handleLinkAccessRoleChange}
+            onLinkAccessChange={handleLinkAccessChange}
             currentUserId={currentUserId}
           />
         )

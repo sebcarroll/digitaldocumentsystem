@@ -235,3 +235,18 @@
     padding: 5px;
     min-width: 100px;
 }
+
+.general-access .access-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .general-access select {
+    flex: 1;
+  }
+  
+  .general-access .access-description {
+    font-size: 0.9em;
+    color: black;
+  }

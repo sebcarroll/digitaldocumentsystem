@@ -1,25 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './chatInterface.css';
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
+import { sendQuery, addDocument, updateDocument, deleteDocument } from '../services/api.js';
 
-/**
- * ChatInterface component
- * Renders a self-contained chat interface with message history and input
- * @param {Object} props - Component props
- * @param {string} props.initialQuery - Initial query to start the chat
- * @param {Function} props.onClose - Function to close the chat interface
- * @returns {JSX.Element} The rendered ChatInterface component
- */
 const ChatInterface = ({ initialQuery, onClose }) => {
+  console.log('ChatInterface rendering', { initialQuery });
+  
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  /**
-   * Adds a new message to the chat
-   * @param {string} text - The message text
-   * @param {boolean} isUser - Whether the message is from the user
-   */
   const addMessage = useCallback((text, isUser) => {
     setMessages(prevMessages => [...prevMessages, { text, isUser }]);
   }, []);
@@ -27,33 +18,76 @@ const ChatInterface = ({ initialQuery, onClose }) => {
   useEffect(() => {
     if (initialQuery) {
       addMessage(initialQuery, true);
+      handleQuery(initialQuery);
     }
   }, [initialQuery, addMessage]);
 
-  /**
-   * Handles form submission
-   * @param {Event} e - The form submit event
-   */
+  const handleQuery = async (query) => {
+    setIsLoading(true);
+    try {
+      const response = await sendQuery(query);
+      addMessage(response.response, false);
+    } catch (error) {
+      console.error('Error processing query:', error);
+      addMessage("Sorry, I couldn't process your request. Please try again.", false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
       addMessage(input, true);
+      handleQuery(input);
       setInput('');
-      // Here you would typically call an API to get the bot's response
-      // For now, we'll just simulate a response
-      setTimeout(() => {
-        addMessage("I'm a simulated response from the AI.", false);
-      }, 1000);
     }
   };
 
-  /**
-   * Handles file input change
-   * @param {Event} e - The file input change event
-   */
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
-    setDocuments([...documents, ...files]);
+    setDocuments(prevDocuments => [...prevDocuments, ...files]);
+
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const content = e.target.result;
+        try {
+          const document = {
+            id: file.name,
+            content: content,
+            type: file.type,
+          };
+          await addDocument(document);
+          addMessage(`Document "${file.name}" uploaded and processed successfully.`, false);
+        } catch (error) {
+          console.error('Error uploading document:', error);
+          addMessage(`Failed to upload document "${file.name}". Please try again.`, false);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleUpdateDocument = async (documentId, newContent) => {
+    try {
+      await updateDocument({ id: documentId, content: newContent });
+      addMessage(`Document "${documentId}" updated successfully.`, false);
+    } catch (error) {
+      console.error('Error updating document:', error);
+      addMessage(`Failed to update document "${documentId}". Please try again.`, false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    try {
+      await deleteDocument(documentId);
+      setDocuments(prevDocuments => prevDocuments.filter(doc => doc.name !== documentId));
+      addMessage(`Document "${documentId}" deleted successfully.`, false);
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      addMessage(`Failed to delete document "${documentId}". Please try again.`, false);
+    }
   };
 
   return (
@@ -72,14 +106,16 @@ const ChatInterface = ({ initialQuery, onClose }) => {
             <div className="message-text">{message.text}</div>
           </div>
         ))}
+        {isLoading && <div className="loading-indicator">Processing...</div>}
       </div>
       {documents.length > 0 && (
         <div className="document-list">
-          {documents.length === 1 ? (
-            <span>{documents[0].name}</span>
-          ) : (
-            <span>{documents.length} documents uploaded</span>
-          )}
+          {documents.map((doc, index) => (
+            <div key={index} className="document-item">
+              <span>{doc.name}</span>
+              <button onClick={() => handleDeleteDocument(doc.name)}>Delete</button>
+            </div>
+          ))}
         </div>
       )}
       <form onSubmit={handleSubmit} className="input-area">
