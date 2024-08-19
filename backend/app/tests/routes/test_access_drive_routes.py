@@ -1,15 +1,18 @@
 """
 Test suite for the Google Drive access routes.
 
-This module contains tests for the various endpoints and functionalities
-related to Google Drive access in the application.
+This module contains unit tests for various endpoints and functionalities
+related to Google Drive access in the application. It covers scenarios such as
+successful operations, error handling, and edge cases for the drive listing,
+file opening, and logout functionalities.
 """
 
 import pytest
 from flask import Flask, session
 from unittest.mock import patch, MagicMock
-from backend.app.routes.access_drive_routes import drive_bp
+from app.routes.access_drive_routes import drive_bp
 from app.utils.drive_utils import get_drive_core
+from app.services.google_drive.drive_service import DriveService
 
 @pytest.fixture
 def app():
@@ -43,15 +46,12 @@ def test_drive_success(client):
     Test successful retrieval of Drive contents.
 
     This test verifies that the /drive endpoint correctly returns
-    a list of files when files are present.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
+    a list of files when files are present in the specified folder.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
         mock_drive_core = mock_get_drive_core.return_value
         mock_drive_core.list_folder_contents.return_value = [
             {'id': '1', 'name': 'file1'},
@@ -65,7 +65,7 @@ def test_drive_success(client):
         assert 'files' in json_data
         assert len(json_data['files']) == 2
         assert 'nextPageToken' in json_data
-        assert json_data['nextPageToken'] is None  # Assuming we're not implementing pagination in DriveCore
+        assert json_data['nextPageToken'] is None
 
 def test_drive_no_files(client):
     """
@@ -73,14 +73,11 @@ def test_drive_no_files(client):
 
     This test ensures that the /drive endpoint returns an appropriate
     message when no files are found in the specified folder.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
         mock_drive_core = mock_get_drive_core.return_value
         mock_drive_core.list_folder_contents.return_value = []
 
@@ -97,14 +94,11 @@ def test_drive_value_error(client):
 
     This test verifies that the /drive endpoint correctly handles
     and reports a ValueError, which typically indicates invalid credentials.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'invalid_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
         mock_get_drive_core.side_effect = ValueError("Invalid credentials")
 
         response = client.get('/drive')
@@ -120,14 +114,11 @@ def test_drive_general_error(client):
 
     This test ensures that the /drive endpoint properly handles
     and reports unexpected errors during the file listing process.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
         mock_drive_core = mock_get_drive_core.return_value
         mock_drive_core.list_folder_contents.side_effect = Exception("Unexpected error")
 
@@ -144,16 +135,15 @@ def test_open_file_success(client):
 
     This test verifies that the /drive/<file_id>/open endpoint
     correctly returns the web view link and MIME type for a file.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
         mock_drive_core = mock_get_drive_core.return_value
-        mock_drive_core.get_file_web_view_link.return_value = ('https://example.com', 'text/plain')
+        mock_service = mock_drive_service.return_value
+        mock_service.get_file_web_view_link.return_value = ('https://example.com', 'text/plain')
 
         response = client.get('/drive/test_file_id/open')
         
@@ -170,16 +160,15 @@ def test_open_file_value_error(client):
 
     This test ensures that the /drive/<file_id>/open endpoint
     properly handles and reports attempts to open an invalid file.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
         mock_drive_core = mock_get_drive_core.return_value
-        mock_drive_core.get_file_web_view_link.side_effect = ValueError("Invalid file ID")
+        mock_service = mock_drive_service.return_value
+        mock_service.get_file_web_view_link.side_effect = ValueError("Invalid file ID")
 
         response = client.get('/drive/invalid_file_id/open')
         
@@ -194,16 +183,15 @@ def test_open_file_general_error(client):
 
     This test verifies that the /drive/<file_id>/open endpoint
     correctly handles and reports unexpected errors during file opening.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('backend.app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
         mock_drive_core = mock_get_drive_core.return_value
-        mock_drive_core.get_file_web_view_link.side_effect = Exception("Unexpected error")
+        mock_service = mock_drive_service.return_value
+        mock_service.get_file_web_view_link.side_effect = Exception("Unexpected error")
 
         response = client.get('/drive/test_file_id/open')
         
@@ -218,9 +206,6 @@ def test_logout(client):
 
     This test ensures that the /logout endpoint correctly clears
     the user's session and returns a success message.
-
-    Args:
-        client (flask.testing.FlaskClient): The test client.
     """
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
@@ -241,9 +226,6 @@ def test_cleanup_services(app):
 
     This test verifies that the teardown function correctly
     removes the 'drive_core' attribute from the Flask 'g' object.
-
-    Args:
-        app (flask.Flask): The Flask app instance.
     """
     with app.test_request_context():
         from flask import g
