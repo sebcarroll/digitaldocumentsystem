@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import './searchbar.css';
 import SearchbarBackground from './searchbarSubComponents/searchbarBackground.js';
 import InputField from './searchbarSubComponents/searchbarInputField.js';
@@ -16,17 +16,22 @@ import WelcomeText from './searchbarSubComponents/searchbarWelcomeText.js';
 const SearchBar = ({ onOpenChat }) => {
   const [query, setQuery] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     if (query.trim()) {
       onOpenChat(query);
       setQuery('');
     }
-  };
+  }, [query, onOpenChat]);
   
-  const handleMaximize = () => {
+  const handleMaximize = useCallback(() => {
+    console.log("Maximize button clicked");
     onOpenChat(query);
-  };
+  }, [query, onOpenChat]);
+
+  const handleQueryChange = useCallback((e) => {
+    setQuery(e.target.value);
+  }, []);
   
   return (
     <SearchbarBackground>
@@ -37,7 +42,7 @@ const SearchBar = ({ onOpenChat }) => {
       <form onSubmit={handleSubmit} className="search-form">
         <InputField 
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleQueryChange}
         />
         <SendButton onClick={handleSubmit} />
       </form>
