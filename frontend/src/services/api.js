@@ -351,3 +351,17 @@ export const deleteDocument = async (documentId) => {
   return response.json();
 };
 
+export const uploadDocument = async (document) => {
+  const formData = new FormData();
+  formData.append('file', new Blob([document.content], {type: document.type}), document.id);
+
+  const response = await fetch(`${API_URL}/drive/upload-file`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error('Failed to upload document');
+  }
+  return response.json();
+};

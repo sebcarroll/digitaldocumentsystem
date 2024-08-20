@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './chatInterface.css';
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
-import { sendQuery, uploadDocument } from '../services/chat_service';
+import { sendQuery, uploadDocument } from '../services/api'
 import SendButton from '../components/drivePage/searchbarSubComponents/searchbarSendButton.js';
 import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
 
