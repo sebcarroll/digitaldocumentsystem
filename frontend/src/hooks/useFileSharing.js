@@ -17,8 +17,6 @@ export const useFileSharing = (items) => {
 
   const fetchCurrentUserRole = useCallback(async () => {
     if (items.length === 0) return;
-    setIsSharingLoading(true);
-    setSharingError(null);
     try {
       const userInfo = await getCurrentUserRole(items[0].id);
       console.log('User Info from API:', userInfo);
@@ -26,38 +24,63 @@ export const useFileSharing = (items) => {
       setCurrentUserId(userInfo.id);
     } catch (error) {
       console.error('Failed to fetch current user info:', error);
-      setSharingError('Failed to fetch user role');
-    } finally {
-      setIsSharingLoading(false);
+      throw error;
     }
   }, [items]);
-
-  useEffect(() => {
-    fetchCurrentUserRole();
-  }, [fetchCurrentUserRole]);
 
   const fetchPeopleWithAccess = useCallback(async () => {
     if (items.length === 0) return;
-    setIsSharingLoading(true);
-    setSharingError(null);
     try {
       const response = await getPeopleWithAccess(items[0].id);
-      console.log('API Response:', response); // Log the full API response
+      console.log('API Response:', response);
       setPeopleWithAccess(response.peopleWithAccess || []);
       setCurrentUserRole(response.currentUserRole || 'viewer');
       setCurrentUserId(response.currentUserId || null);
-      setGeneralAccess(response.generalAccess || 'Restricted');
+      
+      const anyoneWithLink = (response.peopleWithAccess || []).find(person => person.id === 'anyoneWithLink');
+      setGeneralAccess(anyoneWithLink ? 'Anyone with the link' : 'Restricted');
+      if (anyoneWithLink) {
+        setLinkAccessRole(anyoneWithLink.role);
+      }
     } catch (err) {
       console.error('Error fetching people with access:', err);
-      setSharingError('Failed to fetch people with access');
-    } finally {
-      setIsSharingLoading(false);
+      throw err;
     }
   }, [items]);
 
   useEffect(() => {
-    fetchPeopleWithAccess();
-  }, [fetchPeopleWithAccess]);
+    // Reset states when items change
+    setEmail('');
+    setSearchResults([]);
+    setPeopleWithAccess([]);
+    setGeneralAccess('Restricted');
+    setIsLoading(false);
+    setError(null);
+    setPendingEmails([]);
+    setCurrentUserRole(null);
+    setLinkAccessRole('viewer');
+    setCurrentUserId(null);
+    setIsSharingLoading(true);
+    setSharingError(null);
+
+    // Fetch new data
+    if (items.length > 0) {
+      const fetchData = async () => {
+        try {
+          await fetchCurrentUserRole();
+          await fetchPeopleWithAccess();
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          setSharingError('Failed to fetch data');
+        } finally {
+          setIsSharingLoading(false);
+        }
+      };
+      fetchData();
+    } else {
+      setIsSharingLoading(false);
+    }
+  }, [items, fetchCurrentUserRole, fetchPeopleWithAccess]);
 
   const handleEmailChange = useCallback((value) => {
     setEmail(value);
@@ -138,6 +161,21 @@ export const useFileSharing = (items) => {
       await Promise.all(items.map(item => updateGeneralAccess(item.id, newAccess, newLinkRole)));
       setGeneralAccess(newAccess);
       setLinkAccessRole(newLinkRole);
+      
+      // Update peopleWithAccess
+      setPeopleWithAccess(prevPeople => {
+        const updatedPeople = prevPeople.filter(person => person.id !== 'anyoneWithLink');
+        if (newAccess === 'Anyone with the link') {
+          updatedPeople.push({
+            id: 'anyoneWithLink',
+            role: newLinkRole,
+            displayName: 'Anyone with the link',
+            emailAddress: null,
+            photoLink: null
+          });
+        }
+        return updatedPeople;
+      });
     } catch (err) {
       setSharingError('Failed to update general access');
       console.error(err);
@@ -146,12 +184,10 @@ export const useFileSharing = (items) => {
     }
   };
   
-const handleLinkAccessChange = (newRole) => {
+  const handleLinkAccessChange = (newRole) => {
     setLinkAccessRole(newRole);
-    // If you need to update this on the backend immediately:
     handleGeneralAccessChange(generalAccess, newRole);
   };
-
 
   return {
     email,

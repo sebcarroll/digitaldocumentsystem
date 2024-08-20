@@ -1,5 +1,5 @@
 // useFileSelection.js
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { moveFiles, deleteFiles, copyFiles, openDriveFile, renameFile } from '../services/api';
 
 export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
@@ -46,21 +46,33 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     }
   }, [selectedFiles, getDriveFiles, currentFolder.id, setError]);
 
-  const handleCopyLink = useCallback(async () => {
-    if (selectedFiles.length !== 1) return;
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const handleCopyLink = useCallback(async (file) => {
+    if (!file) return;
     try {
-      const file = selectedFiles[0];
-      const response = await openDriveFile(file.id);
-      navigator.clipboard.writeText(response.webViewLink);
-      alert('Link copied to clipboard!');
+      const data = await openDriveFile(file.id);
+      if (data.webViewLink) {
+        await navigator.clipboard.writeText(data.webViewLink);
+        if (isMounted.current) {
+          alert('Link copied to clipboard!');
+        }
+      } else {
+        throw new Error('Web view link not found in response');
+      }
     } catch (error) {
       console.error('Failed to copy link:', error);
-      setError(error.message);
-    } finally {
-      setShowActionMenu(false);
-      setSelectedFiles([]);
+      if (isMounted.current) {
+        setError(`Failed to copy link: ${error.message}`);
+      }
     }
-  }, [selectedFiles, setError]);
+  }, [setError]);
 
   const openRenamePopup = useCallback(() => {
     if (selectedFiles.length !== 1) return;

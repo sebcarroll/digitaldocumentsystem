@@ -24,8 +24,19 @@ const SharePopup = ({
   linkAccessRole,
   currentUserId,
   onLinkAccessChange,
+  isSharingLoading,
 }) => {
   if (!isOpen) return null;
+
+  if (isSharingLoading) {
+    return (
+      <div className="share-popup-overlay">
+        <div className="share-popup">
+          <h2>Loading...</h2>
+        </div>
+      </div>
+    );
+  }
 
   const currentUserAccess = peopleWithAccess.find(person => person.id === currentUserId);
 
@@ -50,6 +61,9 @@ const SharePopup = ({
   };
 
   const canEditPermissions = ['writer', 'owner'].includes(currentUserRole.toLowerCase());
+
+  const anyoneWithLinkPerson = peopleWithAccess.find(person => person.id === 'anyoneWithLink');
+  const filteredPeopleWithAccess = peopleWithAccess.filter(person => person.id !== 'anyoneWithLink');
 
   return (
     <div className="share-popup-overlay">
@@ -86,7 +100,7 @@ const SharePopup = ({
         {isLoading && <p>Loading...</p>}
         {error && <p className="error">{error}</p>}
         <ul className="people-with-access">
-          {peopleWithAccess.map(person => (
+          {filteredPeopleWithAccess.map(person => (
             <li key={person.id}>
               <img src={person.photoLink} alt={person.displayName} />
               <div className="person-info">
@@ -113,38 +127,39 @@ const SharePopup = ({
           ))}
         </ul>
         <div className="general-access">
-        <h3>General access</h3>
-        <div className="access-controls">
-          <select
-            value={generalAccess}
-            onChange={(e) => onGeneralAccessChange(e.target.value)}
-            disabled={!canEditPermissions}
-          >
-            <option value="Restricted">Restricted</option>
-            <option value="Anyone with the link">Anyone with the link</option>
-          </select>
-          {generalAccess === "Anyone with the link" && (
+          <h3>General access</h3>
+          <div className="access-controls">
             <select
-              value={linkAccessRole}
-              onChange={(e) => onLinkAccessChange(e.target.value)}
+              value={generalAccess}
+              onChange={(e) => onGeneralAccessChange(e.target.value)}
               disabled={!canEditPermissions}
             >
-              <option value="viewer">Viewer</option>
-              <option value="commenter">Commenter</option>
-              <option value="editor">Editor</option>
+              <option value="Restricted">Restricted</option>
+              <option value="Anyone with the link">Anyone with the link</option>
             </select>
+            {generalAccess === "Anyone with the link" && (
+              <select
+                value={linkAccessRole}
+                onChange={(e) => onLinkAccessChange(e.target.value)}
+                disabled={!canEditPermissions}
+              >
+                <option value="viewer">Viewer</option>
+                <option value="commenter">Commenter</option>
+                <option value="writer">Editor</option>
+              </select>
+            )}
+          </div>
+          {generalAccess === "Anyone with the link" && (
+            <p className="access-description">
+              Anyone on the Internet with the link can {
+                linkAccessRole === 'viewer' ? 'view' :
+                linkAccessRole === 'commenter' ? 'comment' :
+                linkAccessRole === 'writer' ? 'edit' : 
+                'access'
+              }
+            </p>
           )}
         </div>
-        {generalAccess === "Anyone with the link" && (
-          <p className="access-description">
-            Anyone on the Internet with the link can {
-            linkAccessRole === 'viewer' ? 'view' :
-            linkAccessRole === 'commenter' ? 'comment' :
-            linkAccessRole === 'editor' ? 'edit' : 'access'
-      }
-          </p>
-        )}
-      </div>
         <div className="popup-actions">
           {canEditPermissions && (
             <button onClick={() => items.length > 0 && onCopyLink(items[0])} disabled={items.length === 0}>
