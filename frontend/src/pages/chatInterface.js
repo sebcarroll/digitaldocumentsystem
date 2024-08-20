@@ -1,20 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './chatInterface.css';
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
-import { sendQuery, addDocument, updateDocument, deleteDocument } from '../services/api.js';
+import { sendQuery, uploadDocument } from '../services/chat_service';
+import SendButton from '../components/drivePage/searchbarSubComponents/searchbarSendButton.js';
+import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
 
+/**
+ * ChatInterface component
+ * Renders a self-contained chat interface with message history, input, and file upload functionality.
+ * It interacts with an LLM backend for processing queries and documents.
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {string} props.initialQuery - Initial query to start the chat
+ * @param {Function} props.onClose - Function to close the chat interface
+ * @returns {JSX.Element} The rendered ChatInterface component
+ */
 const ChatInterface = ({ initialQuery, onClose }) => {
   console.log('ChatInterface rendering', { initialQuery });
   
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [documents, setDocuments] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // State declarations
+  const [messages, setMessages] = useState([]); // Stores chat messages
+  const [input, setInput] = useState(''); // Stores current input text
+  const [documents, setDocuments] = useState([]); // Stores uploaded documents
+  const [isLoading, setIsLoading] = useState(false); // Indicates if a query is being processed
 
+  /**
+   * Adds a new message to the chat history
+   * @param {string} text - The message text
+   * @param {boolean} isUser - Whether the message is from the user (true) or the AI (false)
+   */
   const addMessage = useCallback((text, isUser) => {
     setMessages(prevMessages => [...prevMessages, { text, isUser }]);
   }, []);
 
+  // Effect to handle initial query
   useEffect(() => {
     if (initialQuery) {
       addMessage(initialQuery, true);
@@ -22,6 +42,10 @@ const ChatInterface = ({ initialQuery, onClose }) => {
     }
   }, [initialQuery, addMessage]);
 
+  /**
+   * Handles sending a query to the LLM backend and processing the response
+   * @param {string} query - The query to send to the LLM
+   */
   const handleQuery = async (query) => {
     setIsLoading(true);
     try {
@@ -35,6 +59,10 @@ const ChatInterface = ({ initialQuery, onClose }) => {
     }
   };
 
+  /**
+   * Handles form submission when the user sends a message
+   * @param {Event} e - The form submit event
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
@@ -44,21 +72,24 @@ const ChatInterface = ({ initialQuery, onClose }) => {
     }
   };
 
+  /**
+   * Handles file input change when the user uploads documents
+   * @param {Event} e - The file input change event
+   */
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
-    setDocuments(prevDocuments => [...prevDocuments, ...files]);
+    setDocuments([...documents, ...files]);
 
     for (const file of files) {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const content = e.target.result;
         try {
-          const document = {
+          await uploadDocument({
             id: file.name,
             content: content,
             type: file.type,
-          };
-          await addDocument(document);
+          });
           addMessage(`Document "${file.name}" uploaded and processed successfully.`, false);
         } catch (error) {
           console.error('Error uploading document:', error);
@@ -66,27 +97,6 @@ const ChatInterface = ({ initialQuery, onClose }) => {
         }
       };
       reader.readAsText(file);
-    }
-  };
-
-  const handleUpdateDocument = async (documentId, newContent) => {
-    try {
-      await updateDocument({ id: documentId, content: newContent });
-      addMessage(`Document "${documentId}" updated successfully.`, false);
-    } catch (error) {
-      console.error('Error updating document:', error);
-      addMessage(`Failed to update document "${documentId}". Please try again.`, false);
-    }
-  };
-
-  const handleDeleteDocument = async (documentId) => {
-    try {
-      await deleteDocument(documentId);
-      setDocuments(prevDocuments => prevDocuments.filter(doc => doc.name !== documentId));
-      addMessage(`Document "${documentId}" deleted successfully.`, false);
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      addMessage(`Failed to delete document "${documentId}". Please try again.`, false);
     }
   };
 
@@ -110,17 +120,16 @@ const ChatInterface = ({ initialQuery, onClose }) => {
       </div>
       {documents.length > 0 && (
         <div className="document-list">
-          {documents.map((doc, index) => (
-            <div key={index} className="document-item">
-              <span>{doc.name}</span>
-              <button onClick={() => handleDeleteDocument(doc.name)}>Delete</button>
-            </div>
-          ))}
+          {documents.length === 1 ? (
+            <span>{documents[0].name}</span>
+          ) : (
+            <span>{documents.length} documents uploaded</span>
+          )}
         </div>
       )}
       <form onSubmit={handleSubmit} className="input-area">
         <label htmlFor="file-upload" className="file-upload-label">
-          📎
+          <AttachFileSharpIcon />
         </label>
         <input
           id="file-upload"
@@ -137,7 +146,7 @@ const ChatInterface = ({ initialQuery, onClose }) => {
           className="message-input"
         />
         <button type="submit" className="send-button">
-          Send
+          <SendButton />
         </button>
       </form>
     </div>
