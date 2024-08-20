@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './chatInterface.css';
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
 import { sendQuery, uploadDocument } from '../services/api'
@@ -99,6 +99,18 @@ const ChatInterface = ({ initialQuery, onClose }) => {
       reader.readAsText(file);
     }
   };
+
+  const messageListRef = useRef(null);
+
+  const scrollToBottom = () => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  };
+  
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]); // Scroll to bottom whenever messages change
 
   return (
     <div className="chat-interface">

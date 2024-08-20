@@ -1,14 +1,31 @@
 /* chatInterface.css */
+:root {
+  --chat-padding: 20px;
+  --input-height: 45px;
+  --send-button-size: 45px;
+}
+
 .chat-interface {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background-color: #fff;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 .chat-header {
   display: flex;
   justify-content: flex-end;
-  padding: 10px;
+  padding: var(--chat-padding);
+  background-color: #fff;
+  z-index: 2;
 }
 
 .close-button {
@@ -22,6 +39,8 @@
   flex-grow: 1;
   overflow-y: auto;
   padding: 20px;
+  padding-bottom: calc(var(--input-height) + 40px);
+  margin-bottom: calc(var(--input-height) + 40px);
 }
 
 .message {
@@ -73,9 +92,14 @@
 
 .input-area {
   display: flex;
-  padding: 20px;
+  padding: var(--chat-padding);
   background-color: #f6f6f6;
   border-top: 1px solid #e0e0e0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
 }
 
 .file-upload-label {
@@ -85,7 +109,7 @@
 
 .message-input {
   flex-grow: 1;
-  height: 45px;
+  height: var(--input-height);
   padding: 0 15px;
   border: 0.8px solid #d1d5db;
   border-radius: 9999px;
@@ -93,8 +117,8 @@
 }
 
 .send-button {
-  width: 45px;
-  height: 45px;
+  width: var(--send-button-size);
+  height: var(--send-button-size);
   border-radius: 9999px;
   background-color: #1e3a8a;
   color: white;
@@ -111,6 +135,12 @@
 }
 
 @media screen and (max-width: 767px) {
+  :root {
+    --chat-padding: 10px;
+    --input-height: 40px;
+    --send-button-size: 40px;
+  }
+
   .chat-header {
     padding: 5px;
   }
@@ -121,6 +151,8 @@
 
   .message-list {
     padding: 10px;
+    padding-bottom: calc(var(--input-height) + 20px);
+    margin-bottom: calc(var(--input-height) + 20px);
   }
 
   .message-text {
@@ -138,14 +170,14 @@
   }
 
   .message-input {
-    height: 40px;
+    height: var(--input-height);
     padding: 0 10px;
     font-size: 14px;
   }
 
   .send-button {
-    width: 40px;
-    height: 40px;
+    width: var(--send-button-size);
+    height: var(--send-button-size);
     font-size: 14px;
   }
 

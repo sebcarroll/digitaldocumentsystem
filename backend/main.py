@@ -128,24 +128,30 @@ def create_app():
         user_id = session.get('user_id')
         if user_id:
             logger.info(f"Session contains user_id: {user_id}")
-            credentials_json = redis_client.get(f'user:{user_id}:token')
-            if credentials_json:
-                logger.info(f"Credentials found in Redis for user {user_id}")
-                if 'last_active' in session:
-                    try:
-                        last_active = datetime.fromisoformat(session['last_active'])
-                        if datetime.now(timezone.utc) - last_active > timedelta(minutes=2):
-                            logger.info("User inactive for more than 2 minutes")
-                        else:
-                            logger.info("User active within last 2 minutes")
-                    except ValueError:
-                        logger.warning("Invalid last_active timestamp in session")
+            try:
+                credentials_json = redis_client.get(f'user:{user_id}:token')
+                if credentials_json:
+                    logger.info(f"Credentials found in Redis for user {user_id}")
+                    if 'last_active' in session:
+                        try:
+                            last_active = datetime.fromisoformat(session['last_active'])
+                            if datetime.now(timezone.utc) - last_active > timedelta(minutes=30):
+                                session.clear()
+                                logger.info(f"Cleared session for inactive user {user_id}")
+                                return jsonify({"error": "Session expired"}), 401
+                        except ValueError:
+                            logger.warning("Invalid last_active timestamp in session")
+                    else:
+                        logger.warning("No last_active timestamp in session")
                 else:
-                    logger.warning("No last_active timestamp in session")
-            else:
-                logger.warning(f"No credentials found in Redis for user {user_id}")
+                    logger.warning(f"No credentials found in Redis for user {user_id}")
+                    session.clear()
+                    return jsonify({"error": "User credentials not found"}), 401
+            except redis.RedisError as e:
+                logger.error(f"Redis error: {str(e)}")
+                return jsonify({"error": "Server error"}), 500
         else:
-            logger.warning("No user_id in session")
+            logger.info("No user_id in session")
         
         # Update the last active timestamp
         session['last_active'] = datetime.now(timezone.utc).isoformat()
