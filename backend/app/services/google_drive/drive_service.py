@@ -36,9 +36,10 @@ class DriveService:
         logger.info(f"Listing contents of folder: {folder_id}")
         files = drive_service.files().list(
             q=query,
-            fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink)",
+            fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared)",
             pageToken=page_token,
-            pageSize=page_size
+            pageSize=page_size,
+            orderBy="modifiedTime desc"
         ).execute()
 
         items = files.get('files', [])
@@ -50,7 +51,13 @@ class DriveService:
             "mimeType": item['mimeType'],
             "size": item.get('size'),
             "hasThumbnail": item.get('hasThumbnail', False),
-            "thumbnailLink": item.get('thumbnailLink')
+            "thumbnailLink": item.get('thumbnailLink'),
+            "modifiedTime": item.get('modifiedTime'),
+            "viewedByMeTime": item.get('viewedByMeTime'),
+            "sharedWithMeTime": item.get('sharedWithMeTime'),
+            "owners": item.get('owners', []),
+            "parents": item.get('parents', []),
+            "shared": item.get('shared', False)
         } for item in items]
         return file_list, next_page_token
 

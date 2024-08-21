@@ -59,6 +59,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* File size styles */
@@ -106,17 +115,137 @@
   background-color: #e8f0fe;
 }
 
-/* Responsive styles for larger tablets */
+/* List view styles */
+.file-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-list-header, .file-list .file-item {
+  display: grid;
+  grid-template-columns: minmax(100px, 3fr) minmax(100px, 2fr) minmax(80px, 1fr) minmax(80px, 1fr) auto;
+  align-items: center;
+  padding: 8px 16px;
+  gap: 8px;
+}
+
+.file-list-header {
+  font-weight: bold;
+  border-bottom: 1px solid #e0e0e0;
+  color: black;
+}
+
+.file-list .file-item {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.file-list .file-name,
+.file-list .file-reason,
+.file-list .file-owner,
+.file-list .file-location,
+.file-list-header span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0; /* This ensures that the ellipsis works properly */
+}
+
+.file-list .file-reason,
+.file-list .file-owner,
+.file-list .file-location {
+  font-size: 14px;
+  color: #5f6368;
+}
+
+.file-list .more-options {
+  justify-self: end;
+}
+
+/* Grid view specific styles */
+.file-grid .file-item .file-header {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+}
+
+.file-grid .file-name {
+  flex: 1;
+  min-width: 0; /* Allows text to shrink below its content size */
+  margin-right: 4px; /* Space for icons */
+}
+
+.file-grid .file-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-grid .file-icons {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.file-grid .file-type-icon,
+.file-grid .file-sharing-icon {
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+.file-grid .file-size {
+  margin-left: 4px;
+}
+
+/* Ensure consistent folder icon size and alignment */
+.file-type-icon.folder-icon {
+  font-size: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* List view adjustments */
+.file-list .file-item {
+  align-items: center;
+}
+
+.file-list .file-name {
+  display: flex;
+  align-items: center;
+}
+
+.file-list .file-type-icon,
+.file-list .file-sharing-icon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+/* Increase thumbnail size in grid view */
+.file-grid .file-thumbnail {
+  height: 150px; /* Adjust this value as needed */
+}
+
+.file-grid .file-thumbnail img {
+  max-height: 100%;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Responsive styles */
 @media screen and (max-width: 1024px) {
   .file-grid {
     grid-template-columns: repeat(3, 1fr); /* 3 columns */
   }
 }
 
-/* Responsive styles for smaller tablets and larger phones */
 @media screen and (max-width: 768px) {
   .file-grid {
     grid-template-columns: repeat(2, 1fr); /* 2 columns */
+  }
+
+  .file-list-header, .file-list .file-item {
+    grid-template-columns: minmax(80px, 2fr) minmax(80px, 1fr) minmax(60px, 1fr) minmax(60px, 1fr) auto;
+    font-size: 12px;
   }
 
   .file-header {
@@ -142,7 +271,13 @@
   }
 }
 
-/* Responsive styles for smaller phones (e.g., iPhone SE) */
+@media screen and (max-width: 480px) {
+  .file-list-header, .file-list .file-item {
+    grid-template-columns: minmax(60px, 2fr) minmax(60px, 1fr) minmax(50px, 1fr) minmax(50px, 1fr) auto;
+    font-size: 10px;
+  }
+}
+
 @media screen and (max-width: 375px) {
   .drive-content {
     padding: 12px;

@@ -253,6 +253,7 @@ const DrivePage = () => {
             getFileIcon={getFileIcon}
             selectedFiles={selectedFiles}
             showActionMenu={showActionMenu}
+            isFolder={(file) => file.mimeType === 'application/vnd.google-apps.folder'} 
           />
         </main>
       </div>
