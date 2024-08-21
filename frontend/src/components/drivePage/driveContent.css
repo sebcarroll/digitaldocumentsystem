@@ -15,8 +15,8 @@
 /* Grid layout for file items */
 .file-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* Always 4 columns */
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust the minimum width as needed */
+  gap: 20px; /* Increase gap between items */
 }
 
 /* Individual file item styles */
@@ -29,6 +29,10 @@
   transition: box-shadow 0.3s;
   display: flex;
   flex-direction: column;
+}
+
+.file-grid .file-item {
+  height: 250px; /* Increase the height of each item */
 }
 
 /* Hover effect for file items */
@@ -44,11 +48,24 @@
   border-bottom: 1px solid #dadce0;
 }
 
+.file-grid .file-item .file-header {
+  padding: 10px;
+}
+
 /* File type icon styles */
 .file-type-icon {
-  font-size: 18px;
-  margin-right: 6px;
-  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px; /* Space between icon and text */
+}
+
+.file-grid .file-type-icon,
+.file-grid .file-sharing-icon {
+  font-size: 24px; /* Increase icon size */
+  margin-right: 8px;
 }
 
 /* File name styles */
@@ -62,6 +79,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.file-grid .file-name {
+  font-size: 14px; /* Slightly increase font size if needed */
 }
 
 .file-name-text {
@@ -97,10 +118,21 @@
   min-height: 100px;
 }
 
+.file-grid .file-thumbnail {
+  height: 180px; /* Increase the height of the thumbnail area */
+  padding: 10px;
+}
+
 /* Thumbnail image styles */
 .file-thumbnail img {
   max-width: 100%;
   max-height: 120px;
+  object-fit: contain;
+}
+
+.file-grid .file-thumbnail img {
+  max-height: 100%;
+  max-width: 100%;
   object-fit: contain;
 }
 
@@ -186,19 +218,13 @@
   margin-left: auto;
 }
 
-.file-grid .file-type-icon,
-.file-grid .file-sharing-icon {
-  font-size: 18px;
-  margin-right: 4px;
-}
-
 .file-grid .file-size {
   margin-left: 4px;
 }
 
 /* Ensure consistent folder icon size and alignment */
 .file-type-icon.folder-icon {
-  font-size: 48px;
+  font-size: 60px; /* Increase folder icon size */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,27 +246,24 @@
   margin-right: 8px;
 }
 
-/* Increase thumbnail size in grid view */
-.file-grid .file-thumbnail {
-  height: 150px; /* Adjust this value as needed */
-}
-
-.file-grid .file-thumbnail img {
-  max-height: 100%;
-  width: auto;
-  object-fit: contain;
-}
-
 /* Responsive styles */
 @media screen and (max-width: 1024px) {
   .file-grid {
-    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 }
 
 @media screen and (max-width: 768px) {
   .file-grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  
+  .file-grid .file-item {
+    height: 220px;
+  }
+  
+  .file-grid .file-thumbnail {
+    height: 150px;
   }
 
   .file-list-header, .file-list .file-item {
@@ -272,6 +295,18 @@
 }
 
 @media screen and (max-width: 480px) {
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+  
+  .file-grid .file-item {
+    height: 200px;
+  }
+  
+  .file-grid .file-thumbnail {
+    height: 130px;
+  }
+
   .file-list-header, .file-list .file-item {
     grid-template-columns: minmax(60px, 2fr) minmax(60px, 1fr) minmax(50px, 1fr) minmax(50px, 1fr) auto;
     font-size: 10px;

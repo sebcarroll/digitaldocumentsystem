@@ -250,3 +250,45 @@
     font-size: 0.9em;
     color: black;
   }
+  .folder-tree {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .folder-tree-item {
+    margin-bottom: 5px;
+  }
+  
+  .folder-tree-content {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  .folder-tree-icon,
+  .folder-tree-checkbox {
+    display: flex;
+    align-items: center;
+    margin-right: 5px;
+  }
+  
+  .folder-tree-icon-placeholder {
+    width: 24px;
+  }
+  
+  .folder-tree-name {
+    flex-grow: 1;
+  }
+  
+  .folder-tree-children {
+    margin-left: 24px;
+  }
+  
+  .folder-tree-item.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }

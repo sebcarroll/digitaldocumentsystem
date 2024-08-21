@@ -371,3 +371,19 @@ export const uploadDocument = async (document) => {
   }
   return response.json();
 };
+
+export const fetchFolderDetails = async (folderId) => {
+  const response = await fetch(`/api/drive/${folderId}/details`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    credentials: 'include',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch folder details');
+  }
+
+  return response.json();
+};

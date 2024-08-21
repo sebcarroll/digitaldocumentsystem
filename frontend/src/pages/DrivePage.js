@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchDriveFiles, checkAuth } from '../services/api';
+import { fetchDriveFiles, checkAuth, fetchFolderDetails } from '../services/api';
 import './DrivePage.css';
 import Sidebar from '../components/drivePage/sidebar.js';
 import Header from '../components/drivePage/header.js';
@@ -30,6 +30,7 @@ const DrivePage = () => {
   const [isSharePopupOpen, setIsSharePopupOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialQuery, setChatInitialQuery] = useState('');
+  const [folderNames, setFolderNames] = useState({});
   const navigate = useNavigate();
 
   /**
@@ -191,6 +192,22 @@ const DrivePage = () => {
     return '📄';
   };
 
+  const getFolderName = useCallback(async (folderId) => {
+    if (folderNames[folderId]) {
+      return folderNames[folderId];
+    }
+  
+    try {
+      const response = await fetchFolderDetails(folderId);
+      const name = response.name;
+      setFolderNames(prev => ({ ...prev, [folderId]: name }));
+      return name;
+    } catch (error) {
+      console.error('Error fetching folder name:', error);
+      return 'Unknown Folder';
+    }
+  }, [folderNames]);
+
   // Filter drive content based on active view options
   const filteredDriveContent = driveContent.filter(file => {
     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
@@ -254,6 +271,7 @@ const DrivePage = () => {
             selectedFiles={selectedFiles}
             showActionMenu={showActionMenu}
             isFolder={(file) => file.mimeType === 'application/vnd.google-apps.folder'} 
+            getFolderName={getFolderName} 
           />
         </main>
       </div>

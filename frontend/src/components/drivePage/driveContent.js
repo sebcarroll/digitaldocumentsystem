@@ -1,4 +1,4 @@
-import React from 'react';
+import {React, useEffect, useState} from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import PeopleIcon from '@mui/icons-material/People';
@@ -39,13 +39,15 @@ const DriveContent = ({
   getFileIcon,
   selectedFiles,
   showActionMenu,
-  isFolder
+  isFolder,
+  getFolderName
 }) => {
   const getReasonSuggested = (file) => {
     const now = new Date();
     const modifiedDate = new Date(file.modifiedTime);
     const viewedDate = new Date(file.viewedByMeTime);
     const sharedDate = new Date(file.sharedWithMeTime);
+    const createdDate = new Date(file.createdTime);
 
     if (now - modifiedDate < 7 * 24 * 60 * 60 * 1000) {
       return `You modified • ${modifiedDate.toLocaleDateString()}`;
@@ -53,6 +55,8 @@ const DriveContent = ({
       return `You opened • ${viewedDate.toLocaleDateString()}`;
     } else if (now - sharedDate < 7 * 24 * 60 * 60 * 1000) {
       return `Shared with you • ${sharedDate.toLocaleDateString()}`;
+    } else if (now - createdDate < 7 * 24 * 60 * 60 * 1000) {
+      return `You created • ${createdDate.toLocaleDateString()}`;
     }
     return "";
   };
@@ -61,19 +65,22 @@ const DriveContent = ({
     return file.owners && file.owners.length > 0 ? file.owners[0].displayName : "Unknown";
   };
 
-  const getLocation = (file) => {
-    if (file.parents && file.parents.length === 0) {
+  const getLocation = async (file) => {
+    if (!file.parents || file.parents.length === 0) {
       return file.shared ? "Shared with me" : "My Archive";
     }
-    // You might want to implement a way to get the actual folder name
-    return "Some Folder";
+    const folderName = await getFolderName(file.parents[0]);
+    return folderName;
   };
+
   const renderFileIcon = (file) => {
-    if (isFolder(file)) {
-      return file.shared ? <FolderSharedIcon className="file-type-icon folder-icon" /> : <span className="file-type-icon folder-icon">{getFileIcon(file.mimeType)}</span>;
-    } else {
-      return <span className="file-type-icon">{getFileIcon(file.mimeType)}</span>;
-    }
+    return (
+      <span className="file-type-icon">
+        {isFolder(file) ? 
+          (file.shared ? <FolderSharedIcon /> : getFileIcon(file.mimeType)) 
+          : getFileIcon(file.mimeType)}
+      </span>
+    );
   };
 
   const renderSharingIcon = (file) => {
@@ -82,6 +89,15 @@ const DriveContent = ({
     }
     return null;
   };
+
+const [fileLocations, setFileLocations] = useState({});
+
+useEffect(() => {
+  filteredDriveContent.forEach(async (file) => {
+    const location = await getLocation(file);
+    setFileLocations(prev => ({ ...prev, [file.id]: location }));
+  });
+}, [filteredDriveContent]);
 
   return (
     <div className="drive-content">
@@ -113,7 +129,7 @@ const DriveContent = ({
                   </div>
                   <div className="file-reason">{getReasonSuggested(file)}</div>
                   <div className="file-owner">{getOwner(file)}</div>
-                  <div className="file-location">{getLocation(file)}</div>
+                  <div className="file-location">{fileLocations[file.id] || 'Loading...'}</div>
                   <div className="more-options">
                     <MoreVertIcon onClick={(e) => {
                       e.stopPropagation();

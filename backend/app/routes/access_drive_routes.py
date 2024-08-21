@@ -98,6 +98,38 @@ def open_file(file_id):
     finally:
         logger.info("Exiting open_file() function")
 
+@drive_bp.route('/drive/<folder_id>/details')
+def get_folder_details(folder_id):
+    """
+    Retrieve details for a specific folder in Google Drive.
+
+    This route fetches and returns the details of a folder specified by its ID.
+    It uses the DriveService to interact with the Google Drive API.
+
+    Args:
+        folder_id (str): The unique identifier of the folder in Google Drive.
+
+    Returns:
+        flask.Response: A JSON response containing the folder details.
+        - If successful, returns a 200 status code with the folder details.
+        - If the folder is not found, returns a 404 status code with an error message.
+        - If an unexpected error occurs, returns a 500 status code with an error message.
+
+    Raises:
+        Exception: Any unexpected errors that occur during the process.
+    """
+    try:
+        drive_core = get_drive_core(session)
+        drive_service = DriveService(drive_core)
+        folder_details = drive_service.get_file_details(folder_id)
+        if folder_details:
+            return jsonify(folder_details)
+        else:
+            return jsonify({"error": "Folder not found"}), 404
+    except Exception as e:
+        logger.exception(f"Unexpected error occurred: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @drive_bp.teardown_app_request
 def cleanup_services(exception=None):
     """
@@ -127,3 +159,4 @@ def logout():
     session.clear()
     logger.info("User logged out successfully")
     return jsonify({"message": "Logged out successfully"})
+
