@@ -18,3 +18,10 @@ gunicorn
 pytest
 celery
 pyopenssl
+python-docx
+PyPDF2
+pandas
+beautifulsoup4
+python-pptx
+mammoth
+striprtf

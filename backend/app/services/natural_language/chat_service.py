@@ -1,8 +1,8 @@
 """
-Service module for handling chat and document operations.
+This module provides the ChatService class for managing chat operations and document handling.
 
-This module provides a ChatService class that manages interactions with
-a language model, vector store, and document handling operations.
+It integrates with OpenAI's language models, Pinecone vector store, and Google Drive
+for processing queries and handling documents.
 """
 
 import logging
@@ -17,8 +17,12 @@ from langchain_pinecone import PineconeVectorStore as Pinecone
 from pinecone import Pinecone as PineconeClient
 from openai import RateLimitError
 import os
+from flask import session
+from app.services.natural_language.file_extractor import FileExtractor
+from app.utils.drive_utils import get_drive_core
 
 logger = logging.getLogger(__name__)
+
 
 def retry_with_exponential_backoff(
     func,
@@ -70,6 +74,9 @@ class ChatService:
         self.pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
 
+        # Obtain DriveCore instance using the utility function
+        self.drive_core = get_drive_core(session)
+
         self.llm = ChatOpenAI(temperature=0.2, 
                             model_name="gpt-4o-mini",
                             max_tokens=None,
@@ -91,6 +98,9 @@ class ChatService:
             memory=self.memory
         )
         logger.info("ChatService initialized successfully")
+
+        # Initialize FileExtractor with DriveCore instance
+        self.file_extractor = FileExtractor(drive_core=self.drive_core)
 
     @retry_with_exponential_backoff
     def query(self, question):
@@ -117,7 +127,15 @@ class ChatService:
 
     @lru_cache(maxsize=1000)
     def get_embedding(self, text):
-        """Get and cache embeddings for a given text."""
+        """
+        Get and cache embeddings for a given text.
+
+        Args:
+            text (str): The text to embed.
+
+        Returns:
+            list: The embedding vector.
+        """
         return self.embeddings.embed_query(text)
 
     def add_document(self, document):
@@ -158,4 +176,29 @@ class ChatService:
             return True
         except Exception as e:
             logger.error(f"Error deleting document: {str(e)}", exc_info=True)
+            return False
+
+    def process_and_add_file(self, file_id, file_name):
+        """
+        Process a file by extracting its text and then add it to the vector store.
+
+        Args:
+            file_id (str): The ID of the file in Google Drive.
+            file_name (str): The name of the file to be processed.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        logger.info(f"Processing file: {file_name} with ID: {file_id}")
+        try:
+            # Extract text using FileExtractor
+            extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
+            document = {
+                "id": file_id,
+                "content": extracted_text
+            }
+            # Add the extracted text to the vector store
+            return self.add_document(document)
+        except Exception as e:
+            logger.error(f"Error processing and adding file {file_name} with ID {file_id}: {str(e)}", exc_info=True)
             return False

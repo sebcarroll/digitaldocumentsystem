@@ -14,8 +14,14 @@ export const checkAuth = async () => {
   return response.json();
 };
 
-export const fetchDriveFiles = async (folderId = 'root') => {
-  const response = await fetch(`${API_URL}/drive?folder_id=${folderId}`, {
+export const fetchDriveFiles = async (folderId = 'root', pageToken = null) => {
+  const url = new URL(`${API_URL}/drive`);
+  url.searchParams.append('folder_id', folderId);
+  if (pageToken) {
+    url.searchParams.append('page_token', pageToken);
+  }
+
+  const response = await fetch(url, {
     credentials: 'include',
   });
   if (!response.ok) {

@@ -36,7 +36,7 @@ class DriveService:
         logger.info(f"Listing contents of folder: {folder_id}")
         files = drive_service.files().list(
             q=query,
-            fields="nextPageToken, files(id, name, mimeType)",
+            fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink)",
             pageToken=page_token,
             pageSize=page_size
         ).execute()
@@ -44,7 +44,14 @@ class DriveService:
         items = files.get('files', [])
         next_page_token = files.get('nextPageToken')
 
-        file_list = [{"name": item['name'], "id": item['id'], "mimeType": item['mimeType']} for item in items]
+        file_list = [{
+            "name": item['name'],
+            "id": item['id'],
+            "mimeType": item['mimeType'],
+            "size": item.get('size'),
+            "hasThumbnail": item.get('hasThumbnail', False),
+            "thumbnailLink": item.get('thumbnailLink')
+        } for item in items]
         return file_list, next_page_token
 
     def get_file_web_view_link(self, file_id):
@@ -52,6 +59,23 @@ class DriveService:
         logger.info(f"Retrieving web view link for file: {file_id}")
         file = drive_service.files().get(fileId=file_id, fields="webViewLink,mimeType").execute()
         return file.get('webViewLink'), file.get('mimeType')
+    
+    def get_file_details(self, file_id):
+        drive_service, _ = self.get_services()
+        logger.info(f"Retrieving details for file: {file_id}")
+        try:
+            file = drive_service.files().get(fileId=file_id, fields="id,name,mimeType,size,hasThumbnail,thumbnailLink").execute()
+            return {
+                "id": file.get('id'),
+                "name": file.get('name'),
+                "mimeType": file.get('mimeType'),
+                "size": file.get('size'),
+                "hasThumbnail": file.get('hasThumbnail', False),
+                "thumbnailLink": file.get('thumbnailLink')
+            }
+        except Exception as e:
+            logger.error(f"Error retrieving file details: {str(e)}")
+            return None
 
     def cleanup_services(self):
         logger.info("Cleaning up services.")

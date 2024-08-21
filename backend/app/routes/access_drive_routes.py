@@ -44,8 +44,8 @@ def drive():
         page_size = int(request.args.get('page_size', 100))
         
         logger.info(f"Listing folder contents. Folder ID: {folder_id}, Page Token: {page_token}, Page Size: {page_size}")
-        file_list = drive_core.list_folder_contents(folder_id, page_token)
-        next_page_token = None  # Set this based on the result from list_folder_contents if implemented
+        drive_service = DriveService(drive_core)
+        file_list, next_page_token = drive_service.list_folder_contents(folder_id, page_token, page_size)
         logger.debug(f"Received {len(file_list)} files")
         
         if not file_list:

@@ -4,7 +4,6 @@ import SearchbarBackground from './searchbarSubComponents/searchbarBackground.js
 import InputField from './searchbarSubComponents/searchbarInputField.js';
 import MaximiseButton from './searchbarSubComponents/searchbarMaximiseButton.js';
 import SendButton from './searchbarSubComponents/searchbarSendButton.js';
-import WelcomeText from './searchbarSubComponents/searchbarWelcomeText.js';
 
 /**
  * SearchBar component
@@ -38,7 +37,6 @@ const SearchBar = ({ onOpenChat }) => {
       <div className="maximise-button-container">
         <MaximiseButton onClick={handleMaximize} />
       </div>
-      <WelcomeText />
       <form onSubmit={handleSubmit} className="search-form">
         <InputField 
           value={query}
