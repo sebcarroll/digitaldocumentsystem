@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchDriveFiles, checkAuth, fetchFolderDetails } from '../services/api';
+import { fetchDriveFiles, checkAuth, fetchFolderDetails, fetchFolderTree } from '../services/api';
 import './DrivePage.css';
 import Sidebar from '../components/drivePage/sidebar.js';
 import Header from '../components/drivePage/header.js';
@@ -31,12 +31,12 @@ const DrivePage = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInitialQuery, setChatInitialQuery] = useState('');
   const [folderNames, setFolderNames] = useState({});
+  const [folderTree, setFolderTree] = useState([]);
   const navigate = useNavigate();
 
-  /**
-   * Fetches drive files from the server
-   * @param {string} folderId - The ID of the folder to fetch files from
-   */
+  // Move this to the top to resolve circular dependency
+  const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation(setError);
+
   const getDriveFiles = useCallback(async (folderId) => {
     try {
       setLoading(true);
@@ -56,8 +56,26 @@ const DrivePage = () => {
     }
   }, [navigate]);
 
-  const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation(setError);
-  
+  const getFolderTree = useCallback(async () => {
+    try {
+      console.log('Initiating folder tree fetch...');
+      const data = await fetchFolderTree();
+      console.log('Folder tree fetch successful:', data);
+      setFolderTree(data.folderTree);
+    } catch (error) {
+      console.error('Failed to fetch folder tree:', error);
+      setError(`Failed to load folder structure: ${error.message}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log('DrivePage mounted or updated');
+    if (currentFolder && currentFolder.id) {
+      getDriveFiles(currentFolder.id);
+    }
+    getFolderTree();
+  }, [currentFolder, getDriveFiles, getFolderTree]);
+
   const {
     showActionMenu,
     selectedFiles,
@@ -129,10 +147,6 @@ const DrivePage = () => {
     handleClose: handleCloseMovePopup,
     handleMove: handleMoveFiles,
   } = useMovePopup(selectedFiles, handleMove, setError);
-
-  useEffect(() => {
-    getDriveFiles(currentFolder.id);
-  }, [currentFolder.id, getDriveFiles]);
 
   /**
    * Handles opening the chat interface
@@ -272,6 +286,7 @@ const DrivePage = () => {
             showActionMenu={showActionMenu}
             isFolder={(file) => file.mimeType === 'application/vnd.google-apps.folder'} 
             getFolderName={getFolderName} 
+            folderTree={folderTree}
           />
         </main>
       </div>
@@ -330,14 +345,16 @@ const DrivePage = () => {
         folders={driveContent.filter(item => item.mimeType === 'application/vnd.google-apps.folder')}
         handleFolderClick={handleFileClick}
         handleBreadcrumbClick={handleBreadcrumbClick}
+        folderTree={folderTree}
       />
       {isChatOpen && (
         <ChatInterface
           initialQuery={chatInitialQuery}
           onClose={handleCloseChat}
-          />
-        )}
-        </div>
+        />
+      )}
+    </div>
   );
 };
+
 export default DrivePage;

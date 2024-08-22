@@ -27,7 +27,7 @@ class DriveService:
 
         return g.drive_service, g.people_service
 
-    def list_folder_contents(self, folder_id, page_token=None, page_size=100):
+    def list_folder_contents(self, folder_id, page_token=None, page_size=1000):
         drive_service, _ = self.get_services()
         query = f"'{folder_id}' in parents and trashed = false"
         if folder_id == 'root':
@@ -36,7 +36,7 @@ class DriveService:
         logger.info(f"Listing contents of folder: {folder_id}")
         files = drive_service.files().list(
             q=query,
-            fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared)",
+            fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, createdTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared)",
             pageToken=page_token,
             pageSize=page_size,
             orderBy="modifiedTime desc"
@@ -53,6 +53,7 @@ class DriveService:
             "hasThumbnail": item.get('hasThumbnail', False),
             "thumbnailLink": item.get('thumbnailLink'),
             "modifiedTime": item.get('modifiedTime'),
+            "createdTime": item.get('createdTime'),
             "viewedByMeTime": item.get('viewedByMeTime'),
             "sharedWithMeTime": item.get('sharedWithMeTime'),
             "owners": item.get('owners', []),
@@ -71,14 +72,15 @@ class DriveService:
         drive_service, _ = self.get_services()
         logger.info(f"Retrieving details for file: {file_id}")
         try:
-            file = drive_service.files().get(fileId=file_id, fields="id,name,mimeType,size,hasThumbnail,thumbnailLink").execute()
+            file = drive_service.files().get(fileId=file_id, fields="id,name,mimeType,size,hasThumbnail,thumbnailLink,parents").execute()
             return {
                 "id": file.get('id'),
                 "name": file.get('name'),
                 "mimeType": file.get('mimeType'),
                 "size": file.get('size'),
                 "hasThumbnail": file.get('hasThumbnail', False),
-                "thumbnailLink": file.get('thumbnailLink')
+                "thumbnailLink": file.get('thumbnailLink'),
+                "parents": file.get('parents', [])
             }
         except Exception as e:
             logger.error(f"Error retrieving file details: {str(e)}")

@@ -1,8 +1,9 @@
 /* Main container for drive content */
 .drive-content {
   padding: 16px;
-  max-width: 1200px; /* Limit maximum width */
-  margin: 0 auto; /* Center the content */
+  padding-bottom: 100px; /* Add extra padding at the bottom */
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Styles for loading, error, and no files messages */
@@ -15,8 +16,9 @@
 /* Grid layout for file items */
 .file-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Adjust the minimum width as needed */
-  gap: 20px; /* Increase gap between items */
+  grid-template-columns: repeat(4, 1fr); /* Changed to 4 columns */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Increased minimum width */
+  gap: 20px;
 }
 
 /* Individual file item styles */
@@ -32,7 +34,7 @@
 }
 
 .file-grid .file-item {
-  height: 250px; /* Increase the height of each item */
+  height: 300px; /* Increased the height from 250px to 300px */
 }
 
 /* Hover effect for file items */
@@ -50,6 +52,9 @@
 
 .file-grid .file-item .file-header {
   padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* File type icon styles */
@@ -83,6 +88,11 @@
 
 .file-grid .file-name {
   font-size: 14px; /* Slightly increase font size if needed */
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  margin-right: 4px;
 }
 
 .file-name-text {
@@ -119,7 +129,7 @@
 }
 
 .file-grid .file-thumbnail {
-  height: 180px; /* Increase the height of the thumbnail area */
+  height: 220px; /* Increased the height from 180px to 220px */
   padding: 10px;
 }
 
@@ -140,6 +150,17 @@
 .default-icon {
   font-size: 48px;
   color: #5f6368;
+}
+
+/* Large icon for thumbnail area when no thumbnail */
+.file-grid .large-file-icon {
+  font-size: 64px;
+  color: #5f6368;
+}
+
+.file-grid .large-file-icon .file-type-icon {
+  font-size: inherit;
+  margin-right: 0;
 }
 
 /* Selected file item styles */
@@ -247,25 +268,19 @@
 }
 
 /* Responsive styles */
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 1200px) {
   .file-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .file-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media screen and (max-width: 768px) {
-  .file-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
-  
-  .file-grid .file-item {
-    height: 220px;
-  }
-  
-  .file-grid .file-thumbnail {
-    height: 150px;
-  }
-
   .file-list-header, .file-list .file-item {
     grid-template-columns: minmax(80px, 2fr) minmax(80px, 1fr) minmax(60px, 1fr) minmax(60px, 1fr) auto;
     font-size: 12px;
@@ -294,19 +309,13 @@
   }
 }
 
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 600px) {
   .file-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: 1fr;
   }
-  
-  .file-grid .file-item {
-    height: 200px;
-  }
-  
-  .file-grid .file-thumbnail {
-    height: 130px;
-  }
+}
 
+@media screen and (max-width: 480px) {
   .file-list-header, .file-list .file-item {
     grid-template-columns: minmax(60px, 2fr) minmax(60px, 1fr) minmax(50px, 1fr) minmax(50px, 1fr) auto;
     font-size: 10px;
@@ -319,7 +328,6 @@
   }
 
   .file-grid {
-    grid-template-columns: 1fr; /* 1 column */
     gap: 12px;
   }
 

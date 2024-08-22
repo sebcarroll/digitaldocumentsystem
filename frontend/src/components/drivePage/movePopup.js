@@ -50,73 +50,60 @@ const FolderTree = ({ folder, onSelect, selectedFolder, disabled }) => {
   );
 };
 
-const MovePopup = ({
-  isOpen,
-  onClose,
-  onMove,
-  selectedFiles,
-  folders,
-}) => {
-  const [selectedFolder, setSelectedFolder] = useState(null);
-  const [folderStructure, setFolderStructure] = useState([]);
-
-  useEffect(() => {
-    // Build the folder structure
-    const buildFolderStructure = (folders) => {
-      return folders.map(folder => ({
-        ...folder,
-        children: folder.children ? buildFolderStructure(folder.children) : []
-      }));
+  const MovePopup = ({
+    isOpen,
+    onClose,
+    onMove,
+    selectedFiles,
+    folderTree,
+  }) => {
+    const [selectedFolder, setSelectedFolder] = useState(null);
+  
+    if (!isOpen) return null;
+  
+    const title = selectedFiles.length === 1
+      ? `Move "${selectedFiles[0].name}"`
+      : `Move ${selectedFiles.length} items`;
+  
+    const handleSelect = (folderId) => {
+      setSelectedFolder(folderId === selectedFolder ? null : folderId);
     };
-
-    setFolderStructure(buildFolderStructure(folders));
-  }, [folders]);
-
-  if (!isOpen) return null;
-
-  const title = selectedFiles.length === 1
-    ? `Move "${selectedFiles[0].name}"`
-    : `Move ${selectedFiles.length} items`;
-
-  const handleSelect = (folderId) => {
-    setSelectedFolder(folderId === selectedFolder ? null : folderId);
-  };
-
-  const handleMove = () => {
-    if (selectedFolder) {
-      onMove(selectedFiles.map(f => f.id), selectedFolder);
-      onClose();
-    }
-  };
-
-  return (
-    <div className="popup-overlay">
-      <div className="popup-content move-popup">
-        <h2>{title}</h2>
-        <div className="folder-tree">
-          {folderStructure.map(folder => (
-            <FolderTree
-              key={folder.id}
-              folder={folder}
-              onSelect={handleSelect}
-              selectedFolder={selectedFolder}
-              disabled={false}
-            />
-          ))}
-        </div>
-        <div className="popup-actions">
-          <button className="cancel-button" onClick={onClose}>Cancel</button>
-          <button
-            className="ok-button"
-            onClick={handleMove}
-            disabled={!selectedFolder}
-          >
-            Move
-          </button>
+  
+    const handleMove = () => {
+      if (selectedFolder) {
+        onMove(selectedFiles.map(f => f.id), selectedFolder);
+        onClose();
+      }
+    };
+  
+    return (
+      <div className="popup-overlay">
+        <div className="popup-content move-popup">
+          <h2>{title}</h2>
+          <div className="folder-tree">
+            {folderTree.map(folder => (
+              <FolderTree
+                key={folder.id}
+                folder={folder}
+                onSelect={handleSelect}
+                selectedFolder={selectedFolder}
+                disabled={false}
+              />
+            ))}
+          </div>
+          <div className="popup-actions">
+            <button className="cancel-button" onClick={onClose}>Cancel</button>
+            <button
+              className="ok-button"
+              onClick={handleMove}
+              disabled={!selectedFolder}
+            >
+              Move
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default MovePopup;

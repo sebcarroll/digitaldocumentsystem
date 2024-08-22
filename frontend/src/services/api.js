@@ -387,3 +387,21 @@ export const fetchFolderDetails = async (folderId) => {
 
   return response.json();
 };
+
+export const fetchFolderTree = async () => {
+  console.log('Fetching folder tree from API...');
+  const response = await fetch(`${API_URL}/drive/folder-tree`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to fetch folder tree');
+  }
+  const data = await response.json();
+  console.log('Folder tree data received:', data);
+  return data;
+};

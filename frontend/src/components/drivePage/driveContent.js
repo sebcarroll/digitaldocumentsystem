@@ -40,7 +40,8 @@ const DriveContent = ({
   selectedFiles,
   showActionMenu,
   isFolder,
-  getFolderName
+  getFolderName,
+  folderTree
 }) => {
   const getReasonSuggested = (file) => {
     const now = new Date();
@@ -65,12 +66,25 @@ const DriveContent = ({
     return file.owners && file.owners.length > 0 ? file.owners[0].displayName : "Unknown";
   };
 
-  const getLocation = async (file) => {
+  const getLocation = (file) => {
     if (!file.parents || file.parents.length === 0) {
       return file.shared ? "Shared with me" : "My Archive";
     }
-    const folderName = await getFolderName(file.parents[0]);
-    return folderName;
+    const parentId = file.parents[0];
+    const findFolder = (folders) => {
+      for (let folder of folders) {
+        if (folder.id === parentId) {
+          return folder.name;
+        }
+        if (folder.children) {
+          const result = findFolder(folder.children);
+          if (result) return result;
+        }
+      }
+      return null;
+    };
+    const folderName = findFolder(folderTree);
+    return folderName || "My Archive";
   };
 
   const renderFileIcon = (file) => {
@@ -90,14 +104,15 @@ const DriveContent = ({
     return null;
   };
 
-const [fileLocations, setFileLocations] = useState({});
+  const [fileLocations, setFileLocations] = useState({});
 
-useEffect(() => {
-  filteredDriveContent.forEach(async (file) => {
-    const location = await getLocation(file);
-    setFileLocations(prev => ({ ...prev, [file.id]: location }));
-  });
-}, [filteredDriveContent]);
+  useEffect(() => {
+    const locations = {};
+    filteredDriveContent.forEach((file) => {
+      locations[file.id] = getLocation(file);
+    });
+    setFileLocations(locations);
+  }, [filteredDriveContent, folderTree]);
 
   return (
     <div className="drive-content">
@@ -141,6 +156,7 @@ useEffect(() => {
                 <>
                   <div className="file-header">
                     <div className="file-name">
+                      {renderFileIcon(file)}
                       <span className="file-name-text">{file.name}</span>
                     </div>
                     <div className="file-icons">
@@ -160,7 +176,9 @@ useEffect(() => {
                     {file.hasThumbnail ? (
                       <img src={file.thumbnailLink} alt={file.name} />
                     ) : (
-                      renderFileIcon(file)
+                      <span className="large-file-icon">
+                        {renderFileIcon(file)}
+                      </span>
                     )}
                   </div>
                 </>
