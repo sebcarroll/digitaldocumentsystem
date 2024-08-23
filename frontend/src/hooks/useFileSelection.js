@@ -27,6 +27,9 @@ export const useFileSelection = (getDriveFiles, currentFolder, setError) => {
     try {
       await moveFiles(fileIds, newFolderId);
       getDriveFiles(currentFolder.id);
+      setShowActionMenu(false);
+      setSelectedFiles([]);
+      // Note: We'll handle opening the new folder in the DrivePage component
     } catch (error) {
       console.error('Failed to move files:', error);
       setError('Failed to move files. Please try again.');

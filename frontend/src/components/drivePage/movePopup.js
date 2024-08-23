@@ -2,20 +2,23 @@
 import React from 'react';
 import './popup.css';
 
-const MovePopupBreadcrumb = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
+const MovePopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbClick }) => {
   const getBreadcrumbs = () => {
-    let breadcrumbs = [...folderStack, currentFolder];
+    let breadcrumbs = [...folderStack, currentFolder].filter(Boolean);
+    if (breadcrumbs.length === 0) {
+      breadcrumbs = [{ id: 'root', name: 'My Drive' }];
+    }
     if (breadcrumbs.length > 3) {
       breadcrumbs = [{ id: '...', name: '...' }, ...breadcrumbs.slice(-2)];
     }
 
     return breadcrumbs.map((folder, index) => {
-      let folderName = folder.name;
+      let folderName = folder.name || 'Unknown';
       if (folderName.length > 15) {
         folderName = folderName.slice(0, 12) + '...';
       }
       return (
-        <React.Fragment key={folder.id}>
+        <React.Fragment key={folder.id || `folder-${index}`}>
           {index > 0 && <span className="move-breadcrumb-separator">&gt;</span>}
           <span 
             onClick={() => onBreadcrumbClick(index)} 
@@ -39,17 +42,17 @@ const MovePopup = ({
   isOpen, 
   onClose, 
   onMove, 
-  selectedFiles, 
-  currentFolder, 
-  folderStack, 
-  folders, 
+  selectedFiles = [], 
+  currentFolder = { id: 'root', name: 'My Drive' }, 
+  folderStack = [], 
+  folders = [], 
   handleFolderClick, 
   handleBreadcrumbClick 
 }) => {
   if (!isOpen) return null;
 
   const title = selectedFiles.length === 1
-    ? `Move "${selectedFiles[0].name}"`
+    ? `Move "${selectedFiles[0]?.name || 'Item'}"`
     : `Move ${selectedFiles.length} items`;
 
   return (
@@ -64,8 +67,8 @@ const MovePopup = ({
         <div className="folder-list">
           {folders.length > 0 ? (
             folders.map(folder => (
-              <div key={folder.id} className="folder-item" onClick={() => handleFolderClick(folder)}>
-                {folder.name}
+              <div key={folder.id || `folder-${folder.name}`} className="folder-item" onClick={() => handleFolderClick(folder)}>
+                {folder.name || 'Unnamed Folder'}
               </div>
             ))
           ) : (
@@ -73,8 +76,8 @@ const MovePopup = ({
           )}
         </div>
         <div className="popup-actions">
-        <button className="cancel-button" onClick={onClose}>Cancel</button>
-        <button className="ok-button" onClick={onMove}>
+          <button className="cancel-button" onClick={onClose}>Cancel</button>
+          <button className="ok-button" onClick={onMove}>
             Move here
           </button>
         </div>

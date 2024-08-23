@@ -1,8 +1,8 @@
 // useMovePopup.js
 import { useState, useCallback } from 'react';
-import { fetchDriveFiles, moveFiles} from '../services/api';
+import { fetchDriveFiles, moveFiles } from '../services/api';
 
-export const useMovePopup = (initialSelectedFiles, moveFiles, setError) => {
+export const useMovePopup = (initialSelectedFiles, setError, onMoveComplete) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState(initialSelectedFiles);
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
@@ -54,11 +54,11 @@ export const useMovePopup = (initialSelectedFiles, moveFiles, setError) => {
     try {
       await moveFiles(selectedFiles.map(f => f.id), currentFolder.id);
       handleClose();
+      onMoveComplete(currentFolder);
     } catch (error) {
       setError(error.message || 'Failed to move files');
     }
-  }, [selectedFiles, currentFolder.id, moveFiles, handleClose, setError]);
-
+  }, [selectedFiles, currentFolder, moveFiles, handleClose, setError, onMoveComplete]);
 
   return {
     isOpen,

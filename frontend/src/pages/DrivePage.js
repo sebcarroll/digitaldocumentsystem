@@ -141,6 +141,12 @@ const DrivePage = () => {
     sharingError,    
   } = useFileSharing(selectedFiles);
 
+  const handleMoveComplete = useCallback((destinationFolder) => {
+    setShowActionMenu(false);
+    setSelectedFiles([]);
+    handleFileClick(destinationFolder);
+  }, [setShowActionMenu, setSelectedFiles, handleFileClick]);
+
   const {
     isOpen: isMovePopupOpen,
     selectedFiles: moveSelectedFiles,
@@ -152,7 +158,8 @@ const DrivePage = () => {
     handleFolderClick: handleMoveFolderClick,
     handleBreadcrumbClick: handleMoveBreadcrumbClick,
     handleMove: handleMoveFiles,
-  } = useMovePopup(selectedFiles, moveFiles, setError);
+  } = useMovePopup(selectedFiles, setError, handleMoveComplete);
+
   /**
    * Handles opening the chat interface
    * @param {string} [query=''] - The initial query for the chat
