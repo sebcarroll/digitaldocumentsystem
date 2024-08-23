@@ -34,7 +34,7 @@
 }
 
 .file-grid .file-item {
-  height: 300px; /* Increased the height from 250px to 300px */
+  height: 300px; 
 }
 
 /* Hover effect for file items */
@@ -129,14 +129,13 @@
 }
 
 .file-grid .file-thumbnail {
-  height: 220px; /* Increased the height from 180px to 220px */
+  height: 160px; 
   padding: 10px;
 }
 
 /* Thumbnail image styles */
 .file-thumbnail img {
   max-width: 100%;
-  max-height: 120px;
   object-fit: contain;
 }
 
@@ -244,11 +243,18 @@
 }
 
 /* Ensure consistent folder icon size and alignment */
-.file-type-icon.folder-icon {
-  font-size: 60px; /* Increase folder icon size */
+.file-grid .file-thumbnail .file-type-icon {
+  font-size: 64px; /* Match the size of .large-file-icon */
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Specific style for FolderSharedIcon */
+.file-grid .file-thumbnail .file-type-icon svg {
+  font-size: inherit;
+  width: 1em;
+  height: 1em;
 }
 
 /* List view adjustments */
