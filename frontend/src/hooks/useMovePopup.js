@@ -1,56 +1,40 @@
 // useMovePopup.js
-import { useState, useCallback, useEffect } from 'react';
-import { fetchFolders } from '../services/api';
+import { useState, useCallback } from 'react';
+import { fetchDriveFiles, moveFiles} from '../services/api';
 
-export const useMovePopup = (initialSelectedFiles, onMove, setError) => {
+export const useMovePopup = (initialSelectedFiles, moveFiles, setError) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('suggested');
+  const [selectedFiles, setSelectedFiles] = useState(initialSelectedFiles);
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
   const [folderStack, setFolderStack] = useState([]);
   const [folders, setFolders] = useState([]);
-  const [suggestedFolders, setSuggestedFolders] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState(initialSelectedFiles);
 
-  const fetchFoldersData = useCallback(async (folderId = 'root') => {
+  const fetchFoldersData = useCallback(async (folderId) => {
     try {
-      const fetchedFolders = await fetchFolders(folderId);
-      setFolders(fetchedFolders);
+      const content = await fetchDriveFiles(folderId);
+      const folderContent = content && content.files 
+        ? content.files.filter(file => file.mimeType === 'application/vnd.google-apps.folder')
+        : [];
+      setFolders(folderContent);
     } catch (error) {
       console.error('Failed to fetch folders:', error);
-      setError('Failed to fetch folders.');
+      setFolders([]);
     }
-  }, [setError]);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchFoldersData();
-      // TODO: Implement logic to fetch suggested folders
-      setSuggestedFolders([]);
-    }
-  }, [isOpen, fetchFoldersData]);
+  }, []);
 
   const handleOpen = useCallback((files) => {
     setSelectedFiles(files);
     setIsOpen(true);
-  }, []);
+    fetchFoldersData('root');
+  }, [fetchFoldersData]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
-    setActiveTab('suggested');
     setCurrentFolder({ id: 'root', name: 'My Drive' });
     setFolderStack([]);
   }, []);
 
-  const handleTabClick = useCallback((tab) => {
-    setActiveTab(tab);
-    if (tab === 'all') {
-      setCurrentFolder({ id: 'root', name: 'My Drive' });
-      setFolderStack([]);
-      fetchFoldersData();
-    }
-  }, [fetchFoldersData]);
-
-  const handleFolderClick = useCallback(async (folder) => {
+  const handleFolderClick = useCallback((folder) => {
     setFolderStack(prev => [...prev, currentFolder]);
     setCurrentFolder(folder);
     fetchFoldersData(folder.id);
@@ -66,22 +50,24 @@ export const useMovePopup = (initialSelectedFiles, onMove, setError) => {
     }
   }, [folderStack, fetchFoldersData]);
 
-  const handleMove = useCallback(() => {
-    onMove(selectedFiles.map(f => f.id), currentFolder.id);
-    handleClose();
-  }, [selectedFiles, currentFolder, onMove, handleClose]);
+  const handleMove = useCallback(async () => {
+    try {
+      await moveFiles(selectedFiles.map(f => f.id), currentFolder.id);
+      handleClose();
+    } catch (error) {
+      setError(error.message || 'Failed to move files');
+    }
+  }, [selectedFiles, currentFolder.id, moveFiles, handleClose, setError]);
+
 
   return {
     isOpen,
-    activeTab,
+    selectedFiles,
     currentFolder,
     folderStack,
     folders,
-    suggestedFolders,
-    selectedFiles,
     handleOpen,
     handleClose,
-    handleTabClick,
     handleFolderClick,
     handleBreadcrumbClick,
     handleMove,

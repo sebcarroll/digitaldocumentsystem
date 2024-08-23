@@ -292,3 +292,106 @@
     opacity: 0.5;
     pointer-events: none;
   }
+  .folder-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .folder-item {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .folder-item:hover {
+    background-color: #f0f0f0;
+  }
+
+  .folder-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .folder-item {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .folder-item:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .breadcrumb-item {
+    cursor: pointer;
+    color: #1e3a8a;
+  }
+  
+  .breadcrumb-item:hover {
+    text-decoration: underline;
+  }
+  
+  .breadcrumb-separator {
+    margin: 0 5px;
+    color: #666;
+  }
+  
+  .current-item {
+    font-weight: bold;
+    color: #333;
+  }
+
+  /* In your popup.css or a separate CSS file */
+.move-breadcrumbs {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.9em;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 5px;
+  }
+  
+  .move-breadcrumb-item {
+    cursor: pointer;
+    color: #1e3a8a;
+  }
+  
+  .move-breadcrumb-item:hover {
+    text-decoration: underline;
+  }
+  
+  .move-breadcrumb-separator {
+    margin: 0 5px;
+    color: #666;
+  }
+  
+  .move-current-item {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .empty-folder-message {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+  }
+  
+  .folder-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }

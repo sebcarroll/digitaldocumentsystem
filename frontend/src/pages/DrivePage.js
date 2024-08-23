@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchDriveFiles, checkAuth, fetchFolderDetails, fetchFolderTree } from '../services/api';
+import { fetchDriveFiles, checkAuth, fetchFolderDetails, fetchFolderTree, moveFiles } from '../services/api';
 import './DrivePage.css';
 import Sidebar from '../components/drivePage/sidebar.js';
 import Header from '../components/drivePage/header.js';
@@ -143,11 +143,16 @@ const DrivePage = () => {
 
   const {
     isOpen: isMovePopupOpen,
+    selectedFiles: moveSelectedFiles,
+    currentFolder: moveCurrentFolder,
+    folderStack: moveFolderStack,
+    folders: moveFolders,
     handleOpen: handleOpenMovePopup,
     handleClose: handleCloseMovePopup,
+    handleFolderClick: handleMoveFolderClick,
+    handleBreadcrumbClick: handleMoveBreadcrumbClick,
     handleMove: handleMoveFiles,
-  } = useMovePopup(selectedFiles, handleMove, setError);
-
+  } = useMovePopup(selectedFiles, moveFiles, setError);
   /**
    * Handles opening the chat interface
    * @param {string} [query=''] - The initial query for the chat
@@ -335,18 +340,17 @@ const DrivePage = () => {
           />
         )
       )}
-      <MovePopup
-        isOpen={isMovePopupOpen}
-        onClose={handleCloseMovePopup}
-        onMove={handleMoveFiles}
-        selectedFiles={selectedFiles}
-        currentFolder={currentFolder}
-        folderStack={folderStack}
-        folders={driveContent.filter(item => item.mimeType === 'application/vnd.google-apps.folder')}
-        handleFolderClick={handleFileClick}
-        handleBreadcrumbClick={handleBreadcrumbClick}
-        folderTree={folderTree}
-      />
+    <MovePopup
+      isOpen={isMovePopupOpen}
+      onClose={handleCloseMovePopup}
+      onMove={handleMoveFiles}
+      selectedFiles={moveSelectedFiles}
+      currentFolder={moveCurrentFolder}
+      folderStack={moveFolderStack}
+      folders={moveFolders}
+      handleFolderClick={handleMoveFolderClick}
+      handleBreadcrumbClick={handleMoveBreadcrumbClick}
+    />
       {isChatOpen && (
         <ChatInterface
           initialQuery={chatInitialQuery}
