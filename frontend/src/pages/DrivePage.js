@@ -362,6 +362,7 @@ const DrivePage = () => {
         <ChatInterface
           initialQuery={chatInitialQuery}
           onClose={handleCloseChat}
+          getFileIcon={getFileIcon}
         />
       )}
     </div>

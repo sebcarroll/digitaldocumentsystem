@@ -68,34 +68,7 @@ const SharePopup = ({
   return (
     <div className="share-popup-overlay">
       <div className="share-popup">
-        <h2>{title}</h2>
-        {canEditPermissions && (
-          <div className="email-input-container">
-            {pendingEmails.map((pendingEmail, index) => (
-              <span key={index} className="pending-email">
-                {pendingEmail}
-                <button onClick={() => onRemovePendingEmail(pendingEmail)}>&times;</button>
-              </span>
-            ))}
-            <input
-              type="text"
-              value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Add people and groups"
-            />
-          </div>
-        )}
-        {searchResults.length > 0 && canEditPermissions && (
-          <ul className="search-results">
-            {searchResults.map(person => (
-              <li key={person.id} onClick={() => onAddPendingEmail(person.email)}>
-                <img src={person.photoUrl} alt={person.name} />
-                {person.name} ({person.email})
-              </li>
-            ))}
-          </ul>
-        )}
+      <h2>{title}</h2> 
         <h3>People with access</h3>
         {isLoading && <p>Loading...</p>}
         {error && <p className="error">{error}</p>}

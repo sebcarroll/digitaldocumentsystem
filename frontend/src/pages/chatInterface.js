@@ -1,40 +1,27 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './chatInterface.css';
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
-import { sendQuery, uploadDocument } from '../services/api'
+import { sendQuery, uploadDocument, openDriveFile } from '../services/api';
 import SendButton from '../components/drivePage/searchbarSubComponents/searchbarSendButton.js';
 import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
+import UploadPopup from '../components/chatInterface/uploadDocumentPopup.js';
+import { useUploadDocument } from '../hooks/useUploadDocument';
 
-/**
- * ChatInterface component
- * Renders a self-contained chat interface with message history, input, and file upload functionality.
- * It interacts with an LLM backend for processing queries and documents.
- *
- * @component
- * @param {Object} props - Component props
- * @param {string} props.initialQuery - Initial query to start the chat
- * @param {Function} props.onClose - Function to close the chat interface
- * @returns {JSX.Element} The rendered ChatInterface component
- */
-const ChatInterface = ({ initialQuery, onClose }) => {
+const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
   console.log('ChatInterface rendering', { initialQuery });
   
-  // State declarations
-  const [messages, setMessages] = useState([]); // Stores chat messages
-  const [input, setInput] = useState(''); // Stores current input text
-  const [documents, setDocuments] = useState([]); // Stores uploaded documents
-  const [isLoading, setIsLoading] = useState(false); // Indicates if a query is being processed
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploadPopupOpen, setIsUploadPopupOpen] = useState(false);
 
-  /**
-   * Adds a new message to the chat history
-   * @param {string} text - The message text
-   * @param {boolean} isUser - Whether the message is from the user (true) or the AI (false)
-   */
+  const messageListRef = useRef(null);
+
   const addMessage = useCallback((text, isUser) => {
     setMessages(prevMessages => [...prevMessages, { text, isUser }]);
   }, []);
 
-  // Effect to handle initial query
   useEffect(() => {
     if (initialQuery) {
       addMessage(initialQuery, true);
@@ -42,10 +29,6 @@ const ChatInterface = ({ initialQuery, onClose }) => {
     }
   }, [initialQuery, addMessage]);
 
-  /**
-   * Handles sending a query to the LLM backend and processing the response
-   * @param {string} query - The query to send to the LLM
-   */
   const handleQuery = async (query) => {
     setIsLoading(true);
     try {
@@ -59,10 +42,6 @@ const ChatInterface = ({ initialQuery, onClose }) => {
     }
   };
 
-  /**
-   * Handles form submission when the user sends a message
-   * @param {Event} e - The form submit event
-   */
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
@@ -72,36 +51,6 @@ const ChatInterface = ({ initialQuery, onClose }) => {
     }
   };
 
-  /**
-   * Handles file input change when the user uploads documents
-   * @param {Event} e - The file input change event
-   */
-  const handleFileChange = async (e) => {
-    const files = Array.from(e.target.files);
-    setDocuments([...documents, ...files]);
-
-    for (const file of files) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const content = e.target.result;
-        try {
-          await uploadDocument({
-            id: file.name,
-            content: content,
-            type: file.type,
-          });
-          addMessage(`Document "${file.name}" uploaded and processed successfully.`, false);
-        } catch (error) {
-          console.error('Error uploading document:', error);
-          addMessage(`Failed to upload document "${file.name}". Please try again.`, false);
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
-
-  const messageListRef = useRef(null);
-
   const scrollToBottom = () => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
@@ -110,14 +59,49 @@ const ChatInterface = ({ initialQuery, onClose }) => {
   
   useEffect(() => {
     scrollToBottom();
-  }, [messages]); // Scroll to bottom whenever messages change
+  }, [messages]);
+
+  const setError = (errorMessage) => {
+    console.error('Error in ChatInterface:', errorMessage);
+    addMessage(`Error: ${errorMessage}`, false);
+  };
+
+  const uploadDocumentHook = useUploadDocument(setError);
+
+  const handleFileIconClick = () => {
+    console.log('File icon clicked, opening upload popup');
+    setIsUploadPopupOpen(true);
+    uploadDocumentHook.handleOpen();
+  };
+
+  const handleUploadPopupClose = () => {
+    console.log('Closing upload popup');
+    setIsUploadPopupOpen(false);
+    uploadDocumentHook.handleClose();
+  };
+
+  const handleFileUpload = async (selectedFileIds) => {
+    console.log('Handling file upload', selectedFileIds);
+    for (const fileId of selectedFileIds) {
+      try {
+        const fileDetails = await openDriveFile(fileId);
+        await uploadDocument(fileDetails);
+        setDocuments(prev => [...prev, fileDetails]);
+        addMessage(`Document "${fileDetails.name}" uploaded and processed successfully.`, false);
+      } catch (error) {
+        console.error('Error uploading document:', error);
+        addMessage(`Failed to upload document. Please try again.`, false);
+      }
+    }
+    setIsUploadPopupOpen(false);
+  };
 
   return (
     <div className="chat-interface">
       <div className="chat-header">
         <button onClick={onClose} className="close-button">×</button>
       </div>
-      <div className="message-list">
+      <div className="message-list" ref={messageListRef}>
         {messages.map((message, index) => (
           <div key={index} className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}>
             {!message.isUser && (
@@ -140,16 +124,9 @@ const ChatInterface = ({ initialQuery, onClose }) => {
         </div>
       )}
       <form onSubmit={handleSubmit} className="input-area">
-        <label htmlFor="file-upload" className="file-upload-label">
+        <div className="file-upload-label" onClick={handleFileIconClick}>
           <AttachFileSharpIcon />
-        </label>
-        <input
-          id="file-upload"
-          type="file"
-          multiple
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
-        />
+        </div>
         <input
           type="text"
           value={input}
@@ -161,6 +138,14 @@ const ChatInterface = ({ initialQuery, onClose }) => {
           <SendButton />
         </button>
       </form>
+      <UploadPopup
+        getFileIcon={getFileIcon}
+        setError={setError}
+        isOpen={isUploadPopupOpen}
+        onClose={handleUploadPopupClose}
+        onUpload={handleFileUpload}
+        {...uploadDocumentHook}
+      />
     </div>
   );
 };
