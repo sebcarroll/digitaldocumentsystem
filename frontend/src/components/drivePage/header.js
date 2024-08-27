@@ -37,7 +37,7 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
   const handleLogout = useCallback(async () => {
     try {
       await logoutUser();
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       console.error('Failed to logout:', error);
     }
@@ -77,18 +77,19 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
         <div className="settings-icon-container">
           <HeaderQuestionIcon onClick={handleQuestionClick} />
           <HeaderSettingIcon onClick={handleSettingsClick} isOpen={isSettingsOpen} />
-          <HeaderProfileIcon 
-            onClick={handleProfileClick} 
-            isOpen={isProfileOpen} 
-            userEmail={userEmail} 
-            userName={userName}
-            onLogout={handleLogout}
-          />
+          <HeaderProfileIcon onClick={handleProfileClick} />
         </div>
       </div>
       {isSettingsOpen && (
         <div className="settings-dropdown">
           <p className="settings-message">Settings functionality to be implemented in future versions.</p>
+        </div>
+      )}
+      {isProfileOpen && (
+        <div className="profile-dropdown">
+          <p>Hi, {userName}!</p>
+          <p>{userEmail}</p>
+          <button onClick={handleLogout}>Sign out</button>
         </div>
       )}
     </HeaderBackground>

@@ -8,19 +8,10 @@ const ProfileIcon = () => (
   </svg>
 );
 
-const HeaderProfileIcon = ({ onClick, isOpen, userEmail, userName, onLogout }) => {
+const HeaderProfileIcon = ({ onClick }) => {
   return (
-    <div className="profile-icon-wrapper">
-      <div onClick={onClick}>
-        <ProfileIcon />
-      </div>
-      {isOpen && (
-        <div className="profile-dropdown">
-          <p>Hi, {userName}!</p>
-          <p>{userEmail}</p>
-          <button onClick={onLogout}>Sign out</button>
-        </div>
-      )}
+    <div className="profile-icon-wrapper" onClick={onClick}>
+      <ProfileIcon />
     </div>
   );
 };
