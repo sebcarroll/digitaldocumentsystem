@@ -1,0 +1,43 @@
+.faq-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .faq-main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  .faq-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  .faq-item {
+    margin-bottom: 20px;
+  }
+  
+  .faq-item h2 {
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  
+  /* Ensure the sidebar appears correctly */
+  .faq-sidebar {
+    grid-area: sidebar;
+    display: flex
+  }
+
+  .faq-header {
+    grid-area: header;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: #fff;
+    border-bottom: 1px solid #dadce0;
+    padding: 10px;
+  }
+  

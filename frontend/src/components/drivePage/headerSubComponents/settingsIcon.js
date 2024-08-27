@@ -8,8 +8,12 @@ const SettingIcon = () => (
   </svg>
 );
 
-const HeaderSettingIcon = (props) => {
-  return props.IconComponent ? <props.settingIcon className="icon settings-icon" /> : <SettingIcon />;
+const HeaderSettingIcon = ({ onClick }) => {
+  return (
+    <div className="settings-icon-wrapper" onClick={onClick}>
+      <SettingIcon />
+    </div>
+  );
 };
 
 export default HeaderSettingIcon;

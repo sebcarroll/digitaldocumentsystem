@@ -424,3 +424,25 @@ export const clearChatHistory = async () => {
     console.error('Failed to clear chat history:', error);
   }
 };
+
+export const logoutUser = async () => {
+  const response = await fetch(`${API_URL}/logout`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to logout');
+  }
+  return response.json();
+};
+
+export const fetchUserInfo = async () => {
+  const response = await fetch(`${API_URL}/user-info`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch user information');
+  }
+  return response.json();
+};
+

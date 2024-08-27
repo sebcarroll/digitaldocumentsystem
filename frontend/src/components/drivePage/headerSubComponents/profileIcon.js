@@ -8,8 +8,21 @@ const ProfileIcon = () => (
   </svg>
 );
 
-const HeaderProfileIcon = (props) => {
-  return props.IconComponent ? <props.profileIcon className="icon profile-icon" /> : <ProfileIcon />;
+const HeaderProfileIcon = ({ onClick, isOpen, userEmail, userName, onLogout }) => {
+  return (
+    <div className="profile-icon-wrapper">
+      <div onClick={onClick}>
+        <ProfileIcon />
+      </div>
+      {isOpen && (
+        <div className="profile-dropdown">
+          <p>Hi, {userName}!</p>
+          <p>{userEmail}</p>
+          <button onClick={onLogout}>Sign out</button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default HeaderProfileIcon;

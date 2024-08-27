@@ -14,6 +14,7 @@ from app.services.google_drive.auth_service import AuthService
 from app.services.google_drive.core import DriveCore
 from app.services.natural_language.file_extractor import FileExtractor
 from app.services.natural_language.chat_service import ChatService
+from app.utils.drive_utils import get_drive_core
 from googleapiclient.errors import Error as GoogleApiError
 from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
@@ -228,3 +229,19 @@ def logout():
             logger.error(f"Error revoking token: {str(e)}")
     session.clear()
     return jsonify({"message": "Logged out successfully"})
+
+@auth_bp.route('/user-info')
+def get_user_info():
+    try:
+        drive_core = get_drive_core(session)
+        user_info = AuthService.fetch_user_info(drive_core)
+        return jsonify({
+            "email": user_info.get('email'),
+            "name": user_info.get('name')
+        })
+    except ValueError as e:
+        logger.error(f"Authentication error: {str(e)}")
+        return jsonify({"error": str(e)}), 401
+    except Exception as e:
+        logger.error(f"Error fetching user info: {str(e)}")
+        return jsonify({"error": "Failed to fetch user information"}), 500

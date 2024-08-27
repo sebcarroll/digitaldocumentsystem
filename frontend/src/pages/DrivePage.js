@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchDriveFiles, checkAuth, fetchFolderDetails, fetchFolderTree, moveFiles } from '../services/api';
+import { fetchDriveFiles, checkAuth, fetchUserInfo, fetchFolderDetails, fetchFolderTree, moveFiles } from '../services/api';
 import './DrivePage.css';
 import Sidebar from '../components/drivePage/sidebar.js';
 import Header from '../components/drivePage/header.js';
@@ -32,6 +32,8 @@ const DrivePage = () => {
   const [chatInitialQuery, setChatInitialQuery] = useState('');
   const [folderNames, setFolderNames] = useState({});
   const [folderTree, setFolderTree] = useState([]);
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const navigate = useNavigate();
 
   // Move this to the top to resolve circular dependency
@@ -67,6 +69,26 @@ const DrivePage = () => {
       setError(`Failed to load folder structure: ${error.message}`);
     }
   }, []);
+
+  useEffect(() => {
+    const checkAuthAndFetchUserInfo = async () => {
+      try {
+        const authStatus = await checkAuth();
+        if (authStatus.authenticated) {
+          const userInfo = await fetchUserInfo();
+          setUserEmail(userInfo.email);
+          setUserName(userInfo.name);
+        } else {
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+        setError('Failed to load user information.');
+      }
+    };
+
+    checkAuthAndFetchUserInfo();
+  }, [navigate]);
 
   useEffect(() => {
     console.log('DrivePage mounted or updated');
@@ -246,11 +268,13 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
   return (
     <div className="drive-page">
       <div className="drive-header">
-      <Header 
-        folderStack={folderStack}
-        currentFolder={currentFolder}
-        onBreadcrumbClick={handleBreadcrumbClick}
-      />
+        <Header 
+          folderStack={folderStack}
+          currentFolder={currentFolder}
+          onBreadcrumbClick={handleBreadcrumbClick}
+          userEmail={userEmail}
+          userName={userName}
+        />
       </div>
       <div className="sidebar">
         <Sidebar
