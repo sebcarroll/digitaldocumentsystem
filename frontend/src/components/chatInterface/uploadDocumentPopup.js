@@ -3,7 +3,6 @@ import './uploadDocumentPopup.css';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import FolderIcon from '@mui/icons-material/Folder';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbClick }) => {
   console.log('UploadPopupBreadcrumb rendering', { folderStack, currentFolder });
@@ -11,7 +10,7 @@ const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbCl
   const getBreadcrumbs = () => {
     let breadcrumbs = [...folderStack, currentFolder].filter(Boolean);
     if (breadcrumbs.length === 0) {
-      breadcrumbs = [{ id: 'root', name: 'My Drive' }];
+      breadcrumbs = [{ id: 'root', name: 'My Archive' }];
     }
     if (breadcrumbs.length > 3) {
       breadcrumbs = [{ id: '...', name: '...' }, ...breadcrumbs.slice(-2)];
@@ -70,7 +69,7 @@ const UploadPopup = ({
   const renderItem = (item) => {
     console.log('Rendering item', item);
     const isItemFolder = item.mimeType === 'application/vnd.google-apps.folder';
-    const isSelected = selectedFiles.includes(item.id);
+    const isSelected = selectedFiles.some(f => f.id === item.id);
 
     return (
       <div key={item.id} className="folder-item" onClick={() => {
@@ -79,22 +78,31 @@ const UploadPopup = ({
       }}>
         <div className="item-content">
           {isItemFolder ? (
-            <FolderIcon className="folder-icon" />
+            <FolderIcon className="folder-icon"/>
           ) : (
-            <>
+            <div onClick={(e) => {
+              e.stopPropagation();
+              handleFileSelect(item);
+            }}>
               {isSelected ? (
                 <CheckBoxIcon className="checkbox-icon" />
               ) : (
                 <CheckBoxOutlineBlankIcon className="checkbox-icon" />
               )}
-              <span className="file-icon">{getFileIcon(item.mimeType)}</span>
-            </>
+            </div>
           )}
+          <span className="file-icon">{getFileIcon(item.mimeType)}</span>
           <span className="item-name">{item.name}</span>
         </div>
       </div>
     );
   };
+
+  // Filter items to show only folders and files in the current folder
+  const displayedItems = items.filter(item => 
+    (item.mimeType === 'application/vnd.google-apps.folder' && item.parents[0] === currentFolder.id) ||
+    (item.mimeType !== 'application/vnd.google-apps.folder' && item.parents[0] === currentFolder.id)
+  );
 
   return (
     <div className="popup-overlay">
@@ -106,8 +114,8 @@ const UploadPopup = ({
           onBreadcrumbClick={handleBreadcrumbClick}
         />
         <div className="folder-list">
-          {items.length > 0 ? (
-            items.map(item => renderItem(item))
+          {displayedItems.length > 0 ? (
+            displayedItems.map(item => renderItem(item))
           ) : (
             <div className="empty-folder-message">This folder is empty</div>
           )}
@@ -125,7 +133,7 @@ const UploadPopup = ({
             }}
             disabled={selectedFiles.length === 0}
           >
-            Upload selected files
+            Upload selected files ({selectedFiles.length})
           </button>
         </div>
       </div>

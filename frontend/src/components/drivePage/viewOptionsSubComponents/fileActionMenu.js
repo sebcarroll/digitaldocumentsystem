@@ -25,8 +25,6 @@ const ActionButton = ({ icon, text, onClick, disabled }) => {
     setShowText(false);
   }, [hoverTimeout]);
 
-
-
   return (
     <button
       onClick={onClick}
@@ -42,26 +40,26 @@ const ActionButton = ({ icon, text, onClick, disabled }) => {
 };
 
 const FileActionMenu = ({ selectedFiles, onMove, onDelete, onCopyLink, onRename, onMakeCopy, onClose, onShare, isFolder }) => {
+  const noFilesSelected = selectedFiles.length === 0;
   const multipleFilesSelected = selectedFiles.length > 1;
 
-const handleCopyLink = () => {
-  if (selectedFiles.length === 1) {
-    onCopyLink(selectedFiles[0]);
-  }
-};
-
+  const handleCopyLink = () => {
+    if (selectedFiles.length === 1) {
+      onCopyLink(selectedFiles[0]);
+    }
+  };
 
   return (
     <div className="file-action-menu">
       <div className="action-buttons-container">
         <ActionButton icon={<CloseIcon />} text="Close" onClick={onClose} />
         <div className="selected-count">{selectedFiles.length} selected</div>
-        <ActionButton icon={<PersonAddIcon />} text="Share" onClick={onShare} />
-        <ActionButton icon={<DriveFileMoveIcon />} text="Move" onClick={() => onMove(selectedFiles)}/>
-        <ActionButton icon={<DeleteIcon />} text="Move to Bin" onClick={onDelete} />
-        <ActionButton icon={<LinkIcon />} text="Copy link" onClick={handleCopyLink} disabled={multipleFilesSelected} />
-        <ActionButton icon={<DriveFileRenameOutlineIcon />} text="Rename" onClick={onRename} disabled={multipleFilesSelected} />
-        <ActionButton icon={<FileCopyIcon />} text="Make a copy" onClick={onMakeCopy} disabled={isFolder}/>
+        <ActionButton icon={<PersonAddIcon />} text="Share" onClick={onShare} disabled={noFilesSelected} />
+        <ActionButton icon={<DriveFileMoveIcon />} text="Move" onClick={() => onMove(selectedFiles)} disabled={noFilesSelected} />
+        <ActionButton icon={<DeleteIcon />} text="Move to Bin" onClick={onDelete} disabled={noFilesSelected} />
+        <ActionButton icon={<LinkIcon />} text="Copy link" onClick={handleCopyLink} disabled={noFilesSelected || multipleFilesSelected} />
+        <ActionButton icon={<DriveFileRenameOutlineIcon />} text="Rename" onClick={onRename} disabled={noFilesSelected || multipleFilesSelected} />
+        <ActionButton icon={<FileCopyIcon />} text="Make a copy" onClick={onMakeCopy} disabled={noFilesSelected || isFolder} />
       </div>
     </div>
   );

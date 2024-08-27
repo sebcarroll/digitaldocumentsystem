@@ -17,12 +17,9 @@ from langchain_pinecone import PineconeVectorStore as Pinecone
 from pinecone import Pinecone as PineconeClient
 from openai import RateLimitError
 import os
-from flask import session
 from app.services.natural_language.file_extractor import FileExtractor
-from app.utils.drive_utils import get_drive_core
 
 logger = logging.getLogger(__name__)
-
 
 def retry_with_exponential_backoff(
     func,
@@ -61,12 +58,12 @@ class ChatService:
     and vector store.
     """
 
-    def __init__(self):
+    def __init__(self, drive_core=None):
         """
         Initialize the ChatService with necessary components.
 
-        Sets up the language model, vector store, and conversation chain
-        using environment variables for API keys and configuration.
+        Args:
+            drive_core (DriveCore, optional): The DriveCore instance to use for file operations.
         """
         logger.info("Initializing ChatService")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -74,8 +71,9 @@ class ChatService:
         self.pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
 
-        # Obtain DriveCore instance using the utility function
-        self.drive_core = get_drive_core(session)
+        self.drive_core = drive_core
+        if self.drive_core:
+            self.file_extractor = FileExtractor(drive_core=self.drive_core)
 
         self.llm = ChatOpenAI(temperature=0.2, 
                             model_name="gpt-4o-mini",
@@ -99,8 +97,25 @@ class ChatService:
         )
         logger.info("ChatService initialized successfully")
 
-        # Initialize FileExtractor with DriveCore instance
+    def set_drive_core(self, drive_core):
+        """
+        Set or update the DriveCore instance for the ChatService.
+
+        Args:
+            drive_core (DriveCore): The DriveCore instance to set.
+        """
+        self.drive_core = drive_core
         self.file_extractor = FileExtractor(drive_core=self.drive_core)
+        logger.info("DriveCore set for ChatService")
+
+    def has_drive_core(self):
+        """
+        Check if the ChatService has a DriveCore instance.
+
+        Returns:
+            bool: True if DriveCore is set, False otherwise.
+        """
+        return self.drive_core is not None
 
     @retry_with_exponential_backoff
     def query(self, question):
@@ -118,7 +133,7 @@ class ChatService:
         """
         logger.info(f"Processing query: {question}")
         try:
-            result = self.qa.invoke({"question": question})  # Using invoke instead of __call__
+            result = self.qa.invoke({"question": question})
             logger.info(f"Query processed successfully, result: {result['answer']}")
             return result['answer']
         except Exception as e:
@@ -191,6 +206,9 @@ class ChatService:
         """
         logger.info(f"Processing file: {file_name} with ID: {file_id}")
         try:
+            if not self.has_drive_core():
+                raise ValueError("DriveCore not set. Cannot process file.")
+            
             # Extract text using FileExtractor
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
             document = {

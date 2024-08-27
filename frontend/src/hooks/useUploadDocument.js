@@ -7,6 +7,7 @@ export const useUploadDocument = (setError) => {
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
   const [folderStack, setFolderStack] = useState([]);
   const [items, setItems] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   const getDriveFiles = useCallback(async (folderId) => {
     try {
@@ -30,7 +31,7 @@ export const useUploadDocument = (setError) => {
     setIsOpen(false);
     setCurrentFolder({ id: 'root', name: 'My Drive' });
     setFolderStack([]);
-    fileSelectionHook.setSelectedFiles([]);
+    setSelectedFiles([]);
     fileSelectionHook.setShowActionMenu(false);
   }, [fileSelectionHook]);
 
@@ -50,11 +51,22 @@ export const useUploadDocument = (setError) => {
     }
   }, [folderStack, getDriveFiles]);
 
+  const handleFileSelect = useCallback((file) => {
+    setSelectedFiles(prev => {
+      const isSelected = prev.some(f => f.id === file.id);
+      if (isSelected) {
+        return prev.filter(f => f.id !== file.id);
+      } else {
+        return [...prev, file];
+      }
+    });
+  }, []);
+
   const handleUpload = useCallback(async () => {
+    console.log('Uploading files:', selectedFiles);
     // Implement your upload logic here
-    console.log('Uploading files:', fileSelectionHook.selectedFiles);
     handleClose();
-  }, [fileSelectionHook.selectedFiles, handleClose]);
+  }, [selectedFiles, handleClose]);
 
   return {
     isOpen,
@@ -62,10 +74,12 @@ export const useUploadDocument = (setError) => {
     currentFolder,
     folderStack,
     items,
+    selectedFiles,
     handleOpen,
     handleClose,
     handleFolderClick,
     handleBreadcrumbClick,
+    handleFileSelect,
     handleUpload,
     ...fileSelectionHook
   };

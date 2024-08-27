@@ -43,7 +43,7 @@ const MovePopup = ({
   onClose, 
   onMove, 
   selectedFiles = [], 
-  currentFolder = { id: 'root', name: 'My Drive' }, 
+  currentFolder = { id: 'root', name: 'My Archive' }, 
   folderStack = [], 
   folders = [], 
   handleFolderClick, 
@@ -77,7 +77,7 @@ const MovePopup = ({
         </div>
         <div className="popup-actions">
           <button className="cancel-button" onClick={onClose}>Cancel</button>
-          <button className="ok-button" onClick={onMove}>
+          <button className="ok-button" onClick={() => onMove(currentFolder, [...folderStack, currentFolder])}>
             Move here
           </button>
         </div>

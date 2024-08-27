@@ -5,10 +5,10 @@ This module defines the routes for chat functionality, including
 query processing and document management in the vector store.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.services.natural_language.chat_service import ChatService
 import logging
-from app.services.google_drive.core import DriveCore
+from app.utils.drive_utils import get_drive_core
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,35 @@ chat_service = None
 def initialize_chat_service():
     global chat_service
     if chat_service is None:
-        chat_service = ChatService()
+        try:
+            drive_core = get_drive_core(session)
+            chat_service = ChatService(drive_core)
+            logger.info("ChatService initialized with DriveCore")
+        except ValueError:
+            chat_service = ChatService()
+            logger.info("ChatService initialized without DriveCore")
+
+@chat_bp.route('/initialize', methods=['POST'])
+def initialize_chat():
+    """
+    Initialize or update the chat service with Google credentials if available.
+    """
+    global chat_service
+    try:
+        drive_core = get_drive_core(session)
+        if chat_service is None:
+            chat_service = ChatService(drive_core)
+        else:
+            chat_service.set_drive_core(drive_core)
+        return jsonify({"message": "Chat service initialized with Google credentials"}), 200
+    except ValueError as e:
+        if chat_service is None:
+            chat_service = ChatService()
+        logger.info(f"Initializing chat service without Google credentials: {str(e)}")
+        return jsonify({"message": "Chat service initialized without Google credentials"}), 200
+    except Exception as e:
+        logger.error(f"Error initializing chat service: {str(e)}", exc_info=True)
+        return jsonify({"error": "An error occurred while initializing the chat service"}), 500
 
 @chat_bp.route('/query', methods=['POST'])
 def query_llm():
@@ -57,24 +85,32 @@ def manage_document():
         dict: A JSON response indicating the result of the operation.
     """
     try:
+        if not chat_service.has_drive_core():
+            try:
+                drive_core = get_drive_core(session)
+                chat_service.set_drive_core(drive_core)
+            except ValueError as e:
+                return jsonify({"error": "Google credentials required for document management"}), 401
+
         if request.method in ['POST', 'PUT']:
             data = request.json
             logger.debug(f"Received document data: {data}")
-            document = data.get('document')
+            file_id = data.get('file_id')
+            file_name = data.get('file_name')
             
-            if not document:
-                logger.warning("No document provided")
-                return jsonify({"error": "No document provided"}), 400
+            if not file_id or not file_name:
+                logger.warning("File ID or name not provided")
+                return jsonify({"error": "File ID and name are required"}), 400
 
-            logger.info(f"Processing document: {document}")
-            success = chat_service.add_document(document)
+            logger.info(f"Processing file: {file_name} with ID: {file_id}")
+            success = chat_service.process_and_add_file(file_id, file_name)
             
             if success:
-                logger.info("Document processed and stored successfully")
-                return jsonify({"message": "Document processed and stored successfully"})
+                logger.info("File processed and stored successfully")
+                return jsonify({"message": "File processed and stored successfully"})
             else:
-                logger.error("Failed to process document")
-                return jsonify({"error": "Failed to process document"}), 500
+                logger.error("Failed to process file")
+                return jsonify({"error": "Failed to process file"}), 500
 
         elif request.method == 'DELETE':
             data = request.json

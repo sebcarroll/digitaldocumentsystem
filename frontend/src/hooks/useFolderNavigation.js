@@ -6,9 +6,13 @@ export const useFolderNavigation = (setError) => {
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'Home' });
   const [folderStack, setFolderStack] = useState([]);
 
-  const handleFileClick = useCallback(async (file) => {
+  const handleFileClick = useCallback(async (file, newFolderStack = null) => {
     if (file.mimeType === 'application/vnd.google-apps.folder') {
-      setFolderStack(prev => [...prev, currentFolder]);
+      if (newFolderStack) {
+        setFolderStack(newFolderStack);
+      } else {
+        setFolderStack(prev => [...prev, currentFolder]);
+      }
       setCurrentFolder({ id: file.id, name: file.name });
     } else {
       try {

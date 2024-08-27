@@ -141,11 +141,11 @@ const DrivePage = () => {
     sharingError,    
   } = useFileSharing(selectedFiles);
 
-  const handleMoveComplete = useCallback((destinationFolder) => {
-    setShowActionMenu(false);
-    setSelectedFiles([]);
-    handleFileClick(destinationFolder);
-  }, [setShowActionMenu, setSelectedFiles, handleFileClick]);
+const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
+  setShowActionMenu(false);
+  setSelectedFiles([]);
+  handleFileClick(destinationFolder, newFolderStack);
+}, [setShowActionMenu, setSelectedFiles, handleFileClick]);
 
   const {
     isOpen: isMovePopupOpen,
@@ -246,11 +246,11 @@ const DrivePage = () => {
   return (
     <div className="drive-page">
       <div className="drive-header">
-        <Header 
-          folderStack={folderStack}
-          currentFolder={currentFolder}
-          onBreadcrumbClick={handleBreadcrumbClick}
-        />
+      <Header 
+        folderStack={folderStack}
+        currentFolder={currentFolder}
+        onBreadcrumbClick={handleBreadcrumbClick}
+      />
       </div>
       <div className="sidebar">
         <Sidebar

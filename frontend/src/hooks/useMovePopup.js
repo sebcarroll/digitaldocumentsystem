@@ -50,15 +50,15 @@ export const useMovePopup = (initialSelectedFiles, setError, onMoveComplete) => 
     }
   }, [folderStack, fetchFoldersData]);
 
-  const handleMove = useCallback(async () => {
-    try {
-      await moveFiles(selectedFiles.map(f => f.id), currentFolder.id);
-      handleClose();
-      onMoveComplete(currentFolder);
-    } catch (error) {
-      setError(error.message || 'Failed to move files');
-    }
-  }, [selectedFiles, currentFolder, moveFiles, handleClose, setError, onMoveComplete]);
+const handleMove = useCallback(async () => {
+  try {
+    await moveFiles(selectedFiles.map(f => f.id), currentFolder.id);
+    handleClose();
+    onMoveComplete(currentFolder, [...folderStack, currentFolder]);
+  } catch (error) {
+    setError(error.message || 'Failed to move files');
+  }
+}, [selectedFiles, currentFolder, folderStack, moveFiles, handleClose, setError, onMoveComplete]);
 
   return {
     isOpen,

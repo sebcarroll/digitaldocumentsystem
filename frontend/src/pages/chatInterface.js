@@ -80,17 +80,17 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
     uploadDocumentHook.handleClose();
   };
 
-  const handleFileUpload = async (selectedFileIds) => {
-    console.log('Handling file upload', selectedFileIds);
-    for (const fileId of selectedFileIds) {
+  const handleFileUpload = async (selectedFiles) => {
+    console.log('Handling file upload', selectedFiles);
+    for (const file of selectedFiles) {
       try {
-        const fileDetails = await openDriveFile(fileId);
+        const fileDetails = await openDriveFile(file.id);
         await uploadDocument(fileDetails);
         setDocuments(prev => [...prev, fileDetails]);
         addMessage(`Document "${fileDetails.name}" uploaded and processed successfully.`, false);
       } catch (error) {
         console.error('Error uploading document:', error);
-        addMessage(`Failed to upload document. Please try again.`, false);
+        addMessage(`Failed to upload document "${file.name}". Please try again.`, false);
       }
     }
     setIsUploadPopupOpen(false);
