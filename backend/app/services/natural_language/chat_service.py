@@ -18,6 +18,10 @@ from pinecone import Pinecone as PineconeClient
 from openai import RateLimitError
 import os
 from app.services.natural_language.file_extractor import FileExtractor
+import re
+import markdown
+from langchain_core.messages import SystemMessage
+
 
 logger = logging.getLogger(__name__)
 
@@ -75,11 +79,13 @@ class ChatService:
         if self.drive_core:
             self.file_extractor = FileExtractor(drive_core=self.drive_core)
 
-        self.llm = ChatOpenAI(temperature=0.2, 
-                            model_name="gpt-4o-mini",
-                            max_tokens=None,
-                            timeout=None,
-                            max_retries=2,)
+        self.llm = ChatOpenAI(
+            temperature=0.2, 
+            model_name="gpt-4o-mini",
+            max_tokens=None,
+            timeout=None,
+            max_retries=2
+        )
         
         # Initialize Pinecone client
         pc = PineconeClient(api_key=self.pinecone_api_key, environment=self.pinecone_environment)
@@ -93,9 +99,21 @@ class ChatService:
         self.qa = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
             retriever=self.vectorstore.as_retriever(),
-            memory=self.memory
+            memory=self.memory,
         )
-        logger.info("ChatService initialized successfully")
+
+    def post_process_output(self, text):
+        html = markdown.markdown(text)
+            
+        html = re.sub(r'<p>\|(.+)\|</p>', r'<table><tr><th>\1</th></tr>', html)
+        html = re.sub(r'<p>\|[-:|\s]+\|</p>', '', html)
+        html = re.sub(r'<p>\|(.+)\|</p>', r'<tr><td>\1</td></tr>', html)
+        html = html.replace('</tr><table>', '</table>')
+            
+        html = re.sub(r'<p>(\d+\. .*?)</p>', r'<ol><li>\1</li></ol>', html)
+        html = re.sub(r'<p>(- .*?)</p>', r'<ul><li>\1</li></ul>', html)
+            
+        return html
 
     def set_drive_core(self, drive_core):
         """
@@ -131,14 +149,18 @@ class ChatService:
         Raises:
             Exception: If an error occurs during query processing.
         """
+    def query(self, question):
         logger.info(f"Processing query: {question}")
         try:
-            result = self.qa.invoke({"question": question})
-            logger.info(f"Query processed successfully, result: {result['answer']}")
-            return result['answer']
+            result = self.qa({"question": question})
+            processed_result = self.post_process_output(result['answer'])
+            return processed_result
         except Exception as e:
             logger.error(f"Error processing query: {str(e)}", exc_info=True)
             raise
+
+    def clear_memory(self):
+        self.memory.clear()
 
     @lru_cache(maxsize=1000)
     def get_embedding(self, text):

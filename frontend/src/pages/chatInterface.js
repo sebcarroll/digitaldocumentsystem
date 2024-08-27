@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './chatInterface.css';
 import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
-import { sendQuery, uploadDocument, openDriveFile } from '../services/api';
+import { sendQuery, uploadDocument, openDriveFile, clearChatHistory } from '../services/api';
 import SendButton from '../components/drivePage/searchbarSubComponents/searchbarSendButton.js';
 import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
 import UploadPopup from '../components/chatInterface/uploadDocumentPopup.js';
 import { useUploadDocument } from '../hooks/useUploadDocument';
+import Message from './Message';
 
 const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
   console.log('ChatInterface rendering', { initialQuery });
@@ -27,6 +28,10 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
       addMessage(initialQuery, true);
       handleQuery(initialQuery);
     }
+
+    return () => {
+      clearChatHistory();
+    };
   }, [initialQuery, addMessage]);
 
   const handleQuery = async (query) => {
@@ -103,14 +108,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
       </div>
       <div className="message-list" ref={messageListRef}>
         {messages.map((message, index) => (
-          <div key={index} className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}>
-            {!message.isUser && (
-              <div className="bot-icon-background">
-                <BotIcon />
-              </div>
-            )}
-            <div className="message-text">{message.text}</div>
-          </div>
+          <Message key={index} text={message.text} isUser={message.isUser} />
         ))}
         {isLoading && <div className="loading-indicator">Processing...</div>}
       </div>

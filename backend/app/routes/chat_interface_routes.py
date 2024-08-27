@@ -5,7 +5,7 @@ This module defines the routes for chat functionality, including
 query processing and document management in the vector store.
 """
 
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, current_app, make_response
 from app.services.natural_language.chat_service import ChatService
 import logging
 from app.utils.drive_utils import get_drive_core
@@ -19,44 +19,11 @@ chat_service = None
 def initialize_chat_service():
     global chat_service
     if chat_service is None:
-        try:
-            drive_core = get_drive_core(session)
-            chat_service = ChatService(drive_core)
-            logger.info("ChatService initialized with DriveCore")
-        except ValueError:
-            chat_service = ChatService()
-            logger.info("ChatService initialized without DriveCore")
-
-@chat_bp.route('/initialize', methods=['POST'])
-def initialize_chat():
-    """
-    Initialize or update the chat service with Google credentials if available.
-    """
-    global chat_service
-    try:
-        drive_core = get_drive_core(session)
-        if chat_service is None:
-            chat_service = ChatService(drive_core)
-        else:
-            chat_service.set_drive_core(drive_core)
-        return jsonify({"message": "Chat service initialized with Google credentials"}), 200
-    except ValueError as e:
-        if chat_service is None:
-            chat_service = ChatService()
-        logger.info(f"Initializing chat service without Google credentials: {str(e)}")
-        return jsonify({"message": "Chat service initialized without Google credentials"}), 200
-    except Exception as e:
-        logger.error(f"Error initializing chat service: {str(e)}", exc_info=True)
-        return jsonify({"error": "An error occurred while initializing the chat service"}), 500
+        chat_service = ChatService()
 
 @chat_bp.route('/query', methods=['POST'])
 def query_llm():
-    """
-    Process a query and return a response from the language model.
-
-    Returns:
-        dict: A JSON response containing the query result or an error message.
-    """
+    logger.info("Received chat query request")
     try:
         data = request.json
         logger.debug(f"Received query data: {data}")
@@ -73,6 +40,13 @@ def query_llm():
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}", exc_info=True)
         return jsonify({"error": "An error occurred while processing the query"}), 500
+
+@chat_bp.route('/clear', methods=['POST'])
+def clear_chat_history():
+    global chat_service
+    if chat_service:
+        chat_service.clear_memory()
+    return jsonify({"message": "Chat history cleared"}), 200
 
 @chat_bp.route('/document', methods=['POST', 'PUT', 'DELETE'])
 def manage_document():
@@ -133,3 +107,23 @@ def manage_document():
     except Exception as e:
         logger.error(f"Error in manage_document: {str(e)}", exc_info=True)
         return jsonify({"error": "An error occurred while managing the document"}), 500
+
+@chat_bp.route('', defaults={'path': ''})
+@chat_bp.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    try:
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+    except Exception as e:
+        logger.error(f"Error handling OPTIONS request: {str(e)}", exc_info=True)
+        return jsonify({"error": "An error occurred while handling OPTIONS request"}), 500
+
+@chat_bp.before_request
+def log_request_info():
+    logger.debug('Chat BP - Request Method: %s', request.method)
+    logger.debug('Chat BP - Request URL: %s', request.url)
+    logger.debug('Chat BP - Request Headers: %s', request.headers)

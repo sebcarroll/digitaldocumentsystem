@@ -294,19 +294,27 @@ export const fetchFolders = async (folderId = 'root') => {
 };
 
 export const sendQuery = async (query) => {
-  const response = await fetch(`${API_URL}/chat/query`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ query }),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to process query');
+  console.log("Sending query to chat API:", query);
+  try {
+    const response = await fetch(`${API_URL}/chat/query`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ query }),
+    });
+    console.log("Received response from chat API:", response);
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error data:", errorData);
+      throw new Error(errorData.error || 'Failed to process query');
+    }
+    return response.json();
+  } catch (error) {
+    console.error("Full error:", error);
+    throw error;
   }
-  return response.json();
 };
 
 export const addDocument = async (document) => {
@@ -373,12 +381,12 @@ export const uploadDocument = async (document) => {
 };
 
 export const fetchFolderDetails = async (folderId) => {
-  const response = await fetch(`/api/drive/${folderId}/details`, {
+  const response = await fetch(`${API_URL}/drive/${folderId}/details`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-    credentials: 'include',
     },
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -404,4 +412,15 @@ export const fetchFolderTree = async () => {
   const data = await response.json();
   console.log('Folder tree data received:', data);
   return data;
+};
+
+export const clearChatHistory = async () => {
+  try {
+    await fetch(`${API_URL}/chat/clear`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch (error) {
+    console.error('Failed to clear chat history:', error);
+  }
 };

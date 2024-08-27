@@ -1,15 +1,35 @@
-import React from 'react';
-import Icon from './Icon';
+import React, { useEffect, useRef } from 'react';
+import BotIcon from '../chatInterface/chatInterfaceSubComponents/botIcon.js';
+import DOMPurify from 'dompurify';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github.css'; // Choose a style
+import './Message.css';
 
 function Message({ text, isUser }) {
+  const messageRef = useRef(null);
+
+  useEffect(() => {
+    if (messageRef.current) {
+      messageRef.current.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightBlock(block);
+      });
+    }
+  }, [text]);
+
   return (
     <div className={`message ${isUser ? 'user-message' : 'bot-message'}`}>
       {!isUser && (
         <div className="bot-icon-background">
-          <Icon />
+          <BotIcon />
         </div>
       )}
-      <div className="message-text">{text}</div>
+      <div className="message-content">
+        <div 
+          ref={messageRef}
+          className="message-text"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }}
+        />
+      </div>
     </div>
   );
 }
