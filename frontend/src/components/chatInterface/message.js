@@ -3,7 +3,7 @@ import BotIcon from '../chatInterface/chatInterfaceSubComponents/botIcon.js';
 import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css'; // Choose a style
-import './Message.css';
+import './message.css';
 
 function Message({ text, isUser }) {
   const messageRef = useRef(null);

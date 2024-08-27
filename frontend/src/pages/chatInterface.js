@@ -6,7 +6,7 @@ import SendButton from '../components/drivePage/searchbarSubComponents/searchbar
 import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
 import UploadPopup from '../components/chatInterface/uploadDocumentPopup.js';
 import { useUploadDocument } from '../hooks/useUploadDocument';
-import Message from './Message';
+import Message from '../components/chatInterface/message.js';
 
 const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
   console.log('ChatInterface rendering', { initialQuery });

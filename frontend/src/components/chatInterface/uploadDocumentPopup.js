@@ -10,7 +10,7 @@ const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbCl
   const getBreadcrumbs = () => {
     let breadcrumbs = [...folderStack, currentFolder].filter(Boolean);
     if (breadcrumbs.length === 0) {
-      breadcrumbs = [{ id: 'root', name: 'My Archive' }];
+      breadcrumbs = [{ id: 'root', name: 'My Drive' }];
     }
     if (breadcrumbs.length > 3) {
       breadcrumbs = [{ id: '...', name: '...' }, ...breadcrumbs.slice(-2)];
