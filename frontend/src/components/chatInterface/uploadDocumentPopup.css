@@ -46,9 +46,14 @@
     padding: 10px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    border-bottom: 1px solid #e0e0e0;
     display: flex;
     align-items: center;
+}
+
+.folder-item-separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 0 10px;
 }
 
 .folder-item:last-child {
@@ -66,14 +71,14 @@
 }
 
 .checkbox-container {
-    margin-right: 12px;
     display: flex;
     align-items: center;
+    margin-right: 12px;
     flex-shrink: 0;
 }
 
 .checkbox-icon {
-    font-size: 20px;
+    font-size: 24px;
     color: #1e3a8a;
 }
 
@@ -82,7 +87,7 @@
     align-items: center;
     justify-content: space-between;
     flex-grow: 1;
-    min-width: 0; /* Allows flex items to shrink below content size */
+    min-width: 0;
 }
 
 .file-name {
@@ -91,12 +96,17 @@
     font-size: 14px;
     font-weight: bold;
     flex-grow: 1;
-    min-width: 0; /* Allows flex items to shrink below content size */
+    min-width: 0;
 }
 
 .file-type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-right: 8px;
     font-size: 20px;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
 }
 
@@ -104,7 +114,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0; /* Allows text to shrink */
+    min-width: 0;
 }
 
 .file-sharing-icon {
