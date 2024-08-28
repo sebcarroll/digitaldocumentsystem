@@ -100,6 +100,7 @@
   left: 0;
   right: 0;
   z-index: 2;
+  align-items: flex-end;
 }
 
 .file-upload-label {
@@ -109,11 +110,49 @@
 
 .message-input {
   flex-grow: 1;
-  height: var(--input-height);
-  padding: 0 15px;
+  min-height: var(--input-height);
+  max-height: 150px;
+  padding: 10px 15px;
   border: 0.8px solid #d1d5db;
-  border-radius: 9999px;
+  border-radius: 18px; /* Changed back to 18px for rounded corners */
   margin: 0 10px;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.5;
+  font-size: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+  padding-right: 25px;
+}
+
+.message-input::-webkit-scrollbar {
+  width: 8px;
+  height: calc(100% - 4px);
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.message-input::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 0 18px 18px 0; 
+}
+
+.message-input::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 9px;
+}
+
+.message-input::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.message-input:not(:focus):not(:hover) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.message-input:not(:focus):not(:hover)::-webkit-scrollbar {
+  display: none;
 }
 
 .send-button {
@@ -124,6 +163,7 @@
   color: white;
   border: none;
   cursor: pointer;
+  align-self: flex-end;
 }
 
 .document-list {
@@ -170,9 +210,9 @@
   }
 
   .message-input {
-    height: var(--input-height);
-    padding: 0 10px;
     font-size: 14px;
+    padding: 8px 12px;
+    padding-right: 20px;
   }
 
   .send-button {

@@ -3,6 +3,39 @@ import './uploadDocumentPopup.css';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import FolderIcon from '@mui/icons-material/Folder';
+import PeopleIcon from '@mui/icons-material/People';
+
+// Format file size function
+const formatFileSize = (size) => {
+  if (size == null || isNaN(size)) {
+    return 'N/A';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let unitIndex = 0;
+  let fileSize = Number(size);
+
+  if (fileSize === 0) {
+    return '0 B';
+  }
+
+  while (fileSize >= 1024 && unitIndex < units.length - 1) {
+    fileSize /= 1024;
+    unitIndex++;
+  }
+
+  return `${fileSize.toFixed(1)} ${units[unitIndex]}`;
+};
+
+const ALLOWED_FORMATS = [
+  '.docx', '.xlsx', '.txt', '.csv', '.pdf',
+  'application/vnd.google-apps.document',
+  'application/vnd.google-apps.spreadsheet'
+];
+
+const getFileExtension = (filename) => {
+  return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2).toLowerCase();
+};
 
 const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbClick }) => {
   console.log('UploadPopupBreadcrumb rendering', { folderStack, currentFolder });
@@ -106,13 +139,8 @@ const UploadPopup = ({
         }
       }}>
         <div className="item-content">
-          {isItemFolder ? (
-            <FolderIcon className="folder-icon" />
-          ) : (
-            <div onClick={(e) => {
-              e.stopPropagation();
-              handleFileSelect(item);
-            }}>
+          {!isItemFolder && (
+            <div className="checkbox-container" onClick={(e) => e.stopPropagation()}>
               {isSelected ? (
                 <CheckBoxIcon className="checkbox-icon" />
               ) : (
@@ -120,8 +148,20 @@ const UploadPopup = ({
               )}
             </div>
           )}
-          <span className="file-icon">{getFileIcon(item.mimeType || 'unknown')}</span>
-          <span className="item-name">{item.name}</span>
+          <div className="file-header">
+            <div className="file-name">
+              <span className="file-type-icon">
+                {isItemFolder ? <FolderIcon /> : getFileIcon(item.mimeType)}
+              </span>
+              <span className="file-name-text">{item.name}</span>
+              {item.shared && <PeopleIcon className="file-sharing-icon" />}
+            </div>
+            <div className="file-info">
+              {!isItemFolder && (
+                <span className="file-size">{formatFileSize(item.size)}</span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -132,13 +172,17 @@ const UploadPopup = ({
 
   const ROOT_FOLDER_ID = '0AJjuiEj-GTr0Uk9PVA';
   const displayedItems = items.filter(item => {
-    if (currentFolder.id === 'root') {
-      return (item.parents && item.parents[0] === ROOT_FOLDER_ID) ||
-             (!item.parents) ||
-             (item.parents && item.parents.length === 0);
-    } else {
-      return item.parents && item.parents.length > 0 && item.parents[0] === currentFolder.id;
-    }
+    const isInCurrentFolder = (currentFolder.id === 'root' && 
+      ((item.parents && item.parents[0] === ROOT_FOLDER_ID) ||
+       (!item.parents) ||
+       (item.parents && item.parents.length === 0))) ||
+      (item.parents && item.parents.length > 0 && item.parents[0] === currentFolder.id);
+
+    const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
+    const hasAllowedFormat = ALLOWED_FORMATS.includes(`.${getFileExtension(item.name)}`) || 
+                             ALLOWED_FORMATS.includes(item.mimeType);
+
+    return isInCurrentFolder && (isFolder || hasAllowedFormat);
   });
 
   console.log('Displayed items:', displayedItems);

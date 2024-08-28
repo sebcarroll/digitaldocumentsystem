@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import '../../pages/chatInterface.css';
 
 function InputArea({ onSendMessage, onUploadDocuments }) {
   const [input, setInput] = useState('');
+  const textareaRef = useRef(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -16,6 +18,17 @@ function InputArea({ onSendMessage, onUploadDocuments }) {
     onUploadDocuments(files);
   };
 
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [input]);
+
   return (
     <form className="input-area" onSubmit={handleSubmit}>
       <label htmlFor="file-upload" className="file-upload-label">
@@ -28,12 +41,13 @@ function InputArea({ onSendMessage, onUploadDocuments }) {
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
-      <input
-        type="text"
+      <textarea
+        ref={textareaRef}
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={handleInputChange}
         placeholder="Type your message..."
         className="message-input"
+        rows="1"
       />
       <button type="submit" className="send-button">
         Send

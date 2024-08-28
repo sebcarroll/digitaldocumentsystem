@@ -17,6 +17,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
   const [isUploadPopupOpen, setIsUploadPopupOpen] = useState(false);
 
   const messageListRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const addMessage = useCallback((text, isUser) => {
     setMessages(prevMessages => [...prevMessages, { text, isUser }]);
@@ -54,6 +55,26 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
       setInput('');
     }
   };
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const newHeight = Math.max(scrollHeight, parseInt(getComputedStyle(textareaRef.current).getPropertyValue('min-height')));
+      textareaRef.current.style.height = `${newHeight}px`;
+      
+      // Show scrollbar only when content exceeds max height
+      if (scrollHeight > 150) {
+        textareaRef.current.style.overflowY = 'auto';
+      } else {
+        textareaRef.current.style.overflowY = 'hidden';
+      }
+    }
+  }, [input]);
 
   const scrollToBottom = () => {
     if (messageListRef.current) {
@@ -124,12 +145,13 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
         <div className="file-upload-label" onClick={handleFileIconClick}>
           <AttachFileSharpIcon />
         </div>
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           placeholder="Type your message..."
           className="message-input"
+          rows="1"
         />
         <button type="submit" className="send-button">
           <SendButton />

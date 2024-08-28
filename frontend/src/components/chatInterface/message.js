@@ -23,14 +23,12 @@ function Message({ text, isUser }) {
           <BotIcon />
         </div>
       )}
-      <div className="message-content">
         <div 
           ref={messageRef}
           className="message-text"
           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }}
         />
       </div>
-    </div>
   );
 }
 
