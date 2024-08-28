@@ -12,6 +12,7 @@ from functools import lru_cache
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
+from langchain_core.outputs import LLMResult
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore as Pinecone
 from pinecone import Pinecone as PineconeClient
@@ -174,21 +175,28 @@ class ChatService:
         """
         logger.info(f"Processing query: {question}")
         try:
-            result = self.qa({"question": question})
+            # Replace self.qa({"question": question}) with:
+            result = self.qa.invoke({"question": question})
+            
             logger.debug(f"Raw result: {result}")
             logger.debug(f"Retrieved documents: {result.get('source_documents', [])}")
             logger.debug(f"Generated question: {result.get('generated_question', '')}")
             logger.debug(f"Chat history: {self.memory.chat_memory.messages}")
             
             # Extract the answer from the result
-            answer = result['answer']
+            if isinstance(result, dict):
+                answer = result.get('answer', '')
+            elif isinstance(result, LLMResult):
+                answer = result.generations[0][0].text if result.generations else ''
+            else:
+                answer = str(result)
             
             processed_result = self.post_process_output(answer)
             return processed_result
         except Exception as e:
             logger.error(f"Error processing query: {str(e)}", exc_info=True)
             raise
-
+        
     def clear_memory(self):
         self.memory.clear()
 
