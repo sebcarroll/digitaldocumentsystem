@@ -9,8 +9,8 @@ const Sidebar = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, on
     const location = useLocation();
   
     const sidebarItems = [
-      { path: '/', label: 'Home' },
-      { path: '/my-archive', label: 'My Archive' },
+      { path: '/drive', label: 'Home' },
+      { path: '/my-drive', label: 'My Drive' },
       { path: '/shared-with-me', label: 'Shared with me' },
       { path: '/recent', label: 'Recent' },
       { path: '/bin', label: 'Bin' }

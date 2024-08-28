@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './chatInterface.css';
-import BotIcon from '../components/chatInterface/chatInterfaceSubComponents/botIcon.js';
 import { sendQuery, uploadDocument, openDriveFile, clearChatHistory } from '../services/api';
 import SendButton from '../components/drivePage/searchbarSubComponents/searchbarSendButton.js';
 import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
@@ -98,7 +97,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
         addMessage(`Failed to upload document "${file.name}". Please try again.`, false);
       }
     }
-    setIsUploadPopupOpen(false);
+    // The popup will be closed by the UploadPopup component itself
   };
 
   return (

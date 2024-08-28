@@ -68,7 +68,7 @@ const DriveContent = ({
 
   const getLocation = (file) => {
     if (!file.parents || file.parents.length === 0) {
-      return file.shared ? "Shared with me" : "My Archive";
+      return file.shared ? "Shared with me" : "My Drive";
     }
     const parentId = file.parents[0];
     const findFolder = (folders) => {
@@ -84,7 +84,7 @@ const DriveContent = ({
       return null;
     };
     const folderName = findFolder(folderTree);
-    return folderName || "My Archive";
+    return folderName || "My Drive";
   };
 
   const renderFileIcon = (file) => {

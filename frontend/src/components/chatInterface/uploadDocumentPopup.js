@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './uploadDocumentPopup.css';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import FolderIcon from '@mui/icons-material/Folder';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbClick }) => {
   console.log('UploadPopupBreadcrumb rendering', { folderStack, currentFolder });
@@ -50,17 +49,41 @@ const UploadPopup = ({
   isOpen, 
   onClose, 
   onUpload,
-  selectedFiles,
   currentFolder,
   folderStack,
   items,
   handleFolderClick,
   handleBreadcrumbClick,
-  handleFileSelect,
   handleMoreClick,
   isFolder
 }) => {
+  const [selectedFiles, setSelectedFiles] = useState([]);
+
   console.log('UploadPopup rendering', { isOpen, getFileIcon, setError });
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log("UploadPopup received new props:", { items });
+    }
+  }, [isOpen, items]);
+
+  const handleFileSelect = useCallback((file) => {
+    console.log("handleFileSelect called with file:", file);
+    setSelectedFiles(prevSelected => {
+      const isAlreadySelected = prevSelected.some(f => f.id === file.id);
+      if (isAlreadySelected) {
+        console.log("Removing file from selection:", file.name);
+        return prevSelected.filter(f => f.id !== file.id);
+      } else {
+        console.log("Adding file to selection:", file.name);
+        return [...prevSelected, file];
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    console.log("Selected files updated in UploadPopup:", selectedFiles);
+  }, [selectedFiles]);
 
   if (!isOpen) {
     console.log('UploadPopup not rendering because isOpen prop is false');
@@ -70,47 +93,62 @@ const UploadPopup = ({
   const renderItem = (item) => {
     console.log('Rendering item', item);
     const isItemFolder = item.mimeType === 'application/vnd.google-apps.folder';
-    const isSelected = selectedFiles.includes(item.id);
-
+    const isSelected = selectedFiles.some(f => f.id === item.id);
+  
     return (
       <div key={item.id} className="folder-item" onClick={() => {
         console.log('Item clicked', { isItemFolder, item });
-        isItemFolder ? handleFolderClick(item) : handleFileSelect(item);
+        if (!isItemFolder) {
+          console.log('Calling handleFileSelect for non-folder item');
+          handleFileSelect(item);
+        } else {
+          handleFolderClick(item);
+        }
       }}>
         <div className="item-content">
           {isItemFolder ? (
             <FolderIcon className="folder-icon" />
           ) : (
-            <>
+            <div onClick={(e) => {
+              e.stopPropagation();
+              handleFileSelect(item);
+            }}>
               {isSelected ? (
                 <CheckBoxIcon className="checkbox-icon" />
               ) : (
                 <CheckBoxOutlineBlankIcon className="checkbox-icon" />
               )}
-              <span className="file-icon">{getFileIcon(item.mimeType)}</span>
-            </>
+            </div>
           )}
+          <span className="file-icon">{getFileIcon(item.mimeType || 'unknown')}</span>
           <span className="item-name">{item.name}</span>
         </div>
       </div>
     );
   };
 
-console.log('All items:', items);
-console.log('Current folder:', currentFolder);
+  console.log('All items:', items);
+  console.log('Current folder:', currentFolder);
 
-const ROOT_FOLDER_ID = '0AJjuiEj-GTr0Uk9PVA';
-const displayedItems = items.filter(item => {
-  if (currentFolder.id === 'root') {
-    return (item.parents && item.parents[0] === ROOT_FOLDER_ID) ||
-           (!item.parents) ||
-           (item.parents && item.parents.length === 0);
-  } else {
-    return item.parents && item.parents.length > 0 && item.parents[0] === currentFolder.id;
-  }
-});
+  const ROOT_FOLDER_ID = '0AJjuiEj-GTr0Uk9PVA';
+  const displayedItems = items.filter(item => {
+    if (currentFolder.id === 'root') {
+      return (item.parents && item.parents[0] === ROOT_FOLDER_ID) ||
+             (!item.parents) ||
+             (item.parents && item.parents.length === 0);
+    } else {
+      return item.parents && item.parents.length > 0 && item.parents[0] === currentFolder.id;
+    }
+  });
 
   console.log('Displayed items:', displayedItems);
+
+  const handleUpload = () => {
+    console.log('Upload button clicked', { selectedFiles });
+    onUpload(selectedFiles);
+    setSelectedFiles([]); // Reset selected files
+    onClose(); // Close the popup
+  };
 
   return (
     <div className="popup-overlay">
@@ -129,16 +167,10 @@ const displayedItems = items.filter(item => {
           )}
         </div>
         <div className="popup-actions">
-          <button className="cancel-button" onClick={() => {
-            console.log('Cancel button clicked');
-            onClose();
-          }}>Cancel</button>
+          <button className="cancel-button" onClick={onClose}>Cancel</button>
           <button 
             className="ok-button" 
-            onClick={() => {
-              console.log('Upload button clicked', { selectedFiles });
-              onUpload(selectedFiles);
-            }}
+            onClick={handleUpload}
             disabled={selectedFiles.length === 0}
           >
             Upload selected files ({selectedFiles.length})
