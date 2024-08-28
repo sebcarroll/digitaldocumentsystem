@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './uploadDocumentPopup.css';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import FolderIcon from '@mui/icons-material/Folder';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbClick }) => {
   console.log('UploadPopupBreadcrumb rendering', { folderStack, currentFolder });
@@ -69,7 +70,7 @@ const UploadPopup = ({
   const renderItem = (item) => {
     console.log('Rendering item', item);
     const isItemFolder = item.mimeType === 'application/vnd.google-apps.folder';
-    const isSelected = selectedFiles.some(f => f.id === item.id);
+    const isSelected = selectedFiles.includes(item.id);
 
     return (
       <div key={item.id} className="folder-item" onClick={() => {
@@ -78,31 +79,38 @@ const UploadPopup = ({
       }}>
         <div className="item-content">
           {isItemFolder ? (
-            <FolderIcon className="folder-icon"/>
+            <FolderIcon className="folder-icon" />
           ) : (
-            <div onClick={(e) => {
-              e.stopPropagation();
-              handleFileSelect(item);
-            }}>
+            <>
               {isSelected ? (
                 <CheckBoxIcon className="checkbox-icon" />
               ) : (
                 <CheckBoxOutlineBlankIcon className="checkbox-icon" />
               )}
-            </div>
+              <span className="file-icon">{getFileIcon(item.mimeType)}</span>
+            </>
           )}
-          <span className="file-icon">{getFileIcon(item.mimeType)}</span>
           <span className="item-name">{item.name}</span>
         </div>
       </div>
     );
   };
 
-  // Filter items to show only folders and files in the current folder
-  const displayedItems = items.filter(item => 
-    (item.mimeType === 'application/vnd.google-apps.folder' && item.parents[0] === currentFolder.id) ||
-    (item.mimeType !== 'application/vnd.google-apps.folder' && item.parents[0] === currentFolder.id)
-  );
+console.log('All items:', items);
+console.log('Current folder:', currentFolder);
+
+const ROOT_FOLDER_ID = '0AJjuiEj-GTr0Uk9PVA';
+const displayedItems = items.filter(item => {
+  if (currentFolder.id === 'root') {
+    return (item.parents && item.parents[0] === ROOT_FOLDER_ID) ||
+           (!item.parents) ||
+           (item.parents && item.parents.length === 0);
+  } else {
+    return item.parents && item.parents.length > 0 && item.parents[0] === currentFolder.id;
+  }
+});
+
+  console.log('Displayed items:', displayedItems);
 
   return (
     <div className="popup-overlay">

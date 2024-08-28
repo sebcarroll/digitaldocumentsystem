@@ -43,7 +43,7 @@ const MovePopup = ({
   onClose, 
   onMove, 
   selectedFiles = [], 
-  currentFolder = { id: 'root', name: 'My Archive' }, 
+  currentFolder = { id: 'root', name: 'My Drive' }, 
   folderStack = [], 
   folders = [], 
   handleFolderClick, 

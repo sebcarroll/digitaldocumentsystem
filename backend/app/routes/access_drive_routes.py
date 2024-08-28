@@ -27,7 +27,7 @@ def drive():
     Query Parameters:
     - folder_id: The ID of the folder to list (default is 'root').
     - page_token: Token for pagination.
-    - page_size: Number of items to retrieve per page (default is 100).
+    - page_size: Number of items to retrieve per page (default is 1000).
 
     Returns:
     - A JSON object containing the list of files and the next page token.
@@ -41,7 +41,7 @@ def drive():
         
         folder_id = request.args.get('folder_id', 'root')
         page_token = request.args.get('page_token')
-        page_size = int(request.args.get('page_size', 100))
+        page_size = int(request.args.get('page_size', 1000))
         
         logger.info(f"Listing folder contents. Folder ID: {folder_id}, Page Token: {page_token}, Page Size: {page_size}")
         drive_service = DriveService(drive_core)

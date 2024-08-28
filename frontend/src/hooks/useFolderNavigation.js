@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { openDriveFile } from '../services/api';  // Import the openDriveFile function
 
 export const useFolderNavigation = (setError) => {
-  const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'Home' });
+  const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
   const [folderStack, setFolderStack] = useState([]);
 
   const handleFileClick = useCallback(async (file, newFolderStack = null) => {
