@@ -3,7 +3,7 @@
 from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from database.schemas.document import DocumentSchema
+from database.schemas.query_and_document import QueryandDocumentSchema
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class PineconeManager:
         self.environment = environment
         self.index_name = index_name
         self.openai_api_key = openai_api_key
-        self.document_schema = DocumentSchema()         
+        self.query_and_document_schema = QueryandDocumentSchema()         
         # Initialize Pinecone
         self.pc = Pinecone(api_key=api_key)
         

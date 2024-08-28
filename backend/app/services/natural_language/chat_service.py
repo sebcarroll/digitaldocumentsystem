@@ -20,8 +20,7 @@ import os
 from app.services.natural_language.file_extractor import FileExtractor
 import re
 import markdown
-from langchain_core.messages import SystemMessage
-
+from langchain.prompts import PromptTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +79,7 @@ class ChatService:
             self.file_extractor = FileExtractor(drive_core=self.drive_core)
 
         self.llm = ChatOpenAI(
-            temperature=0.2, 
+            temperature=0.3,
             model_name="gpt-4o-mini",
             max_tokens=None,
             timeout=None,
@@ -96,10 +95,34 @@ class ChatService:
         
         self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
         
+        prompt_template = """Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
+        {context}
+
+        {chat_history}
+
+        Question: {question}
+        Helpful Answer:"""
+
+        PROMPT = PromptTemplate(
+            template=prompt_template, input_variables=["context", "chat_history", "question"]
+        )
+
+        self.memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            input_key="question",
+            output_key="answer",
+            return_messages=True
+        )
+
         self.qa = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
-            retriever=self.vectorstore.as_retriever(),
+            retriever=self.vectorstore.as_retriever(search_kwargs={"k": 5}),
             memory=self.memory,
+            combine_docs_chain_kwargs={"prompt": PROMPT},
+            return_source_documents=True,
+            return_generated_question=True,
+            verbose=True
         )
 
     def post_process_output(self, text):
@@ -149,11 +172,18 @@ class ChatService:
         Raises:
             Exception: If an error occurs during query processing.
         """
-    def query(self, question):
         logger.info(f"Processing query: {question}")
         try:
             result = self.qa({"question": question})
-            processed_result = self.post_process_output(result['answer'])
+            logger.debug(f"Raw result: {result}")
+            logger.debug(f"Retrieved documents: {result.get('source_documents', [])}")
+            logger.debug(f"Generated question: {result.get('generated_question', '')}")
+            logger.debug(f"Chat history: {self.memory.chat_memory.messages}")
+            
+            # Extract the answer from the result
+            answer = result['answer']
+            
+            processed_result = self.post_process_output(answer)
             return processed_result
         except Exception as e:
             logger.error(f"Error processing query: {str(e)}", exc_info=True)
