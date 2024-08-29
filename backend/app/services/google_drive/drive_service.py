@@ -72,7 +72,10 @@ class DriveService:
         drive_service, _ = self.get_services()
         logger.info(f"Retrieving details for file: {file_id}")
         try:
-            file = drive_service.files().get(fileId=file_id, fields="id,name,mimeType,size,hasThumbnail,thumbnailLink,parents").execute()
+            file = drive_service.files().get(
+                fileId=file_id,
+                fields="id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, createdTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared"
+            ).execute()
             return {
                 "id": file.get('id'),
                 "name": file.get('name'),
@@ -80,7 +83,13 @@ class DriveService:
                 "size": file.get('size'),
                 "hasThumbnail": file.get('hasThumbnail', False),
                 "thumbnailLink": file.get('thumbnailLink'),
-                "parents": file.get('parents', [])
+                "modifiedTime": file.get('modifiedTime'),
+                "createdTime": file.get('createdTime'),
+                "viewedByMeTime": file.get('viewedByMeTime'),
+                "sharedWithMeTime": file.get('sharedWithMeTime'),
+                "owners": file.get('owners', []),
+                "parents": file.get('parents', []),
+                "shared": file.get('shared', False)
             }
         except Exception as e:
             logger.error(f"Error retrieving file details: {str(e)}")

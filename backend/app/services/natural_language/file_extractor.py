@@ -3,7 +3,9 @@
 import logging
 import os
 import io
-from typing import BinaryIO, List
+import docx2txt
+from typing import Union, List
+from io import BytesIO
 
 from app.services.google_drive.core import DriveCore
 from googleapiclient.http import MediaIoBaseDownload
@@ -11,8 +13,10 @@ from langchain_community.document_loaders import (
     Docx2txtLoader,
     CSVLoader,
     TextLoader,
-    UnstructuredPDFLoader
+    UnstructuredPDFLoader,
+     UnstructuredExcelLoader
 )
+
 from langchain.schema import Document
 
 # Set up logging
@@ -33,7 +37,7 @@ class FileExtractor:
         """
         self.drive_core = drive_core
 
-    def convert_google_doc_to_docx(self, file_id: str) -> BinaryIO:
+    def convert_google_doc_to_docx(self, file_id: str) -> BytesIO:
         """
         Convert a Google Doc to .docx format.
 
@@ -51,13 +55,13 @@ class FileExtractor:
                 fileId=file_id,
                 mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             )
-            file = io.BytesIO(request.execute())
+            file = BytesIO(request.execute())
             return file
         except Exception as e:
             logger.error(f"Error converting Google Doc to DOCX: {e}")
             raise
 
-    def convert_google_sheet_to_xlsx(self, file_id: str) -> BinaryIO:
+    def convert_google_sheet_to_xlsx(self, file_id: str) -> BytesIO:
         """
         Convert a Google Sheet to .xlsx format.
 
@@ -81,12 +85,12 @@ class FileExtractor:
             logger.error(f"Error converting Google Sheet to XLSX: {e}")
             raise
 
-    def load_document(self, file: BinaryIO, file_type: str) -> List[Document]:
+    def load_document(self, file: Union[str, BytesIO], file_type: str) -> List[Document]:
         """
         Load a document using the appropriate Langchain loader.
 
         Args:
-            file (BinaryIO): A file-like object containing the document content.
+            file (Union[str, BytesIO]): A file path, URL, or BytesIO object containing the document content.
             file_type (str): The type of the file (e.g., 'docx', 'csv', 'txt', 'pdf').
 
         Returns:
@@ -98,17 +102,28 @@ class FileExtractor:
         """
         try:
             if file_type == 'docx':
-                loader = Docx2txtLoader(file)
+                if isinstance(file, BytesIO):
+                    # If it's a BytesIO object, we need to extract the text manually
+                    text = docx2txt.process(file)
+                    return [Document(page_content=text)]
+                else:
+                    loader = Docx2txtLoader(file)
             elif file_type == 'csv':
                 loader = CSVLoader(file)
             elif file_type == 'txt':
                 loader = TextLoader(file)
             elif file_type == 'pdf':
                 loader = UnstructuredPDFLoader(file)
+            elif file_type == 'xlsx':
+                if isinstance(file, BytesIO):
+                    loader = UnstructuredExcelLoader(file)
+                else:
+                    loader = UnstructuredExcelLoader(file)
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
             
-            return loader.load()
+            if file_type != 'docx' or not isinstance(file, BytesIO):
+                return loader.load()
         except Exception as e:
             logger.error(f"Error loading document: {e}")
             raise
@@ -159,18 +174,20 @@ class FileExtractor:
             Exception: If there's an error during the extraction process.
         """
         try:
-            # Determine the file type
-            _, file_extension = os.path.splitext(file_name)
-            file_extension = file_extension.lower()[1:]  # Remove the dot
+            # Get file metadata to determine the MIME type
+            file_metadata = self.drive_core.drive_service.files().get(fileId=file_id, fields='mimeType').execute()
+            mime_type = file_metadata['mimeType']
 
-            if file_extension == 'gdoc':
+            if mime_type == 'application/vnd.google-apps.document':
                 file = self.convert_google_doc_to_docx(file_id)
                 file_extension = 'docx'
-            elif file_extension == 'gsheet':
+            elif mime_type == 'application/vnd.google-apps.spreadsheet':
                 file = self.convert_google_sheet_to_xlsx(file_id)
                 file_extension = 'xlsx'
             else:
                 file = self.download_file_from_google_drive(file_id, file_name)
+                _, file_extension = os.path.splitext(file_name)
+                file_extension = file_extension.lower()[1:]  # Remove the dot
 
             documents = self.load_document(file, file_extension)
             return "\n\n".join([doc.page_content for doc in documents])

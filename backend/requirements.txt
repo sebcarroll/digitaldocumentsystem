@@ -26,3 +26,8 @@ python-pptx
 mammoth
 striprtf
 markdown
+docx2txt
+unstructured
+openpyxl 
+pandas
+networkx

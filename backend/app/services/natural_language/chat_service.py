@@ -277,6 +277,7 @@ class ChatService:
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
             document = {
                 "id": file_id,
+                "user_id": self.user_id,
                 "content": extracted_text,
                 "lastModified": file_details.get('modifiedTime'),
                 "isSelected": True 
