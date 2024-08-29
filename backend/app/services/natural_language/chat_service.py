@@ -6,52 +6,20 @@ for processing queries and handling documents.
 """
 
 import logging
-import time
-import random
-from functools import lru_cache
+import os
+from typing import Dict, Any, List, Optional
+from datetime import datetime
+
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain_core.outputs import LLMResult
-from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore as Pinecone
-from pinecone import Pinecone as PineconeClient
-from openai import RateLimitError
-import os
-from app.services.natural_language.file_extractor import FileExtractor
-import re
-import markdown
 from langchain.prompts import PromptTemplate
 
+from app.services.natural_language.file_extractor import FileExtractor
+from app.services.database.pinecone_manager_service import PineconeManager
+
 logger = logging.getLogger(__name__)
-
-def retry_with_exponential_backoff(
-    func,
-    initial_delay: float = 1,
-    exponential_base: float = 2,
-    jitter: bool = True,
-    max_retries: int = 3,
-    errors: tuple = (RateLimitError,),
-):
-    """Retry a function with exponential backoff."""
-    def wrapper(*args, **kwargs):
-        num_retries = 0
-        delay = initial_delay
-
-        while True:
-            try:
-                return func(*args, **kwargs)
-            except errors as e:
-                num_retries += 1
-                if num_retries > max_retries:
-                    raise Exception(f"Maximum number of retries ({max_retries}) exceeded.")
-
-                delay *= exponential_base * (1 + jitter * random.random())
-
-                logger.warning(f"Retrying in {delay:.2f} seconds...")
-                time.sleep(delay)
-
-    return wrapper
 
 class ChatService:
     """
@@ -62,37 +30,34 @@ class ChatService:
     and vector store.
     """
 
-    def __init__(self, drive_core=None):
+    def __init__(self, drive_core=None, user_id: Optional[str] = None):
         """
         Initialize the ChatService with necessary components.
 
         Args:
             drive_core (DriveCore, optional): The DriveCore instance to use for file operations.
+            user_id (str, optional): The ID of the user associated with this ChatService instance.
         """
-        logger.info("Initializing ChatService")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
 
         self.drive_core = drive_core
+        self.user_id = user_id
+
         if self.drive_core:
             self.file_extractor = FileExtractor(drive_core=self.drive_core)
 
-        self.llm = ChatOpenAI(
-            temperature=0.3,
-            model_name="gpt-4o-mini",
-            max_tokens=None,
-            timeout=None,
-            max_retries=2
+        self.llm = ChatOpenAI(temperature=0.3, model_name="gpt-4-1106-preview")
+        
+        self.pinecone_manager = PineconeManager(
+            api_key=self.pinecone_api_key,
+            environment=self.pinecone_environment,
+            index_name=self.pinecone_index_name
         )
         
-        # Initialize Pinecone client
-        pc = PineconeClient(api_key=self.pinecone_api_key, environment=self.pinecone_environment)
-        self.index = pc.Index(self.pinecone_index_name)
-        
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
-        self.vectorstore = Pinecone(self.index, self.embeddings, "text")
+        self.vectorstore = Pinecone(self.pinecone_manager.index, self.pinecone_manager.embeddings, "text")
         
         self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
         
@@ -109,13 +74,6 @@ class ChatService:
             template=prompt_template, input_variables=["context", "chat_history", "question"]
         )
 
-        self.memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            input_key="question",
-            output_key="answer",
-            return_messages=True
-        )
-
         self.qa = ConversationalRetrievalChain.from_llm(
             llm=self.llm,
             retriever=self.vectorstore.as_retriever(search_kwargs={"k": 5}),
@@ -126,41 +84,16 @@ class ChatService:
             verbose=True
         )
 
-    def post_process_output(self, text):
-        html = markdown.markdown(text)
-            
-        html = re.sub(r'<p>\|(.+)\|</p>', r'<table><tr><th>\1</th></tr>', html)
-        html = re.sub(r'<p>\|[-:|\s]+\|</p>', '', html)
-        html = re.sub(r'<p>\|(.+)\|</p>', r'<tr><td>\1</td></tr>', html)
-        html = html.replace('</tr><table>', '</table>')
-            
-        html = re.sub(r'<p>(\d+\. .*?)</p>', r'<ol><li>\1</li></ol>', html)
-        html = re.sub(r'<p>(- .*?)</p>', r'<ul><li>\1</li></ul>', html)
-            
-        return html
-
-    def set_drive_core(self, drive_core):
+    def set_user_id(self, user_id: str) -> None:
         """
-        Set or update the DriveCore instance for the ChatService.
+        Set the user ID for the ChatService instance.
 
         Args:
-            drive_core (DriveCore): The DriveCore instance to set.
+            user_id (str): The ID of the user to set.
         """
-        self.drive_core = drive_core
-        self.file_extractor = FileExtractor(drive_core=self.drive_core)
-        logger.info("DriveCore set for ChatService")
+        self.user_id = user_id
 
-    def has_drive_core(self):
-        """
-        Check if the ChatService has a DriveCore instance.
-
-        Returns:
-            bool: True if DriveCore is set, False otherwise.
-        """
-        return self.drive_core is not None
-
-    @retry_with_exponential_backoff
-    def query(self, question):
+    def query(self, question: str) -> str:
         """
         Process a query and return a response.
 
@@ -171,89 +104,19 @@ class ChatService:
             str: The response from the language model.
 
         Raises:
-            Exception: If an error occurs during query processing.
+            ValueError: If user_id is not set.
         """
-        logger.info(f"Processing query: {question}")
+        if not self.user_id:
+            raise ValueError("User ID is not set. Call set_user_id() before querying.")
+
         try:
-            # Replace self.qa({"question": question}) with:
             result = self.qa.invoke({"question": question})
-            
-            logger.debug(f"Raw result: {result}")
-            logger.debug(f"Retrieved documents: {result.get('source_documents', [])}")
-            logger.debug(f"Generated question: {result.get('generated_question', '')}")
-            logger.debug(f"Chat history: {self.memory.chat_memory.messages}")
-            
-            # Extract the answer from the result
-            if isinstance(result, dict):
-                answer = result.get('answer', '')
-            elif isinstance(result, LLMResult):
-                answer = result.generations[0][0].text if result.generations else ''
-            else:
-                answer = str(result)
-            
-            processed_result = self.post_process_output(answer)
-            return processed_result
+            return result.get('answer', '')
         except Exception as e:
-            logger.error(f"Error processing query: {str(e)}", exc_info=True)
+            logger.error(f"Error processing query for user {self.user_id}: {str(e)}", exc_info=True)
             raise
-        
-    def clear_memory(self):
-        self.memory.clear()
 
-    @lru_cache(maxsize=1000)
-    def get_embedding(self, text):
-        """
-        Get and cache embeddings for a given text.
-
-        Args:
-            text (str): The text to embed.
-
-        Returns:
-            list: The embedding vector.
-        """
-        return self.embeddings.embed_query(text)
-
-    def add_document(self, document):
-        """
-        Add a document to the vector store.
-
-        Args:
-            document (dict): The document to add, containing 'id' and 'content'.
-
-        Returns:
-            bool: True if successful, False otherwise.
-        """
-        logger.info(f"Adding document: {document['id']}")
-        try:
-            texts = [document['content']]
-            metadatas = [{"source": document['id']}]
-            self.vectorstore.add_texts(texts=texts, metadatas=metadatas)
-            logger.info(f"Document {document['id']} added successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Error adding document: {str(e)}", exc_info=True)
-            return False
-
-    def delete_document(self, document_id):
-        """
-        Delete a document from the vector store.
-
-        Args:
-            document_id (str): The ID of the document to delete.
-
-        Returns:
-            bool: True if successful, False otherwise.
-        """
-        logger.info(f"Deleting document: {document_id}")
-        try:
-            self.vectorstore.delete(ids=[document_id])
-            logger.info(f"Document {document_id} deleted successfully")
-            return True
-        except Exception as e:
-            logger.error(f"Error deleting document: {str(e)}", exc_info=True)
-            return False
-
-    def process_and_add_file(self, file_id, file_name):
+    def process_and_add_file(self, file_id: str, file_name: str) -> bool:
         """
         Process a file by extracting its text and then add it to the vector store.
 
@@ -263,20 +126,63 @@ class ChatService:
 
         Returns:
             bool: True if successful, False otherwise.
+
+        Raises:
+            ValueError: If user_id is not set or if DriveCore is not set.
         """
-        logger.info(f"Processing file: {file_name} with ID: {file_id}")
+        if not self.user_id:
+            raise ValueError("User ID is not set. Call set_user_id() before processing files.")
+        if not self.drive_core:
+            raise ValueError("DriveCore is not set. Cannot process file.")
+
         try:
-            if not self.has_drive_core():
-                raise ValueError("DriveCore not set. Cannot process file.")
-            
-            # Extract text using FileExtractor with Langchain loaders
+            file_details = self.drive_core.get_file_details(file_id)
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
             document = {
                 "id": file_id,
-                "content": extracted_text
+                "content": extracted_text,
+                "lastModified": file_details.get('modifiedTime'),
+                "isSelected": True 
             }
-            # Add the extracted text to the vector store
-            return self.add_document(document)
+            result = self.pinecone_manager.upsert_document(document, self.user_id)
+            return result['success']
         except Exception as e:
-            logger.error(f"Error processing and adding file {file_name} with ID {file_id}: {str(e)}", exc_info=True)
+            logger.error(f"Error processing file {file_name} with ID {file_id} for user {self.user_id}: {str(e)}", exc_info=True)
             return False
+
+    def update_document_selection(self, file_id: str, is_selected: bool) -> bool:
+        """
+        Update the selection status of a document.
+
+        Args:
+            file_id (str): The Google Drive file ID of the document.
+            is_selected (bool): The new selection status.
+
+        Returns:
+            bool: True if the update was successful, False otherwise.
+
+        Raises:
+            ValueError: If user_id is not set.
+        """
+        if not self.user_id:
+            raise ValueError("User ID is not set. Call set_user_id() before updating document selection.")
+
+        return self.pinecone_manager.update_document_selection(file_id, is_selected, self.user_id)
+
+    def delete_document(self, file_id: str) -> bool:
+        """
+        Delete a document from the vector store.
+
+        Args:
+            file_id (str): The Google Drive file ID of the document to delete.
+
+        Returns:
+            bool: True if the deletion was successful, False otherwise.
+
+        Raises:
+            ValueError: If user_id is not set.
+        """
+        if not self.user_id:
+            raise ValueError("User ID is not set. Call set_user_id() before deleting documents.")
+
+        return self.pinecone_manager.delete_document(file_id, self.user_id)

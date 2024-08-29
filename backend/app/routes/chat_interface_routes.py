@@ -13,13 +13,23 @@ from app.utils.drive_utils import get_drive_core
 logger = logging.getLogger(__name__)
 
 chat_bp = Blueprint('chat', __name__)
-chat_service = None
 
 @chat_bp.before_request
 def initialize_chat_service():
-    global chat_service
-    if chat_service is None:
-        chat_service = ChatService()
+    if 'chat_service' not in current_app.extensions:
+        current_app.extensions['chat_service'] = ChatService()
+    
+    user_id = session.get('user_id')
+    if user_id:
+        current_app.extensions['chat_service'].set_user_id(user_id)
+    
+    if not current_app.extensions['chat_service'].has_drive_core():
+        try:
+            drive_core = get_drive_core(session)
+            current_app.extensions['chat_service'].set_drive_core(drive_core)
+        except ValueError:
+            # Log the error but don't raise an exception
+            logger.warning("Failed to initialize drive_core for chat service")
 
 @chat_bp.route('/query', methods=['POST'])
 def query_llm():
@@ -34,6 +44,7 @@ def query_llm():
             return jsonify({"error": "No query provided"}), 400
 
         logger.info(f"Processing query: {query}")
+        chat_service = current_app.extensions['chat_service']
         result = chat_service.query(query)
         logger.info(f"Query processed successfully, result: {result}")
         return jsonify({"response": result})
@@ -43,9 +54,8 @@ def query_llm():
 
 @chat_bp.route('/clear', methods=['POST'])
 def clear_chat_history():
-    global chat_service
-    if chat_service:
-        chat_service.clear_memory()
+    chat_service = current_app.extensions['chat_service']
+    chat_service.clear_memory()
     return jsonify({"message": "Chat history cleared"}), 200
 
 @chat_bp.route('/document', methods=['POST', 'PUT', 'DELETE'])
@@ -58,14 +68,8 @@ def manage_document():
     Returns:
         dict: A JSON response indicating the result of the operation.
     """
+    chat_service = current_app.extensions['chat_service']
     try:
-        if not chat_service.has_drive_core():
-            try:
-                drive_core = get_drive_core(session)
-                chat_service.set_drive_core(drive_core)
-            except ValueError as e:
-                return jsonify({"error": "Google credentials required for document management"}), 401
-
         if request.method in ['POST', 'PUT']:
             data = request.json
             logger.debug(f"Received document data: {data}")
@@ -107,6 +111,27 @@ def manage_document():
     except Exception as e:
         logger.error(f"Error in manage_document: {str(e)}", exc_info=True)
         return jsonify({"error": "An error occurred while managing the document"}), 500
+
+@chat_bp.route('/update-document-selection', methods=['POST'])
+def update_document_selection():
+    chat_service = current_app.extensions['chat_service']
+    try:
+        data = request.json
+        file_id = data.get('fileId')
+        is_selected = data.get('isSelected')
+        
+        if file_id is None or is_selected is None:
+            return jsonify({"error": "fileId and isSelected are required"}), 400
+
+        result = chat_service.update_document_selection(file_id, is_selected)
+        
+        if result:
+            return jsonify({"message": "Document selection updated successfully"})
+        else:
+            return jsonify({"error": "Failed to update document selection"}), 500
+    except Exception as e:
+        logger.error(f"Error in update_document_selection: {str(e)}", exc_info=True)
+        return jsonify({"error": "An error occurred while updating document selection"}), 500
 
 @chat_bp.route('', defaults={'path': ''})
 @chat_bp.route('/<path:path>', methods=['OPTIONS'])

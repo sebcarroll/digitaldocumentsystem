@@ -1,11 +1,18 @@
+"""Module for extracting text from various file formats stored on Google Drive."""
+
 import logging
 import os
 import io
-from typing import BinaryIO
+from typing import BinaryIO, List
 
 from app.services.google_drive.core import DriveCore
 from googleapiclient.http import MediaIoBaseDownload
-from langchain.document_loaders import Docx2txtLoader, CSVLoader, TextLoader, UnstructuredPDFLoader
+from langchain_community.document_loaders import (
+    Docx2txtLoader,
+    CSVLoader,
+    TextLoader,
+    UnstructuredPDFLoader
+)
 from langchain.schema import Document
 
 # Set up logging
@@ -74,7 +81,7 @@ class FileExtractor:
             logger.error(f"Error converting Google Sheet to XLSX: {e}")
             raise
 
-    def load_document(self, file: BinaryIO, file_type: str) -> list[Document]:
+    def load_document(self, file: BinaryIO, file_type: str) -> List[Document]:
         """
         Load a document using the appropriate Langchain loader.
 
@@ -83,7 +90,7 @@ class FileExtractor:
             file_type (str): The type of the file (e.g., 'docx', 'csv', 'txt', 'pdf').
 
         Returns:
-            list[Document]: A list of Langchain Document objects.
+            List[Document]: A list of Langchain Document objects.
 
         Raises:
             ValueError: If the file type is not supported.

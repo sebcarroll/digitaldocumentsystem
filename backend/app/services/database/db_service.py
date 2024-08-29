@@ -28,14 +28,12 @@ def init_db(app):
     logger.info(f"PINECONE_API_KEY: {'set' if app.config['PINECONE_API_KEY'] else 'not set'}")
     logger.info(f"PINECONE_ENVIRONMENT: {app.config['PINECONE_ENVIRONMENT']}")
     logger.info(f"PINECONE_INDEX_NAME: {app.config['PINECONE_INDEX_NAME']}")
-    logger.info(f"OPENAI_API_KEY: {'set' if app.config['OPENAI_API_KEY'] else 'not set'}")
 
     try:
         pinecone_manager = PineconeManager(
             api_key=app.config['PINECONE_API_KEY'],
             environment=app.config['PINECONE_ENVIRONMENT'],
             index_name=app.config['PINECONE_INDEX_NAME'],
-            openai_api_key=app.config['OPENAI_API_KEY']
         )
         logger.info("Pinecone manager initialized successfully")
     except Exception as e:

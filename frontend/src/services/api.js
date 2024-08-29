@@ -446,3 +446,13 @@ export const fetchUserInfo = async () => {
   return response.json();
 };
 
+const updateDocumentSelection = async (fileId, isSelected) => {
+  const response = await fetch('/update-document-selection', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ fileId, isSelected }),
+  });
+  return response.json();
+};
