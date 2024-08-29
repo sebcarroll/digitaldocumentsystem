@@ -1,17 +1,17 @@
 import React from 'react';
+import './documentList.css';
 
-function DocumentList({ documents }) {
-  if (documents.length === 0) return null;
-
+const SelectedDocuments = ({ documents, onRemove }) => {
   return (
-    <div className="document-list">
-      {documents.length === 1 ? (
-        <span>{documents[0].name}</span>
-      ) : (
-        <span>{documents.length} documents uploaded</span>
-      )}
+    <div className="selected-documents">
+      {documents.map((doc) => (
+        <div key={doc.id} className="document-bubble">
+          <span className="document-name">{doc.name}</span>
+          <button className="remove-document" onClick={() => onRemove(doc.id)}>×</button>
+        </div>
+      ))}
     </div>
   );
-}
+};
 
-export default DocumentList;
+export default SelectedDocuments;

@@ -446,13 +446,37 @@ export const fetchUserInfo = async () => {
   return response.json();
 };
 
-const updateDocumentSelection = async (fileId, isSelected) => {
-  const response = await fetch('/update-document-selection', {
+export const updateDocumentSelection = async (fileId, isSelected) => {
+  const response = await fetch(`${API_URL}/chat/update-document-selection`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify({ fileId, isSelected }),
   });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update document selection');
+  }
+  return response.json();
+};
+
+
+export const uploadSelectedDocuments = async (selectedFiles) => {
+  const fileIds = selectedFiles.map(file => file.id);
+  const fileNames = selectedFiles.map(file => file.name);
+  const response = await fetch(`${API_URL}/chat/upload-documents`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ fileIds, fileNames }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to upload selected documents');
+  }
   return response.json();
 };

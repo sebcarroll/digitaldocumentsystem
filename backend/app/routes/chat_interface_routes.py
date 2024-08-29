@@ -152,3 +152,27 @@ def log_request_info():
     logger.debug('Chat BP - Request Method: %s', request.method)
     logger.debug('Chat BP - Request URL: %s', request.url)
     logger.debug('Chat BP - Request Headers: %s', request.headers)
+
+@chat_bp.route('/upload-documents', methods=['POST'])
+def upload_documents():
+    chat_service = current_app.extensions['chat_service']
+    try:
+        data = request.json
+        file_ids = data.get('fileIds', [])
+        file_names = data.get('fileNames', [])
+        
+        if not file_ids or not file_names or len(file_ids) != len(file_names):
+            logger.warning("Invalid file data provided")
+            return jsonify({"error": "Invalid file data provided"}), 400
+
+        result = chat_service.process_and_add_multiple_files(file_ids, file_names)
+
+        logger.info(f"Uploaded {result['successful_uploads']} out of {result['total_files']} documents")
+        return jsonify({
+            "message": f"Processed {result['successful_uploads']} out of {result['total_files']} documents successfully",
+            "successful_uploads": result['successful_uploads'],
+            "total_files": result['total_files']
+        })
+    except Exception as e:
+        logger.error(f"Error in upload_documents: {str(e)}", exc_info=True)
+        return jsonify({"error": "An error occurred while uploading documents"}), 500

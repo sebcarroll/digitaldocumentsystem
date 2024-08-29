@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './chatInterface.css';
-import { sendQuery, uploadDocument, openDriveFile, clearChatHistory } from '../services/api';
+import { sendQuery, uploadDocument, openDriveFile, clearChatHistory, uploadSelectedDocuments, updateDocumentSelection } from '../services/api';
 import SendButton from '../components/drivePage/searchbarSubComponents/searchbarSendButton.js';
 import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
 import UploadPopup from '../components/chatInterface/uploadDocumentPopup.js';
 import { useUploadDocument } from '../hooks/useUploadDocument';
 import Message from '../components/chatInterface/message.js';
+import SelectedDocuments from '../components/chatInterface/documentList.js';
 
 const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
   console.log('ChatInterface rendering', { initialQuery });
@@ -15,6 +16,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadPopupOpen, setIsUploadPopupOpen] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
 
   const messageListRef = useRef(null);
   const textareaRef = useRef(null);
@@ -107,19 +109,28 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
 
   const handleFileUpload = async (selectedFiles) => {
     console.log('Handling file upload', selectedFiles);
-    for (const file of selectedFiles) {
-      try {
-        const fileDetails = await openDriveFile(file.id);
-        await uploadDocument(fileDetails);
-        setDocuments(prev => [...prev, fileDetails]);
-        addMessage(`Document "${fileDetails.name}" uploaded and processed successfully.`, false);
-      } catch (error) {
-        console.error('Error uploading document:', error);
-        addMessage(`Failed to upload document "${file.name}". Please try again.`, false);
-      }
+    try {
+      const result = await uploadSelectedDocuments(selectedFiles);
+      setSelectedDocuments(prevDocs => [...prevDocs, ...selectedFiles]);
+      addMessage(`${result.successful_uploads} out of ${result.total_files} document(s) uploaded and processed successfully.`, false);
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      addMessage(`Failed to upload documents. Please try again.`, false);
     }
-    // The popup will be closed by the UploadPopup component itself
+    handleUploadPopupClose();
   };
+
+  const handleRemoveDocument = async (docId) => {
+    try {
+      await updateDocumentSelection(docId, false);
+      setSelectedDocuments(prev => prev.filter(doc => doc.id !== docId));
+      addMessage(`Document removed from selection.`, false);
+    } catch (error) {
+      console.error('Error removing document:', error);
+      addMessage(`Failed to remove document. Please try again.`, false);
+    }
+  };
+
 
   return (
     <div className="chat-interface">
@@ -132,15 +143,10 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
         ))}
         {isLoading && <div className="loading-indicator">Processing...</div>}
       </div>
-      {documents.length > 0 && (
-        <div className="document-list">
-          {documents.length === 1 ? (
-            <span>{documents[0].name}</span>
-          ) : (
-            <span>{documents.length} documents uploaded</span>
-          )}
-        </div>
-      )}
+      <SelectedDocuments 
+        documents={selectedDocuments} 
+        onRemove={handleRemoveDocument} 
+      />
       <form onSubmit={handleSubmit} className="input-area">
         <div className="file-upload-label" onClick={handleFileIconClick}>
           <AttachFileSharpIcon />
