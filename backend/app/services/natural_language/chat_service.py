@@ -49,7 +49,13 @@ class ChatService:
         if self.drive_core:
             self.file_extractor = FileExtractor(drive_core=self.drive_core)
 
-        self.llm = ChatOpenAI(temperature=0.3, model_name="gpt-4-1106-preview")
+        self.llm = ChatOpenAI(
+            temperature=0.3,
+            model_name="gpt-4o-mini",
+            max_tokens=None,
+            timeout=None,
+            max_retries=2
+        )
         
         self.pinecone_manager = PineconeManager(
             api_key=self.pinecone_api_key,
@@ -92,6 +98,15 @@ class ChatService:
             user_id (str): The ID of the user to set.
         """
         self.user_id = user_id
+
+    def has_drive_core(self) -> bool:
+        """
+        Check if the ChatService instance has a DriveCore object.
+
+        Returns:
+            bool: True if DriveCore is set, False otherwise.
+        """
+        return self.drive_core is not None
 
     def query(self, question: str) -> str:
         """
