@@ -26,6 +26,8 @@ from openai import RateLimitError
 
 from app.services.natural_language.file_extractor import FileExtractor
 from app.services.database.pinecone_manager_service import PineconeManager
+from app.services.google_drive.core import DriveCore
+from app.services.google_drive.drive_service import DriveService
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +68,7 @@ class ChatService:
     and vector store.
     """
 
-    def __init__(self, drive_core=None, user_id: Optional[str] = None):
+    def __init__(self, drive_core: Optional[DriveCore] = None, user_id: Optional[str] = None):
         """
         Initialize the ChatService with necessary components.
 
@@ -81,6 +83,7 @@ class ChatService:
         self.pinecone_index_name = os.getenv("PINECONE_INDEX_NAME")
 
         self.drive_core = drive_core
+        self.drive_service = DriveService(drive_core) if drive_core else None
         self.user_id = user_id
 
         if self.drive_core:
@@ -164,14 +167,33 @@ class ChatService:
         """
         self.user_id = user_id
 
-    def has_drive_core(self) -> bool:
+    def has_drive_service(self) -> bool:
         """
-        Check if the ChatService instance has a DriveCore object.
+        Check if the ChatService instance has a DriveService object.
 
         Returns:
-            bool: True if DriveCore is set, False otherwise.
+            bool: True if DriveService is set, False otherwise.
         """
-        return self.drive_core is not None
+        return self.drive_service is not None
+
+    def has_drive_core(self) -> bool:
+        """
+        Returns:
+            bool: True if DriveService is set, False otherwise.
+        """
+        return self.drive_core is not None 
+
+    def set_drive_core(self, drive_core: DriveCore) -> None:
+        """
+        Set or update the DriveCore instance for the ChatService.
+
+        Args:
+            drive_core (DriveCore): The DriveCore instance to set.
+        """
+        self.drive_core = drive_core
+        self.drive_service = DriveService(drive_core)
+        self.file_extractor = FileExtractor(drive_core=self.drive_core)
+        logger.info("DriveCore and DriveService set for ChatService")
 
     @retry_with_exponential_backoff
     def query(self, question: str) -> str:
@@ -242,16 +264,16 @@ class ChatService:
             bool: True if successful, False otherwise.
 
         Raises:
-            ValueError: If user_id is not set or if DriveCore is not set.
+            ValueError: If user_id is not set or if DriveService is not set.
         """
         if not self.user_id:
             raise ValueError("User ID is not set. Call set_user_id() before processing files.")
-        if not self.drive_core:
-            raise ValueError("DriveCore is not set. Cannot process file.")
+        if not self.drive_service:
+            raise ValueError("DriveService is not set. Cannot process file.")
 
         logger.info(f"Processing file for user {self.user_id}: {file_name} with ID: {file_id}")
         try:
-            file_details = self.drive_core.get_file_details(file_id)
+            file_details = self.drive_service.get_file_details(file_id)
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
             document = {
                 "id": file_id,
@@ -314,12 +336,12 @@ class ChatService:
             Dict[str, Any]: A dictionary containing the number of successful uploads and total files.
 
         Raises:
-            ValueError: If user_id is not set or if DriveCore is not set.
+            ValueError: If user_id is not set or if DriveService is not set.
         """
         if not self.user_id:
             raise ValueError("User ID is not set. Call set_user_id() before processing files.")
-        if not self.drive_core:
-            raise ValueError("DriveCore is not set. Cannot process files.")
+        if not self.drive_service:
+            raise ValueError("DriveService is not set. Cannot process files.")
 
         successful_uploads = 0
         total_files = len(file_ids)
