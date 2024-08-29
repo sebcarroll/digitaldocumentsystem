@@ -1,106 +1,124 @@
 import logging
-from app.services.google_drive.core import DriveCore
-from docx import Document
-import PyPDF2
-import mammoth
-import pandas as pd
 import os
 import io
+from typing import BinaryIO
+
+from app.services.google_drive.core import DriveCore
 from googleapiclient.http import MediaIoBaseDownload
-from bs4 import BeautifulSoup
-from pptx import Presentation
-from striprtf.striprtf import rtf_to_text
+from langchain.document_loaders import Docx2txtLoader, CSVLoader, TextLoader, UnstructuredPDFLoader
+from langchain.schema import Document
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 class FileExtractor:
     """
-    A class to extract text from various file formats including .docx, .doc, PDFs, 
+    A class to extract text from various file formats including .docx, .doc, PDFs,
     Google Docs, Google Sheets, Excel files, and files stored on Google Drive.
     """
 
     def __init__(self, drive_core: DriveCore):
         """
         Initialize FileExtractor with a DriveCore instance.
+
+        Args:
+            drive_core (DriveCore): An instance of the DriveCore class for Google Drive operations.
         """
         self.drive_core = drive_core
 
-    def extract_text_from_docx(self, file_path):
+    def convert_google_doc_to_docx(self, file_id: str) -> BinaryIO:
         """
-        Extract text from a .docx file using mammoth.
+        Convert a Google Doc to .docx format.
+
+        Args:
+            file_id (str): The ID of the Google Doc file.
+
+        Returns:
+            BinaryIO: A file-like object containing the .docx content.
+
+        Raises:
+            Exception: If there's an error during the conversion process.
         """
         try:
-            with open(file_path, "rb") as docx_file:
-                result = mammoth.extract_raw_text(docx_file)
-            return result.value
+            request = self.drive_core.drive_service.files().export_media(
+                fileId=file_id,
+                mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            )
+            file = io.BytesIO(request.execute())
+            return file
         except Exception as e:
-            logger.error(f"Error extracting text from DOCX file {file_path}: {e}")
+            logger.error(f"Error converting Google Doc to DOCX: {e}")
             raise
 
-    def extract_text_from_doc(self, file_path):
+    def convert_google_sheet_to_xlsx(self, file_id: str) -> BinaryIO:
         """
-        Extract text from a .doc file using mammoth.
+        Convert a Google Sheet to .xlsx format.
+
+        Args:
+            file_id (str): The ID of the Google Sheet file.
+
+        Returns:
+            BinaryIO: A file-like object containing the .xlsx content.
+
+        Raises:
+            Exception: If there's an error during the conversion process.
         """
         try:
-            with open(file_path, "rb") as doc_file:
-                result = mammoth.extract_raw_text(doc_file)
-            return result.value
+            request = self.drive_core.drive_service.files().export_media(
+                fileId=file_id,
+                mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            file = io.BytesIO(request.execute())
+            return file
         except Exception as e:
-            logger.error(f"Error extracting text from DOC file {file_path}: {e}")
+            logger.error(f"Error converting Google Sheet to XLSX: {e}")
             raise
 
-    def extract_text_from_pdf(self, file_path):
+    def load_document(self, file: BinaryIO, file_type: str) -> list[Document]:
         """
-        Extract text from a PDF file.
+        Load a document using the appropriate Langchain loader.
+
+        Args:
+            file (BinaryIO): A file-like object containing the document content.
+            file_type (str): The type of the file (e.g., 'docx', 'csv', 'txt', 'pdf').
+
+        Returns:
+            list[Document]: A list of Langchain Document objects.
+
+        Raises:
+            ValueError: If the file type is not supported.
+            Exception: If there's an error during the loading process.
         """
         try:
-            with open(file_path, 'rb') as file:
-                reader = PyPDF2.PdfReader(file)
-                full_text = [page.extract_text() for page in reader.pages]
-            return '\n'.join(full_text)
+            if file_type == 'docx':
+                loader = Docx2txtLoader(file)
+            elif file_type == 'csv':
+                loader = CSVLoader(file)
+            elif file_type == 'txt':
+                loader = TextLoader(file)
+            elif file_type == 'pdf':
+                loader = UnstructuredPDFLoader(file)
+            else:
+                raise ValueError(f"Unsupported file type: {file_type}")
+            
+            return loader.load()
         except Exception as e:
-            logger.error(f"Error extracting text from PDF file {file_path}: {e}")
+            logger.error(f"Error loading document: {e}")
             raise
 
-    def extract_text_from_excel(self, file_path):
-        """
-        Extract text from an Excel file.
-        """
-        try:
-            df = pd.read_excel(file_path)
-            return df.to_csv(index=False)
-        except Exception as e:
-            logger.error(f"Error extracting text from Excel file {file_path}: {e}")
-            raise
-
-    def extract_text_from_google_doc(self, file_id):
-        """
-        Extract text from a Google Doc file using the DriveCore service.
-        """
-        try:
-            mime_type = 'text/plain'
-            data = self.drive_core.drive_service.files().export(fileId=file_id, mimeType=mime_type).execute()
-            return data.decode('utf-8')
-        except Exception as e:
-            logger.error(f"Error extracting text from Google Doc with ID {file_id}: {e}")
-            raise
-
-    def extract_text_from_google_sheet(self, file_id):
-        """
-        Extract text from a Google Sheet file using the DriveCore service.
-        """
-        try:
-            mime_type = 'text/csv'
-            data = self.drive_core.drive_service.files().export(fileId=file_id, mimeType=mime_type).execute()
-            return data.decode('utf-8')
-        except Exception as e:
-            logger.error(f"Error extracting text from Google Sheet with ID {file_id}: {e}")
-            raise
-
-    def download_file_from_google_drive(self, file_id, file_name):
+    def download_file_from_google_drive(self, file_id: str, file_name: str) -> str:
         """
         Download a file from Google Drive.
+
+        Args:
+            file_id (str): The ID of the file in Google Drive.
+            file_name (str): The name to save the file as locally.
+
+        Returns:
+            str: The path to the downloaded file.
+
+        Raises:
+            Exception: If there's an error during the download process.
         """
         try:
             request = self.drive_core.drive_service.files().get_media(fileId=file_id)
@@ -119,113 +137,36 @@ class FileExtractor:
             logger.error(f"Error downloading file with ID {file_id}: {e}")
             raise
 
-    def extract_text_from_drive_file(self, file_id, file_name):
+    def extract_text_from_drive_file(self, file_id: str, file_name: str) -> str:
         """
-        Download and extract text from a Google Drive file.
+        Download and extract text from a Google Drive file using Langchain loaders.
+
+        Args:
+            file_id (str): The ID of the file in Google Drive.
+            file_name (str): The name of the file.
+
+        Returns:
+            str: The extracted text content from the file.
+
+        Raises:
+            Exception: If there's an error during the extraction process.
         """
         try:
-            # Download the file
-            local_path = self.download_file_from_google_drive(file_id, file_name)
-            
-            # Determine the file extension to decide which extraction method to use
-            _, file_extension = os.path.splitext(local_path)
-            
-            if file_extension == '.pdf':
-                return self.extract_text_from_pdf(local_path)
-            elif file_extension == '.docx':
-                return self.extract_text_from_docx(local_path)
-            elif file_extension == '.doc':
-                return self.extract_text_from_doc(local_path)
-            elif file_extension in ['.xls', '.xlsx']:
-                return self.extract_text_from_excel(local_path)
-            elif file_extension == '.txt':
-                return self.extract_text_from_txt(local_path)
-            elif file_extension == '.md':
-                return self.extract_text_from_md(local_path)
-            elif file_extension == '.rtf':
-                return self.extract_text_from_rtf(local_path)
-            elif file_extension == '.html':
-                return self.extract_text_from_html(local_path)
-            elif file_extension in ['.pptx', '.ppt']:
-                return self.extract_text_from_pptx(local_path)
-            elif file_extension == '.csv':
-                return self.extract_text_from_csv(local_path)
+            # Determine the file type
+            _, file_extension = os.path.splitext(file_name)
+            file_extension = file_extension.lower()[1:]  # Remove the dot
+
+            if file_extension == 'gdoc':
+                file = self.convert_google_doc_to_docx(file_id)
+                file_extension = 'docx'
+            elif file_extension == 'gsheet':
+                file = self.convert_google_sheet_to_xlsx(file_id)
+                file_extension = 'xlsx'
             else:
-                logger.error(f"Unsupported file extension: {file_extension}")
-                raise ValueError("Unsupported file type")
+                file = self.download_file_from_google_drive(file_id, file_name)
+
+            documents = self.load_document(file, file_extension)
+            return "\n\n".join([doc.page_content for doc in documents])
         except Exception as e:
             logger.error(f"Error extracting text from Drive file with ID {file_id}: {e}")
-            raise
-
-    def extract_text_from_txt(self, file_path):
-        """
-        Extract text from a plain text (.txt) file.
-        """
-        try:
-            with open(file_path, 'r') as file:
-                return file.read()
-        except Exception as e:
-            logger.error(f"Error extracting text from TXT file {file_path}: {e}")
-            raise
-
-    def extract_text_from_md(self, file_path):
-        """
-        Extract text from a markdown (.md) file using plain text conversion.
-        """
-        try:
-            with open(file_path, 'r') as file:
-                return file.read()
-        except Exception as e:
-            logger.error(f"Error extracting text from MD file {file_path}: {e}")
-            raise
-
-    def extract_text_from_rtf(self, file_path):
-        """
-        Extract text from an RTF (.rtf) file using striprtf.
-        """
-        try:
-            with open(file_path, 'r') as rtf_file:
-                rtf_content = rtf_file.read()
-                return rtf_to_text(rtf_content)
-        except Exception as e:
-            logger.error(f"Error extracting text from RTF file {file_path}: {e}")
-            raise
-
-    def extract_text_from_html(self, file_path):
-        """
-        Extract text from an HTML (.html) file.
-        """
-        try:
-            with open(file_path, 'r') as file:
-                soup = BeautifulSoup(file, 'html.parser')
-                return soup.get_text()
-        except Exception as e:
-            logger.error(f"Error extracting text from HTML file {file_path}: {e}")
-            raise
-
-    def extract_text_from_csv(self, file_path):
-        """
-        Extract text from a CSV (.csv) file.
-        """
-        try:
-            df = pd.read_csv(file_path)
-            return df.to_csv(index=False)
-        except Exception as e:
-            logger.error(f"Error extracting text from CSV file {file_path}: {e}")
-            raise
-
-    def extract_text_from_pptx(self, file_path):
-        """
-        Extract text from a PowerPoint (.pptx) file.
-        """
-        try:
-            prs = Presentation(file_path)
-            text_runs = []
-            for slide in prs.slides:
-                for shape in slide.shapes:
-                    if hasattr(shape, "text"):
-                        text_runs.append(shape.text)
-            return "\n".join(text_runs)
-        except Exception as e:
-            logger.error(f"Error extracting text from PPTX file {file_path}: {e}")
             raise

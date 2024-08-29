@@ -269,7 +269,7 @@ class ChatService:
             if not self.has_drive_core():
                 raise ValueError("DriveCore not set. Cannot process file.")
             
-            # Extract text using FileExtractor
+            # Extract text using FileExtractor with Langchain loaders
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
             document = {
                 "id": file_id,
