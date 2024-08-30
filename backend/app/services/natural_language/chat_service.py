@@ -105,7 +105,7 @@ class ChatService:
             return_messages=True
         )
 
-    def post_process_output(self, text):
+    def post_process_output(self, text: str) -> str:
         """
         Post-process the output text to convert markdown to HTML and apply custom formatting.
 
@@ -116,17 +116,17 @@ class ChatService:
             str: The processed HTML output.
         """
         html = markdown.markdown(text)
-            
+        
         html = re.sub(r'<p>\|(.+)\|</p>', r'<table><tr><th>\1</th></tr>', html)
         html = re.sub(r'<p>\|[-:|\s]+\|</p>', '', html)
         html = re.sub(r'<p>\|(.+)\|</p>', r'<tr><td>\1</td></tr>', html)
         html = html.replace('</tr><table>', '</table>')
-            
+        
         html = re.sub(r'<p>(\d+\. .*?)</p>', r'<ol><li>\1</li></ol>', html)
         html = re.sub(r'<p>(- .*?)</p>', r'<ul><li>\1</li></ul>', html)
-            
+        
         return html
-
+    
     def set_user_id(self, user_id: str) -> None:
         """
         Set the user ID for the ChatService instance.
@@ -169,30 +169,35 @@ class ChatService:
         """
         Process a query and return a response.
 
+        This method retrieves selected documents for the user, combines them into a context,
+        and uses this context along with the chat history to generate a response to the
+        given question using a language model.
+
         Args:
-            question (str): The query string.
+            question (str): The query string to be processed.
 
         Returns:
-            str: The response from the language model.
+            str: The processed response from the language model, converted to HTML format.
 
         Raises:
-            ValueError: If user_id is not set.
+            ValueError: If the user_id is not set.
             Exception: If an error occurs during query processing.
+
+        Note:
+            This method uses exponential backoff for retrying in case of certain errors.
+            It also updates the chat memory with the question and response.
         """
         if not self.user_id:
             raise ValueError("User ID is not set. Call set_user_id() before querying.")
 
         logger.info(f"Processing query for user {self.user_id}: {question}")
         try:
-            # Get all selected documents
             selected_documents = self.pinecone_manager.get_selected_documents(self.user_id)
             
-            # Combine the content of all selected documents
             context = "\n\n".join([doc['metadata'].get('content', '') for doc in selected_documents])
             
-            # Prepare the prompt
             chat_history = self.memory.chat_memory.messages
-            prompt = f"""Use the following pieces of context and the chat history to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+            prompt = f"""Use the following pieces of context and the chat history to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Please ensure all answers are printed in markdown.
 
             Context:
             {context}
@@ -203,14 +208,15 @@ class ChatService:
             Question: {question}
             Helpful Answer:"""
 
-            # Get response from LLM
             response = self.llm.invoke(prompt)
             
-            # Update memory
-            self.memory.chat_memory.add_user_message(question)
-            self.memory.chat_memory.add_ai_message(response)
+            # Extract the content from the AIMessage object
+            response_content = response.content if hasattr(response, 'content') else str(response)
             
-            processed_result = self.post_process_output(response)
+            self.memory.chat_memory.add_user_message(question)
+            self.memory.chat_memory.add_ai_message(response_content)
+            
+            processed_result = self.post_process_output(response_content)
             return processed_result
         except Exception as e:
             logger.error(f"Error processing query for user {self.user_id}: {str(e)}", exc_info=True)
