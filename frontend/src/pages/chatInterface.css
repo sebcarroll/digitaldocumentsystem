@@ -101,6 +101,7 @@
   right: 0;
   z-index: 2;
   align-items: flex-end;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 .file-upload-label {

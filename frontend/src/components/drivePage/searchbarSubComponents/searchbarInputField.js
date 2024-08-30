@@ -2,14 +2,16 @@ import React from 'react';
 import '../searchbar.css';
 
 const defaultProps = {
-  text: 'Type your message here...',
+  placeholder: 'Type your message here...',
 };
 
-const InputField = (props) => {
+const InputField = ({ value, onChange, placeholder = defaultProps.placeholder }) => {
   return (
     <input 
       className="input-field" 
-      placeholder={props.text ?? defaultProps.text} 
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
     />
   );
 };

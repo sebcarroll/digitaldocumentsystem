@@ -45,17 +45,23 @@ const SearchBar = ({ onOpenChat }) => {
     setQuery(e.target.value);
   }, []);
   
+  
   return (
     <SearchbarBackground>
       <div className="maximise-button-container">
-        <MaximiseButton onClick={handleMaximize} />
+        <MaximiseButton onClick={() => onOpenChat(query, false)} />
       </div>
-      <AttachFileSharpIcon onClick={handleUpload} />
       <form onSubmit={handleSubmit} className="search-form">
-        <InputField 
-          value={query}
-          onChange={handleQueryChange}
-        />
+        <div className="input-wrapper">
+          <div className="attach-file-container">
+            <AttachFileSharpIcon onClick={() => onOpenChat(query, true)} />
+          </div>
+          <InputField 
+            value={query}
+            onChange={handleQueryChange}
+            placeholder="Type your message here..."
+          />
+        </div>
         <SendButton type="submit" onClick={handleSubmit} />
       </form>
     </SearchbarBackground>
