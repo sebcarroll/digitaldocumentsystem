@@ -199,14 +199,24 @@ const DriveContent = ({
                     </div>
                   </div>
                   <div className="file-thumbnail">
-                    {file.hasThumbnail ? (
-                      <img src={file.thumbnailLink} alt={file.name} />
-                    ) : (
-                      <span className="large-file-icon">
+                      {file.hasThumbnail ? (
+                        <img 
+                          src={file.thumbnailLink} 
+                          alt={file.name} 
+                          onError={(e) => {
+                            e.target.onerror = null; // prevents looping
+                            e.target.style.display = 'none'; // hide the img element
+                            e.target.nextElementSibling.style.display = 'flex'; // show the icon
+                          }}
+                        />
+                      ) : null}
+                      <span 
+                        className="large-file-icon" 
+                        style={{display: file.hasThumbnail ? 'none' : 'flex'}}
+                      >
                         {renderFileIcon(file)}
                       </span>
-                    )}
-                  </div>
+                    </div>
                 </>
               )}
             </div>

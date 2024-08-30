@@ -10,9 +10,13 @@ const QuestionIcon = ({ onClick }) => (
 
 const HeaderQuestionIcon = ({ onClick, QuestionIcon: CustomQuestionIcon }) => {
   return CustomQuestionIcon ? (
-    <CustomQuestionIcon className="icon question-icon" onClick={onClick} />
+    <div title="Frequently Asked Questions">
+      <CustomQuestionIcon className="icon question-icon" onClick={onClick} />
+    </div>
   ) : (
-    <QuestionIcon onClick={onClick} />
+    <div title="Frequently Asked Questions">
+      <QuestionIcon onClick={onClick} />
+    </div>
   );
 };
 

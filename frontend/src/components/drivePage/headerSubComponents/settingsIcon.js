@@ -10,7 +10,7 @@ const SettingIcon = () => (
 
 const HeaderSettingIcon = ({ onClick }) => {
   return (
-    <div className="settings-icon-wrapper" onClick={onClick}>
+    <div className="settings-icon-wrapper" onClick={onClick} title="Settings">
       <SettingIcon />
     </div>
   );

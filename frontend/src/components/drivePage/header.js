@@ -74,10 +74,19 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
           </div>
           <span className="text">{getPageTitle()}</span>
         </div>
-        <div className="settings-icon-container">
-          <HeaderQuestionIcon onClick={handleQuestionClick} />
-          <HeaderSettingIcon onClick={handleSettingsClick} isOpen={isSettingsOpen} />
-          <HeaderProfileIcon onClick={handleProfileClick} />
+        <div className="settings-icon-container"> <HeaderQuestionIcon 
+            onClick={handleQuestionClick} 
+            title="Frequently Asked Questions"
+          />
+          <HeaderSettingIcon 
+            onClick={handleSettingsClick} 
+            isOpen={isSettingsOpen} 
+            title="Settings"
+          />
+          <HeaderProfileIcon 
+            onClick={handleProfileClick} 
+            title="User Profile"
+          />
         </div>
       </div>
       {isSettingsOpen && (

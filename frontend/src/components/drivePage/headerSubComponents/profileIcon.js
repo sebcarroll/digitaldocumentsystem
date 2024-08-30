@@ -10,7 +10,7 @@ const ProfileIcon = () => (
 
 const HeaderProfileIcon = ({ onClick }) => {
   return (
-    <div className="profile-icon-wrapper" onClick={onClick}>
+    <div className="profile-icon-wrapper" onClick={onClick} title="User Profile">
       <ProfileIcon />
     </div>
   );
