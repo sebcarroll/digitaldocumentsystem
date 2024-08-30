@@ -131,11 +131,16 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
     }
   };
 
+  const handleClose = () => {
+    clearChatHistory();
+    onClose();
+  };
+  
 
   return (
     <div className="chat-interface">
       <div className="chat-header">
-        <button onClick={onClose} className="close-button">×</button>
+      <button onClick={handleClose} className="close-button">×</button>
       </div>
       <div className="message-list" ref={messageListRef}>
         {messages.map((message, index) => (

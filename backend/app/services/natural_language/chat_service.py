@@ -16,12 +16,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain_core.outputs import LLMResult
-from langchain_pinecone import PineconeVectorStore as Pinecone
-from pinecone import Pinecone as PineconeClient
-from langchain.prompts import PromptTemplate
 from openai import RateLimitError
 
 from app.services.natural_language.file_extractor import FileExtractor
@@ -103,37 +98,11 @@ class ChatService:
             index_name=self.pinecone_index_name
         )
         
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
-        self.vectorstore = Pinecone(self.pinecone_manager.index, self.embeddings, "text")
-        
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
             input_key="question",
             output_key="answer",
             return_messages=True
-        )
-        
-        prompt_template = """Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
-        {context}
-
-        {chat_history}
-
-        Question: {question}
-        Helpful Answer:"""
-
-        PROMPT = PromptTemplate(
-            template=prompt_template, input_variables=["context", "chat_history", "question"]
-        )
-
-        self.qa = ConversationalRetrievalChain.from_llm(
-            llm=self.llm,
-            retriever=self.vectorstore.as_retriever(search_kwargs={"k": 5}),
-            memory=self.memory,
-            combine_docs_chain_kwargs={"prompt": PROMPT},
-            return_source_documents=True,
-            return_generated_question=True,
-            verbose=True
         )
 
     def post_process_output(self, text):
@@ -179,7 +148,7 @@ class ChatService:
     def has_drive_core(self) -> bool:
         """
         Returns:
-            bool: True if DriveService is set, False otherwise.
+            bool: True if DriveCore is set, False otherwise.
         """
         return self.drive_core is not None 
 
@@ -215,53 +184,77 @@ class ChatService:
 
         logger.info(f"Processing query for user {self.user_id}: {question}")
         try:
-            result = self.qa.invoke({"question": question})
+            # Get all selected documents
+            selected_documents = self.pinecone_manager.get_selected_documents(self.user_id)
             
-            logger.debug(f"Raw result: {result}")
-            logger.debug(f"Retrieved documents: {result.get('source_documents', [])}")
-            logger.debug(f"Generated question: {result.get('generated_question', '')}")
-            logger.debug(f"Chat history: {self.memory.chat_memory.messages}")
+            # Combine the content of all selected documents
+            context = "\n\n".join([doc['metadata'].get('content', '') for doc in selected_documents])
             
-            if isinstance(result, dict):
-                answer = result.get('answer', '')
-            elif isinstance(result, LLMResult):
-                answer = result.generations[0][0].text if result.generations else ''
-            else:
-                answer = str(result)
+            # Prepare the prompt
+            chat_history = self.memory.chat_memory.messages
+            prompt = f"""Use the following pieces of context and the chat history to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
+            Context:
+            {context}
+
+            Chat History:
+            {chat_history}
+
+            Question: {question}
+            Helpful Answer:"""
+
+            # Get response from LLM
+            response = self.llm.invoke(prompt)
             
-            processed_result = self.post_process_output(answer)
+            # Update memory
+            self.memory.chat_memory.add_user_message(question)
+            self.memory.chat_memory.add_ai_message(response)
+            
+            processed_result = self.post_process_output(response)
             return processed_result
         except Exception as e:
             logger.error(f"Error processing query for user {self.user_id}: {str(e)}", exc_info=True)
             raise
 
     def clear_memory(self):
-        """Clear the conversation memory."""
+        """
+        Clear the conversation memory and reset document selection.
+
+        This method performs two operations:
+        1. Clears the conversation memory, removing all stored messages.
+        2. Resets the selection status of all documents for the current user
+           in the Pinecone index, setting 'isSelected' to False.
+
+        If no user ID is set, only the conversation memory is cleared,
+        and a warning is logged.
+
+        Raises:
+            Exception: If there's an error during the document selection reset process.
+        """
         self.memory.clear()
-
-    @lru_cache(maxsize=1000)
-    def get_embedding(self, text: str) -> List[float]:
-        """
-        Get and cache embeddings for a given text.
-
-        Args:
-            text (str): The text to embed.
-
-        Returns:
-            List[float]: The embedding vector.
-        """
-        return self.embeddings.embed_query(text)
+        if self.user_id:
+            success = self.pinecone_manager.update_all_selected_documents(self.user_id, False)
+            if success:
+                logger.info(f"Reset all selected documents for user {self.user_id}")
+            else:
+                logger.error(f"Failed to reset selected documents for user {self.user_id}")
+        else:
+            logger.warning("User ID not set, skipping document selection reset")
 
     def process_and_add_file(self, file_id: str, file_name: str) -> bool:
         """
         Process a file by extracting its text and then add it to the vector store.
+
+        This method extracts text from a Google Drive file, creates a document object
+        with the extracted text, and adds it to the Pinecone vector store.
 
         Args:
             file_id (str): The ID of the file in Google Drive.
             file_name (str): The name of the file to be processed.
 
         Returns:
-            bool: True if successful, False otherwise.
+            bool: True if the file was successfully processed and added to the vector store,
+                False otherwise.
 
         Raises:
             ValueError: If user_id is not set or if DriveService is not set.
@@ -275,6 +268,13 @@ class ChatService:
         try:
             file_details = self.drive_service.get_file_details(file_id)
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
+            
+            if not extracted_text:
+                logger.warning(f"No text extracted from file {file_name} with ID {file_id}")
+                return False
+            
+            logger.info(f"Processing extracted text from file {file_name} (first 500 characters): {extracted_text[:500]}")
+            
             document = {
                 "id": file_id,
                 "user_id": self.user_id,
@@ -287,6 +287,38 @@ class ChatService:
         except Exception as e:
             logger.error(f"Error processing file {file_name} with ID {file_id} for user {self.user_id}: {str(e)}", exc_info=True)
             return False
+
+    def process_and_add_multiple_files(self, file_ids: List[str], file_names: List[str]) -> Dict[str, Any]:
+        """
+        Process multiple files and add them to the vector store.
+
+        Args:
+            file_ids (List[str]): The IDs of the files in Google Drive.
+            file_names (List[str]): The names of the files to be processed.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the number of successful uploads and total files.
+
+        Raises:
+            ValueError: If user_id is not set or if DriveService is not set.
+        """
+        if not self.user_id:
+            raise ValueError("User ID is not set. Call set_user_id() before processing files.")
+        if not self.drive_service:
+            raise ValueError("DriveService is not set. Cannot process files.")
+
+        successful_uploads = 0
+        total_files = len(file_ids)
+
+        for file_id, file_name in zip(file_ids, file_names):
+            success = self.process_and_add_file(file_id, file_name)
+            if success:
+                successful_uploads += 1
+
+        return {
+            "successful_uploads": successful_uploads,
+            "total_files": total_files
+        }
 
     def update_document_selection(self, file_id: str, is_selected: bool) -> bool:
         """
@@ -324,35 +356,3 @@ class ChatService:
             raise ValueError("User ID is not set. Call set_user_id() before deleting documents.")
 
         return self.pinecone_manager.delete_document(file_id, self.user_id)
-    
-    def process_and_add_multiple_files(self, file_ids: List[str], file_names: List[str]) -> Dict[str, Any]:
-        """
-        Process multiple files and add them to the vector store.
-
-        Args:
-            file_ids (List[str]): The IDs of the files in Google Drive.
-            file_names (List[str]): The names of the files to be processed.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing the number of successful uploads and total files.
-
-        Raises:
-            ValueError: If user_id is not set or if DriveService is not set.
-        """
-        if not self.user_id:
-            raise ValueError("User ID is not set. Call set_user_id() before processing files.")
-        if not self.drive_service:
-            raise ValueError("DriveService is not set. Cannot process files.")
-
-        successful_uploads = 0
-        total_files = len(file_ids)
-
-        for file_id, file_name in zip(file_ids, file_names):
-            success = self.process_and_add_file(file_id, file_name)
-            if success:
-                successful_uploads += 1
-
-        return {
-            "successful_uploads": successful_uploads,
-            "total_files": total_files
-        }

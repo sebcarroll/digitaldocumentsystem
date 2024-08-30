@@ -19,10 +19,12 @@ class PineconeManager:
             api_key (str): The Pinecone API key.
             environment (str): The Pinecone environment.
             index_name (str): The name of the Pinecone index.
+            openai_api_key (str, optional): The OpenAI API key for embeddings.
         """
         self.pc = PineconeClient(api_key=api_key, environment=environment)
         self.index = self.pc.Index(index_name)
         self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002", openai_api_key=openai_api_key)
+
     def upsert_document(self, document: Dict[str, Any], user_id: str) -> Dict[str, Any]:
         """
         Upsert a document into the Pinecone index.
@@ -39,35 +41,14 @@ class PineconeManager:
             metadata = {
                 "googleDriveFileId": document['id'],
                 "lastModified": document['lastModified'],
-                "isSelected": document['isSelected']
+                "isSelected": document['isSelected'],
+                "content": document['content']  # Store the full content in metadata
             }
             self.index.upsert(vectors=[(document['id'], embedding, metadata)], namespace=user_id)
             return {"success": True, "vectors_upserted": 1}
         except Exception as e:
             logger.error(f"Error upserting document {document['id']} for user {user_id}: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
-
-    def query_similar_documents(self, query: str, user_id: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """
-        Query the Pinecone index for similar documents.
-
-        Args:
-            query (str): The query string.
-            user_id (str): The ID of the user performing the query.
-            top_k (int): The number of top results to return.
-
-        Returns:
-            List[Dict[str, Any]]: A list of the top similar documents.
-        """
-        query_embedding = self.embeddings.embed_query(query)
-        results = self.index.query(
-            vector=query_embedding,
-            top_k=top_k,
-            include_metadata=True,
-            filter={"isSelected": True},
-            namespace=user_id
-        )
-        return results['matches']
 
     def update_document_selection(self, file_id: str, is_selected: bool, user_id: str) -> bool:
         """
@@ -104,4 +85,71 @@ class PineconeManager:
             return True
         except Exception as e:
             logger.error(f"Error deleting document {file_id} for user {user_id}: {str(e)}", exc_info=True)
+            return False
+        
+    def get_selected_documents(self, user_id: str) -> List[Dict[str, Any]]:
+        """
+        Retrieve all selected documents for a given user.
+
+        Args:
+            user_id (str): The ID of the user.
+
+        Returns:
+            List[Dict[str, Any]]: A list of selected documents and their metadata.
+        """
+        try:
+            results = self.index.query(
+                vector=[0] * 1536,  # Dummy vector, not used for filtering
+                top_k=10000,  # Set to a high number to retrieve all documents
+                include_metadata=True,
+                filter={"isSelected": True},
+                namespace=user_id
+            )
+            
+            logger.info(f"Retrieved selected documents for user {user_id}:")
+            logger.info(f"Number of selected documents: {len(results['matches'])}")
+            for match in results['matches']:
+                logger.info(f"Document ID: {match['id']}")
+                logger.info(f"Metadata: {match['metadata']}")
+            
+            return results['matches']
+        except Exception as e:
+            logger.error(f"Error retrieving selected documents for user {user_id}: {str(e)}", exc_info=True)
+            return []
+
+    def update_all_selected_documents(self, user_id: str, is_selected: bool) -> bool:
+        """
+        Update the selection status of all documents for a given user.
+
+        This method fetches all documents for the specified user and updates their status
+        to the provided is_selected value.
+
+        Args:
+            user_id (str): The ID of the user whose documents are to be updated.
+            is_selected (bool): The new selection status to be applied to all documents.
+
+        Returns:
+            bool: True if the update operation was successful, False otherwise.
+
+        Raises:
+            Exception: If there's an error during the update process.
+        """
+        try:
+            # Fetch all documents for the user
+            results = self.index.query(
+                vector=[0] * 1536,  # Dummy vector, not used for filtering
+                top_k=10000,  # Set to a high number to retrieve all documents
+                include_metadata=True,
+                namespace=user_id
+            )
+
+            # Update each document
+            for match in results['matches']:
+                document_id = match['id']
+                self.update_document_selection(document_id, is_selected, user_id)
+
+            logger.info(f"Updated selection status to {is_selected} for all documents of user {user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating all documents for user {user_id}: {str(e)}", exc_info=True)
             return False

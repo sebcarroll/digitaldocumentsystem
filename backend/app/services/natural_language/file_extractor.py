@@ -163,15 +163,19 @@ class FileExtractor:
         """
         Download and extract text from a Google Drive file using Langchain loaders.
 
+        This method determines the file type, downloads or converts the file as necessary,
+        and then extracts the text content using appropriate loaders.
+
         Args:
             file_id (str): The ID of the file in Google Drive.
             file_name (str): The name of the file.
 
         Returns:
-            str: The extracted text content from the file.
+            str: The extracted text content from the file. Returns an empty string if
+                extraction fails or no text is found.
 
         Raises:
-            Exception: If there's an error during the extraction process.
+            Exception: If there's an error during the extraction process that cannot be handled.
         """
         try:
             # Get file metadata to determine the MIME type
@@ -187,10 +191,16 @@ class FileExtractor:
             else:
                 file = self.download_file_from_google_drive(file_id, file_name)
                 _, file_extension = os.path.splitext(file_name)
-                file_extension = file_extension.lower()[1:]  # Remove the dot
-
+                file_extension = file_extension.lower()[1:] 
+                
             documents = self.load_document(file, file_extension)
-            return "\n\n".join([doc.page_content for doc in documents])
+            extracted_text = "\n\n".join([doc.page_content for doc in documents])
+            
+            logger.info(f"Extracted text from file {file_name} (ID: {file_id}):")
+            logger.info(f"First 500 characters: {extracted_text[:500]}")
+            logger.info(f"Total length: {len(extracted_text)} characters")
+            
+            return extracted_text
         except Exception as e:
             logger.error(f"Error extracting text from Drive file with ID {file_id}: {e}")
-            raise
+            return "" 
