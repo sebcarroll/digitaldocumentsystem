@@ -8,14 +8,13 @@ import { useUploadDocument } from '../hooks/useUploadDocument';
 import Message from '../components/chatInterface/message.js';
 import SelectedDocuments from '../components/chatInterface/documentList.js';
 
-const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
+const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, setIsUploadPopupOpen }) => {
   console.log('ChatInterface rendering', { initialQuery });
   
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUploadPopupOpen, setIsUploadPopupOpen] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
 
   const messageListRef = useRef(null);
@@ -30,11 +29,16 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon }) => {
       addMessage(initialQuery, true);
       handleQuery(initialQuery);
     }
+    
+    // Open upload popup if isUploadPopupOpen is true
+    if (isUploadPopupOpen) {
+      handleFileIconClick();
+    }
 
     return () => {
       clearChatHistory();
     };
-  }, [initialQuery, addMessage]);
+  }, [initialQuery, addMessage, isUploadPopupOpen]);
 
   const handleQuery = async (query) => {
     setIsLoading(true);

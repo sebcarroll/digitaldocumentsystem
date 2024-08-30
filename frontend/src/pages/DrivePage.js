@@ -34,6 +34,7 @@ const DrivePage = () => {
   const [folderTree, setFolderTree] = useState([]);
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
+  const [isUploadPopupOpen, setIsUploadPopupOpen] = useState(false);
   const navigate = useNavigate();
 
   // Move this to the top to resolve circular dependency
@@ -186,9 +187,13 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
    * Handles opening the chat interface
    * @param {string} [query=''] - The initial query for the chat
    */
-  const handleOpenChat = (query = '') => {
+  const handleOpenChat = (query = '', openUploadMenu = false) => {
     setIsChatOpen(true);
     setChatInitialQuery(query);
+    if (openUploadMenu) {
+      // Open the upload document menu
+      setIsUploadPopupOpen(true);
+    }
   };
 
   /**
@@ -286,9 +291,9 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
         />
       </div>
       <div className="main-area">
-        <div className="search-bar-container">
-          <SearchBar onOpenChat={handleOpenChat} />
-        </div>
+      <div className="search-bar-container">
+        <SearchBar onOpenChat={handleOpenChat} />
+      </div>
         <div className="view-options-container">
         <ViewOptions
           filesActive={filesActive}
@@ -382,13 +387,15 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
       handleFolderClick={handleMoveFolderClick}
       handleBreadcrumbClick={handleMoveBreadcrumbClick}
     />
-      {isChatOpen && (
-        <ChatInterface
-          initialQuery={chatInitialQuery}
-          onClose={handleCloseChat}
-          getFileIcon={getFileIcon}
-        />
-      )}
+    {isChatOpen && (
+      <ChatInterface
+        initialQuery={chatInitialQuery}
+        onClose={handleCloseChat}
+        getFileIcon={getFileIcon}
+        isUploadPopupOpen={isUploadPopupOpen}
+        setIsUploadPopupOpen={setIsUploadPopupOpen}
+      />
+    )}
     </div>
   );
 };
