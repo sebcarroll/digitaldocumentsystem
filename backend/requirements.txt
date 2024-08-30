@@ -31,3 +31,4 @@ unstructured
 openpyxl 
 pandas
 networkx
+pdfminer

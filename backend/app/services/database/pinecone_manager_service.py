@@ -153,3 +153,23 @@ class PineconeManager:
         except Exception as e:
             logger.error(f"Error updating all documents for user {user_id}: {str(e)}", exc_info=True)
             return False
+        
+    def get_document_metadata(self, file_id: str, user_id: str) -> Dict[str, Any]:
+        """
+        Retrieve metadata for a specific document.
+
+        Args:
+            file_id (str): The Google Drive file ID of the document.
+            user_id (str): The ID of the user who owns the document.
+
+        Returns:
+            Dict[str, Any]: The document's metadata if found, empty dict otherwise.
+        """
+        try:
+            results = self.index.fetch(ids=[file_id], namespace=user_id)
+            if results and file_id in results['vectors']:
+                return results['vectors'][file_id]['metadata']
+            return {}
+        except Exception as e:
+            logger.error(f"Error retrieving metadata for document {file_id} for user {user_id}: {str(e)}", exc_info=True)
+            return {}

@@ -6,6 +6,7 @@ import io
 import docx2txt
 from typing import Union, List
 from io import BytesIO
+import tempfile
 
 from app.services.google_drive.core import DriveCore
 from googleapiclient.http import MediaIoBaseDownload
@@ -13,10 +14,11 @@ from langchain_community.document_loaders import (
     Docx2txtLoader,
     CSVLoader,
     TextLoader,
-    UnstructuredPDFLoader,
-     UnstructuredExcelLoader
+    UnstructuredExcelLoader,
+    PyPDFLoader
 )
-
+from PyPDF2 import PdfReader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.schema import Document
 
 # Set up logging
@@ -91,7 +93,7 @@ class FileExtractor:
 
         Args:
             file (Union[str, BytesIO]): A file path, URL, or BytesIO object containing the document content.
-            file_type (str): The type of the file (e.g., 'docx', 'csv', 'txt', 'pdf').
+            file_type (str): The type of the file (e.g., 'docx', 'csv', 'txt', 'pdf', 'xlsx').
 
         Returns:
             List[Document]: A list of Langchain Document objects.
@@ -103,7 +105,6 @@ class FileExtractor:
         try:
             if file_type == 'docx':
                 if isinstance(file, BytesIO):
-                    # If it's a BytesIO object, we need to extract the text manually
                     text = docx2txt.process(file)
                     return [Document(page_content=text)]
                 else:
@@ -113,17 +114,32 @@ class FileExtractor:
             elif file_type == 'txt':
                 loader = TextLoader(file)
             elif file_type == 'pdf':
-                loader = UnstructuredPDFLoader(file)
+                if file_type == 'pdf':
+                    if isinstance(file, BytesIO):
+                        pdf_reader = PdfReader(file)
+                        documents = []
+                        for page in pdf_reader.pages:
+                            text = page.extract_text()
+                            documents.append(Document(page_content=text))
+                        return documents
+                    else:
+                        loader = PyPDFLoader(file)
+                        return loader.load()
             elif file_type == 'xlsx':
                 if isinstance(file, BytesIO):
-                    loader = UnstructuredExcelLoader(file)
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as temp_file:
+                        temp_file.write(file.getvalue())
+                        temp_file_path = temp_file.name
+                    loader = UnstructuredExcelLoader(temp_file_path)
+                    documents = loader.load()
+                    os.unlink(temp_file_path)
+                    return documents
                 else:
                     loader = UnstructuredExcelLoader(file)
             else:
                 raise ValueError(f"Unsupported file type: {file_type}")
             
-            if file_type != 'docx' or not isinstance(file, BytesIO):
-                return loader.load()
+            return loader.load()
         except Exception as e:
             logger.error(f"Error loading document: {e}")
             raise
@@ -188,11 +204,17 @@ class FileExtractor:
             elif mime_type == 'application/vnd.google-apps.spreadsheet':
                 file = self.convert_google_sheet_to_xlsx(file_id)
                 file_extension = 'xlsx'
+            elif mime_type == 'application/pdf':
+                # Get PDF content directly without downloading
+                request = self.drive_core.drive_service.files().get_media(fileId=file_id)
+                file = io.BytesIO(request.execute())
+                file_extension = 'pdf'
             else:
+                # For other file types, we might still need to download
                 file = self.download_file_from_google_drive(file_id, file_name)
                 _, file_extension = os.path.splitext(file_name)
-                file_extension = file_extension.lower()[1:] 
-                
+                file_extension = file_extension.lower()[1:]
+
             documents = self.load_document(file, file_extension)
             extracted_text = "\n\n".join([doc.page_content for doc in documents])
             
@@ -203,4 +225,4 @@ class FileExtractor:
             return extracted_text
         except Exception as e:
             logger.error(f"Error extracting text from Drive file with ID {file_id}: {e}")
-            return "" 
+            return ""
