@@ -146,8 +146,8 @@ class PineconeManager:
         """
         try:
             results = self.index.query(
-                vector=[0] * 1536,  # Dummy vector, not used for filtering
-                top_k=10000,  # Set to a high number to retrieve all documents
+                vector=[0] * 1536,
+                top_k=10000,
                 include_metadata=True,
                 filter={"isSelected": True},
                 namespace=user_id
@@ -170,7 +170,7 @@ class PineconeManager:
             reconstructed_docs = []
             for doc in documents.values():
                 doc['content'] = ''.join(doc['content'])
-                reconstructed_docs.append({'metadata': doc})  # Wrap the document in a 'metadata' key
+                reconstructed_docs.append({'metadata': doc})
             
             return reconstructed_docs
         except Exception as e:

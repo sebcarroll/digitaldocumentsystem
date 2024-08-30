@@ -230,14 +230,17 @@ class FileExtractor:
                 file = self.convert_google_sheet_to_xlsx(file_id)
                 file_extension = 'xlsx'
             elif mime_type in ['application/pdf', 'text/csv', 'text/plain', 
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            'application/vnd.ms-excel']:
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
                 request = self.drive_core.drive_service.files().get_media(fileId=file_id)
                 file = io.BytesIO(request.execute())
                 if mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                     file_extension = 'xlsx'
                 elif mime_type == 'application/vnd.ms-excel':
                     file_extension = 'xls'
+                elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    file_extension = 'docx'
                 else:
                     file_extension = mime_type.split('/')[-1]
             else:
