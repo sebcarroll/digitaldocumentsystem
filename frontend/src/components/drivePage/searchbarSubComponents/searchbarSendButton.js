@@ -12,14 +12,16 @@ const defaultProps = {
   IconComponent,
 };
 
-const SendButton = (props) => {
+const SendButton = ({ onClick, type = 'button', IconComponent: PropsIconComponent }) => {
+  const ButtonIconComponent = PropsIconComponent || defaultProps.IconComponent;
+
   return (
-    <button className="send-button">
-      {props.IconComponent ? (
-        <props.IconComponent className="send_button_icon" />
-      ) : (
-        <defaultProps.IconComponent />
-      )}
+    <button 
+      className="send-button" 
+      onClick={onClick} 
+      type={type}
+    >
+      <ButtonIconComponent className="send_button_icon" />
     </button>
   );
 };

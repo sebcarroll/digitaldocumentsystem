@@ -187,22 +187,22 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
    * Handles opening the chat interface
    * @param {string} [query=''] - The initial query for the chat
    */
-  const handleOpenChat = (query = '', openUploadMenu = false) => {
+  const handleOpenChat = useCallback((query = '', openUploadMenu = false) => {
+    console.log("handleOpenChat called in DrivePage", { query, openUploadMenu });
     setIsChatOpen(true);
     setChatInitialQuery(query);
     if (openUploadMenu) {
-      // Open the upload document menu
       setIsUploadPopupOpen(true);
     }
-  };
+  }, []);
 
-  /**
-   * Handles closing the chat interface
-   */
-  const handleCloseChat = () => {
+  console.log("DrivePage rendered, handleOpenChat type:", typeof handleOpenChat);
+
+  const handleCloseChat = useCallback(() => {
     setIsChatOpen(false);
     setChatInitialQuery('');
-  };
+    setIsUploadPopupOpen(false);
+  }, []);
 
   /**
    * Handles the share functionality
@@ -292,7 +292,7 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
       </div>
       <div className="main-area">
       <div className="search-bar-container">
-        <SearchBar onOpenChat={handleOpenChat} />
+        <SearchBar onOpenChat={handleOpenChat}/>
       </div>
         <div className="view-options-container">
         <ViewOptions

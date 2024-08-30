@@ -13,14 +13,20 @@ import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
  * @param {Function} props.onOpenChat - Function to open the chat interface
  * @returns {JSX.Element} The rendered SearchBar component
  */
+
+
 const SearchBar = ({ onOpenChat }) => {
   const [query, setQuery] = useState('');
 
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
-    if (query.trim()) {
-      onOpenChat(query, false); // false indicates not to open upload menu
+    console.log("Form submitted, query:", query);
+    console.log("onOpenChat type:", typeof onOpenChat);
+    if (query.trim() && typeof onOpenChat === 'function') {
+      onOpenChat(query, false);
       setQuery('');
+    } else {
+      console.error("onOpenChat is not a function or query is empty. Query:", query, "onOpenChat:", onOpenChat);
     }
   }, [query, onOpenChat]);
   
@@ -29,9 +35,10 @@ const SearchBar = ({ onOpenChat }) => {
     onOpenChat(query, false);
   }, [query, onOpenChat]);
 
-  const handleUpload = useCallback(() => {
+  const handleUpload = useCallback((e) => {
+    e.preventDefault();
     console.log("Upload button clicked");
-    onOpenChat(query, true); // true indicates to open upload menu
+    onOpenChat(query, true);
   }, [query, onOpenChat]);
 
   const handleQueryChange = useCallback((e) => {
@@ -49,7 +56,7 @@ const SearchBar = ({ onOpenChat }) => {
           value={query}
           onChange={handleQueryChange}
         />
-        <SendButton onClick={handleSubmit} />
+        <SendButton type="submit" onClick={handleSubmit} />
       </form>
     </SearchbarBackground>
   );
