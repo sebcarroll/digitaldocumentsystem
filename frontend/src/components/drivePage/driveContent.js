@@ -58,8 +58,19 @@ const DriveContent = ({
       return `Shared with you • ${sharedDate.toLocaleDateString()}`;
     } else if (now - createdDate < 7 * 24 * 60 * 60 * 1000) {
       return `You created • ${createdDate.toLocaleDateString()}`;
+    } else {
+      // If none of the above conditions are met, return the most recent action
+      const mostRecentDate = new Date(Math.max(modifiedDate, viewedDate, sharedDate, createdDate));
+      if (mostRecentDate.getTime() === modifiedDate.getTime()) {
+        return `Modified • ${modifiedDate.toLocaleDateString()}`;
+      } else if (mostRecentDate.getTime() === viewedDate.getTime()) {
+        return `Opened • ${viewedDate.toLocaleDateString()}`;
+      } else if (mostRecentDate.getTime() === sharedDate.getTime()) {
+        return `Shared • ${sharedDate.toLocaleDateString()}`;
+      } else {
+        return `Created • ${createdDate.toLocaleDateString()}`;
+      }
     }
-    return "";
   };
 
   const getOwner = (file) => {
@@ -114,9 +125,24 @@ const DriveContent = ({
     setFileLocations(locations);
   }, [filteredDriveContent, folderTree]);
 
+  const sortByMostRecentInteraction = (a, b) => {
+    const getLatestDate = (file) => {
+      return new Date(Math.max(
+        new Date(file.modifiedTime),
+        new Date(file.viewedByMeTime),
+        new Date(file.sharedWithMeTime),
+        new Date(file.createdTime)
+      ));
+    };
+
+    return getLatestDate(b) - getLatestDate(a);
+  };
+
+  const sortedDriveContent = [...filteredDriveContent].sort(sortByMostRecentInteraction);
+
   return (
     <div className="drive-content">
-      {filteredDriveContent.length === 0 ? (
+      {sortedDriveContent.length === 0 ? (
         <p className="no-files">No items to display.</p>
       ) : (
         <div className={`file-${listLayoutActive ? 'list' : 'grid'}`}>
@@ -129,7 +155,7 @@ const DriveContent = ({
               <span></span>
             </div>
           )}
-          {filteredDriveContent.map((file) => (
+          {sortedDriveContent.map((file) => (
             <div 
               key={file.id} 
               className={`file-item ${selectedFiles.some(f => f.id === file.id) ? 'selected' : ''}`}
