@@ -249,17 +249,18 @@ class ChatService:
 
     def process_and_add_file(self, file_id: str, file_name: str) -> bool:
         """
-        Process a file by extracting its text and then add it to the vector store.
+        Process a file by extracting its text and then add it to or update it in the vector store.
 
-        This method extracts text from a Google Drive file, creates a document object
-        with the extracted text, and adds it to the Pinecone vector store.
+        This method checks if the file already exists in the database, and only uploads
+        a new version if the lastModified time is newer. Otherwise, it just updates
+        the isSelected flag.
 
         Args:
             file_id (str): The ID of the file in Google Drive.
             file_name (str): The name of the file to be processed.
 
         Returns:
-            bool: True if the file was successfully processed and added to the vector store,
+            bool: True if the file was successfully processed and added/updated in the vector store,
                 False otherwise.
 
         Raises:
@@ -273,6 +274,23 @@ class ChatService:
         logger.info(f"Processing file for user {self.user_id}: {file_name} with ID: {file_id}")
         try:
             file_details = self.drive_service.get_file_details(file_id)
+            new_last_modified = file_details.get('modifiedTime')
+            
+            # Check if the document already exists in the database
+            existing_metadata = self.pinecone_manager.get_document_metadata(file_id, self.user_id)
+            
+            if existing_metadata:
+                existing_last_modified = existing_metadata.get('lastModified')
+                if existing_last_modified == new_last_modified:
+                    # If the file hasn't been modified, just update the isSelected flag
+                    logger.info(f"File {file_name} already exists and is up to date. Updating isSelected flag.")
+                    return self.pinecone_manager.update_document_selection(file_id, True, self.user_id)
+                else:
+                    # If the file has been modified, delete the old version
+                    logger.info(f"File {file_name} has been modified. Deleting old version.")
+                    self.pinecone_manager.delete_document(file_id, self.user_id)
+            
+            # Extract text and create a new document
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
             
             if not extracted_text:
@@ -285,7 +303,7 @@ class ChatService:
                 "id": file_id,
                 "user_id": self.user_id,
                 "content": extracted_text,
-                "lastModified": file_details.get('modifiedTime'),
+                "lastModified": new_last_modified,
                 "isSelected": True 
             }
             result = self.pinecone_manager.upsert_document(document, self.user_id)

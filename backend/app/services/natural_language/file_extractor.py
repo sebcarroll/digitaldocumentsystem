@@ -7,6 +7,10 @@ import docx2txt
 from typing import Union, List
 from io import BytesIO
 import tempfile
+import csv
+import xlrd
+import openpyxl
+import chardet
 
 from app.services.google_drive.core import DriveCore
 from googleapiclient.http import MediaIoBaseDownload
@@ -110,30 +114,51 @@ class FileExtractor:
                 else:
                     loader = Docx2txtLoader(file)
             elif file_type == 'csv':
-                loader = CSVLoader(file)
-            elif file_type == 'txt':
-                loader = TextLoader(file)
-            elif file_type == 'pdf':
-                if file_type == 'pdf':
-                    if isinstance(file, BytesIO):
-                        pdf_reader = PdfReader(file)
-                        documents = []
-                        for page in pdf_reader.pages:
-                            text = page.extract_text()
-                            documents.append(Document(page_content=text))
-                        return documents
-                    else:
-                        loader = PyPDFLoader(file)
-                        return loader.load()
-            elif file_type == 'xlsx':
                 if isinstance(file, BytesIO):
-                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as temp_file:
-                        temp_file.write(file.getvalue())
-                        temp_file_path = temp_file.name
-                    loader = UnstructuredExcelLoader(temp_file_path)
-                    documents = loader.load()
-                    os.unlink(temp_file_path)
+                    detected = chardet.detect(file.getvalue())
+                    encoding = detected['encoding']
+                    csv_reader = csv.reader(io.StringIO(file.getvalue().decode(encoding)))
+                    rows = list(csv_reader)
+                    text = "\n".join([",".join(row) for row in rows])
+                    return [Document(page_content=text)]
+                else:
+                    loader = CSVLoader(file)
+            elif file_type == 'txt':
+                if isinstance(file, BytesIO):
+                    text = file.getvalue().decode('utf-8')
+                    return [Document(page_content=text)]
+                else:
+                    loader = TextLoader(file)
+            elif file_type == 'pdf':
+                if isinstance(file, BytesIO):
+                    pdf_reader = PdfReader(file)
+                    documents = []
+                    for page in pdf_reader.pages:
+                        text = page.extract_text()
+                        documents.append(Document(page_content=text))
                     return documents
+                else:
+                    loader = PyPDFLoader(file)
+            elif file_type in ['xlsx', 'xls']:
+                if isinstance(file, BytesIO):
+                    if file_type == 'xlsx':
+                        workbook = openpyxl.load_workbook(file)
+                        sheets = workbook.sheetnames
+                    else:  # xls
+                        workbook = xlrd.open_workbook(file_contents=file.getvalue())
+                        sheets = workbook.sheet_names()
+                    
+                    text = []
+                    for sheet_name in sheets:
+                        if file_type == 'xlsx':
+                            sheet = workbook[sheet_name]
+                            sheet_text = "\n".join([" ".join(str(cell.value) for cell in row) for row in sheet.iter_rows()])
+                        else:  # xls
+                            sheet = workbook.sheet_by_name(sheet_name)
+                            sheet_text = "\n".join([" ".join(str(sheet.cell_value(row, col)) for col in range(sheet.ncols)) for row in range(sheet.nrows)])
+                        text.append(f"Sheet: {sheet_name}\n{sheet_text}")
+                    
+                    return [Document(page_content="\n\n".join(text))]
                 else:
                     loader = UnstructuredExcelLoader(file)
             else:
@@ -204,16 +229,19 @@ class FileExtractor:
             elif mime_type == 'application/vnd.google-apps.spreadsheet':
                 file = self.convert_google_sheet_to_xlsx(file_id)
                 file_extension = 'xlsx'
-            elif mime_type == 'application/pdf':
-                # Get PDF content directly without downloading
+            elif mime_type in ['application/pdf', 'text/csv', 'text/plain', 
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-excel']:
                 request = self.drive_core.drive_service.files().get_media(fileId=file_id)
                 file = io.BytesIO(request.execute())
-                file_extension = 'pdf'
+                if mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                    file_extension = 'xlsx'
+                elif mime_type == 'application/vnd.ms-excel':
+                    file_extension = 'xls'
+                else:
+                    file_extension = mime_type.split('/')[-1]
             else:
-                # For other file types, we might still need to download
-                file = self.download_file_from_google_drive(file_id, file_name)
-                _, file_extension = os.path.splitext(file_name)
-                file_extension = file_extension.lower()[1:]
+                raise ValueError(f"Unsupported MIME type: {mime_type}")
 
             documents = self.load_document(file, file_extension)
             extracted_text = "\n\n".join([doc.page_content for doc in documents])
