@@ -1,13 +1,9 @@
-// CurrentPageText.js
 import React from 'react';
-import { useLocation } from 'react-router-dom';
 import '../header.css';
 
-const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
-  const location = useLocation();
-
+const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }) => {
   const getRootName = () => {
-    switch (location.pathname) {
+    switch (path) {
       case '/drive':
         return 'Home';
       case '/my-drive':
@@ -22,11 +18,17 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
   };
 
   const getBreadcrumbs = () => {
-    if (!folderStack || !currentFolder) {
-      return [{ id: 'root', name: getRootName() }];
+    const rootName = getRootName();
+    let breadcrumbs = [{ id: 'root', name: rootName }];
+
+    if (folderStack && folderStack.length > 0) {
+      breadcrumbs = [...breadcrumbs, ...folderStack];
     }
 
-    let breadcrumbs = [{ id: 'root', name: getRootName() }, ...folderStack, currentFolder];
+    if (currentFolder && currentFolder.id !== 'root') {
+      breadcrumbs.push(currentFolder);
+    }
+
     if (breadcrumbs.length > 4) {
       breadcrumbs = [
         breadcrumbs[0],

@@ -14,7 +14,6 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
   const location = useLocation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const isRootFolder = currentFolder && currentFolder.id === 'root' && folderStack && folderStack.length === 0;
 
   const handleQuestionClick = () => {
     navigate('/faq');
@@ -54,39 +53,13 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
           <span className="breadcrumb-item current-item">Frequently Asked Questions</span>
         </div>
       );
-    } else if (path === '/drive') {
-      return isRootFolder ? 'Welcome to Diganise' : 'Home';
-    } else if (path === '/my-drive') {
-      return isRootFolder ? 'My Drive' : (
-        <CurrentPageText
-          folderStack={['My Drive', ...folderStack.slice(1)]}
-          currentFolder={currentFolder}
-          onBreadcrumbClick={onBreadcrumbClick}
-        />
-      );
-    } else if (path === '/shared-with-me') {
-      return isRootFolder ? 'Shared With Me' : (
-        <CurrentPageText
-          folderStack={['Shared With Me', ...folderStack.slice(1)]}
-          currentFolder={currentFolder}
-          onBreadcrumbClick={onBreadcrumbClick}
-        />
-      );
-    } else if (path === '/recent') {
-      return isRootFolder ? 'Recent' : (
-        <CurrentPageText
-          folderStack={['Recent', ...folderStack.slice(1)]}
-          currentFolder={currentFolder}
-          onBreadcrumbClick={onBreadcrumbClick}
-        />
-      );
-    }
-      else {
+    } else {
       return (
         <CurrentPageText
           folderStack={folderStack}
           currentFolder={currentFolder}
           onBreadcrumbClick={onBreadcrumbClick}
+          path={path}
         />
       );
     }

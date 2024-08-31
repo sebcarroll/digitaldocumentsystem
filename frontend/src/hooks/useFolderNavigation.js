@@ -1,6 +1,5 @@
-// useFolderNavigation.js
 import { useState, useCallback } from 'react';
-import { openDriveFile } from '../services/api';  // Import the openDriveFile function
+import { openDriveFile } from '../services/api';
 
 export const useFolderNavigation = (setError) => {
   const [currentFolder, setCurrentFolder] = useState({ id: 'root', name: 'My Drive' });
@@ -36,10 +35,14 @@ export const useFolderNavigation = (setError) => {
   }, [folderStack]);
 
   const handleBreadcrumbClick = useCallback((index) => {
-    if (index < folderStack.length) {
-      const newStack = folderStack.slice(0, index);
+    if (index === 0) {
+      // Clicking on the root folder
+      setFolderStack([]);
+      setCurrentFolder({ id: 'root', name: 'My Drive' });
+    } else if (index <= folderStack.length) {
+      const newStack = folderStack.slice(0, index - 1);
       setFolderStack(newStack);
-      setCurrentFolder(folderStack[index]);
+      setCurrentFolder(folderStack[index - 1]);
     }
   }, [folderStack]);
 
