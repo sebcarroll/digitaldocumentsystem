@@ -104,6 +104,7 @@ class DriveFolderOperations:
             logger.error(f"Failed to fetch folders: {str(e)}")
             raise Exception(f"Failed to fetch folders: {str(e)}")
 
+
     def build_folder_tree(self):
         """Build a tree structure of all folders."""
         logger.info("Building folder tree")
@@ -112,17 +113,25 @@ class DriveFolderOperations:
             folder_dict = {folder['id']: folder for folder in folders}
             root_folders = []
             
-            for folder in folders:
+            # First pass: identify the true root folder (My Drive)
+            my_drive = next((folder for folder in folders if folder.get('parents') is None), None)
+            if my_drive:
+                root_folders.append(my_drive)
+                folder_dict.pop(my_drive['id'], None)  # Remove My Drive from folder_dict
+
+            # Second pass: build the tree
+            for folder_id, folder in folder_dict.items():
                 folder['children'] = []
-                parent_id = folder.get('parents', [None])[0]  # Get the first (and only) parent, or None if no parent
-                if parent_id is None or parent_id not in folder_dict:
-                    root_folders.append(folder)
-                else:
+                parent_id = folder.get('parents', [None])[0]
+                if parent_id in folder_dict:
                     parent = folder_dict[parent_id]
                     if 'children' not in parent:
                         parent['children'] = []
                     parent['children'].append(folder)
-            
+                elif parent_id != my_drive['id']:
+                    # If parent is not in folder_dict and not My Drive, it's a top-level folder
+                    root_folders.append(folder)
+
             logger.info(f"Built folder tree with {len(root_folders)} root folders")
             return root_folders
         except Exception as e:

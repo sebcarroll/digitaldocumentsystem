@@ -16,6 +16,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [initialQueryProcessed, setInitialQueryProcessed] = useState(false);
 
   const messageListRef = useRef(null);
   const textareaRef = useRef(null);
@@ -25,21 +26,17 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
   }, []);
 
   useEffect(() => {
-    if (initialQuery) {
+    if (initialQuery && !initialQueryProcessed) {
       addMessage(initialQuery, true);
       handleQuery(initialQuery);
+      setInitialQueryProcessed(true);
     }
     
-    // Open upload popup if isUploadPopupOpen is true
     if (isUploadPopupOpen) {
       handleFileIconClick();
     }
-
-    return () => {
-      clearChatHistory();
-    };
-  }, [initialQuery, addMessage, isUploadPopupOpen]);
-
+  }, [initialQuery, initialQueryProcessed, addMessage, isUploadPopupOpen]);
+  
   const handleQuery = async (query) => {
     setIsLoading(true);
     try {
