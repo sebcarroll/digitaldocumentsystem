@@ -185,16 +185,20 @@
   font-weight: bold;
   border-bottom: 1px solid #e0e0e0;
   color: black;
+  font-size: 14px;
 }
 
 .file-list .file-item {
   border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
 }
 
 .file-list .file-name,
 .file-list .file-reason,
 .file-list .file-owner,
 .file-list .file-location,
+.file-list .file-modified,
+.file-list .file-size,
 .file-list-header span {
   white-space: nowrap;
   overflow: hidden;
@@ -204,7 +208,9 @@
 
 .file-list .file-reason,
 .file-list .file-owner,
-.file-list .file-location {
+.file-list .file-location,
+.file-list .file-modified,
+.file-list .file-size {
   font-size: 14px;
   color: #5f6368;
 }
@@ -271,6 +277,12 @@
 .file-list .file-sharing-icon {
   font-size: 18px;
   margin-right: 8px;
+}
+
+/* Add this new style for proper alignment */
+.file-list .file-item > div {
+  display: flex;
+  align-items: center;
 }
 
 /* Responsive styles */

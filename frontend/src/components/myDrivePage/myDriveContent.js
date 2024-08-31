@@ -2,7 +2,7 @@ import {React, useEffect, useState} from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import PeopleIcon from '@mui/icons-material/People';
-import './driveContent.css';
+import '../generalComponents/driveContent.css';
 
 /**
  * Formats the file size into a human-readable string
@@ -41,38 +41,9 @@ const DriveContent = ({
   showActionMenu,
   isFolder,
   getFolderName,
-  folderTree
+  folderTree,
+  currentFolderId
 }) => {
-  const getReasonSuggested = (file) => {
-    const now = new Date();
-    const modifiedDate = new Date(file.modifiedTime);
-    const viewedDate = new Date(file.viewedByMeTime);
-    const sharedDate = new Date(file.sharedWithMeTime);
-    const createdDate = new Date(file.createdTime);
-
-    if (now - modifiedDate < 7 * 24 * 60 * 60 * 1000) {
-      return `You modified • ${modifiedDate.toLocaleDateString()}`;
-    } else if (now - viewedDate < 7 * 24 * 60 * 60 * 1000) {
-      return `You opened • ${viewedDate.toLocaleDateString()}`;
-    } else if (now - sharedDate < 7 * 24 * 60 * 60 * 1000) {
-      return `Shared with you • ${sharedDate.toLocaleDateString()}`;
-    } else if (now - createdDate < 7 * 24 * 60 * 60 * 1000) {
-      return `You created • ${createdDate.toLocaleDateString()}`;
-    } else {
-      // If none of the above conditions are met, return the most recent action
-      const mostRecentDate = new Date(Math.max(modifiedDate, viewedDate, sharedDate, createdDate));
-      if (mostRecentDate.getTime() === modifiedDate.getTime()) {
-        return `Modified • ${modifiedDate.toLocaleDateString()}`;
-      } else if (mostRecentDate.getTime() === viewedDate.getTime()) {
-        return `Opened • ${viewedDate.toLocaleDateString()}`;
-      } else if (mostRecentDate.getTime() === sharedDate.getTime()) {
-        return `Shared • ${sharedDate.toLocaleDateString()}`;
-      } else {
-        return `Created • ${createdDate.toLocaleDateString()}`;
-      }
-    }
-  };
-
   const getOwner = (file) => {
     return file.owners && file.owners.length > 0 ? file.owners[0].displayName : "Unknown";
   };
@@ -125,37 +96,29 @@ const DriveContent = ({
     setFileLocations(locations);
   }, [filteredDriveContent, folderTree]);
 
-  const sortByMostRecentInteraction = (a, b) => {
-    const getLatestDate = (file) => {
-      return new Date(Math.max(
-        new Date(file.modifiedTime),
-        new Date(file.viewedByMeTime),
-        new Date(file.sharedWithMeTime),
-        new Date(file.createdTime)
-      ));
-    };
-
-    return getLatestDate(b) - getLatestDate(a);
+  const sortByMostRecentModification = (a, b) => {
+    return new Date(b.modifiedTime) - new Date(a.modifiedTime);
   };
 
-  const sortedDriveContent = [...filteredDriveContent].sort(sortByMostRecentInteraction);
+  const filteredAndSortedContent = filteredDriveContent
+    .filter(file => currentFolderId ? file.parents && file.parents.includes(currentFolderId) : getLocation(file) === 'My Drive')
+    .sort(sortByMostRecentModification);
 
   return (
     <div className="drive-content">
-      {sortedDriveContent.length === 0 ? (
+      {filteredAndSortedContent.length === 0 ? (
         <p className="no-files">No items to display.</p>
       ) : (
         <div className={`file-${listLayoutActive ? 'list' : 'grid'}`}>
           {listLayoutActive && (
             <div className="file-list-header">
               <span>Name</span>
-              <span>Reason suggested</span>
               <span>Owner</span>
-              <span>Location</span>
-              <span></span>
+              <span>Last Modified</span>
+              <span>Size</span>
             </div>
           )}
-          {sortedDriveContent.map((file) => (
+          {filteredAndSortedContent.map((file) => (
             <div 
               key={file.id} 
               className={`file-item ${selectedFiles.some(f => f.id === file.id) ? 'selected' : ''}`}
@@ -168,9 +131,9 @@ const DriveContent = ({
                     <span className="file-name-text">{file.name}</span>
                     {renderSharingIcon(file)}
                   </div>
-                  <div className="file-reason">{getReasonSuggested(file)}</div>
                   <div className="file-owner">{getOwner(file)}</div>
-                  <div className="file-location">{fileLocations[file.id] || 'Loading...'}</div>
+                  <div className="file-modified">{new Date(file.modifiedTime).toLocaleDateString()}</div>
+                  <div className="file-size">{formatFileSize(file.size)}</div>
                   <div className="more-options">
                     <MoreVertIcon onClick={(e) => {
                       e.stopPropagation();
@@ -199,24 +162,24 @@ const DriveContent = ({
                     </div>
                   </div>
                   <div className="file-thumbnail">
-                      {file.hasThumbnail ? (
-                        <img 
-                          src={file.thumbnailLink} 
-                          alt={file.name} 
-                          onError={(e) => {
-                            e.target.onerror = null; 
-                            e.target.style.display = 'none'; 
-                            e.target.nextElementSibling.style.display = 'flex'; 
-                          }}
-                        />
-                      ) : null}
-                      <span 
-                        className="large-file-icon" 
-                        style={{display: file.hasThumbnail ? 'none' : 'flex'}}
-                      >
-                        {renderFileIcon(file)}
-                      </span>
-                    </div>
+                    {file.hasThumbnail ? (
+                      <img 
+                        src={file.thumbnailLink} 
+                        alt={file.name} 
+                        onError={(e) => {
+                          e.target.onerror = null; 
+                          e.target.style.display = 'none'; 
+                          e.target.nextElementSibling.style.display = 'flex'; 
+                        }}
+                      />
+                    ) : null}
+                    <span 
+                      className="large-file-icon" 
+                      style={{display: file.hasThumbnail ? 'none' : 'flex'}}
+                    >
+                      {renderFileIcon(file)}
+                    </span>
+                  </div>
                 </>
               )}
             </div>
