@@ -101,7 +101,15 @@ const DriveContent = ({
   };
 
   const filteredAndSortedContent = filteredDriveContent
-    .filter(file => currentFolderId ? file.parents && file.parents.includes(currentFolderId) : getLocation(file) === 'My Drive')
+    .filter(file => {
+      if (currentFolderId) {
+        // If we're in a folder, show all its children
+        return file.parents && file.parents.includes(currentFolderId);
+      } else {
+        // If we're at the root, only show files with "My Drive" location
+        return getLocation(file) === 'My Drive';
+      }
+    })
     .sort(sortByMostRecentModification);
 
   return (

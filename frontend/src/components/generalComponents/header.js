@@ -44,7 +44,9 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
   }, [navigate]);
 
   const getPageTitle = () => {
-    if (location.pathname === '/faq') {
+    const path = location.pathname;
+
+    if (path === '/faq') {
       return (
         <div className="breadcrumbs">
           <span className="breadcrumb-item" onClick={handleHomeClick}>Home</span>
@@ -52,8 +54,40 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
           <span className="breadcrumb-item current-item">Frequently Asked Questions</span>
         </div>
       );
-    } else if (isRootFolder) {
-      return 'Welcome to Diganise';
+    } else if (path === '/drive') {
+      return isRootFolder ? 'Welcome to Diganise' : 'Home';
+    } else if (path === '/my-drive') {
+      return isRootFolder ? 'My Drive' : (
+        <CurrentPageText
+          folderStack={['My Drive', ...folderStack.slice(1)]}
+          currentFolder={currentFolder}
+          onBreadcrumbClick={onBreadcrumbClick}
+        />
+      );
+    } else if (path === '/shared-with-me') {
+      return isRootFolder ? 'Shared With Me' : (
+        <CurrentPageText
+          folderStack={['Shared With Me', ...folderStack.slice(1)]}
+          currentFolder={currentFolder}
+          onBreadcrumbClick={onBreadcrumbClick}
+        />
+      );
+    } else if (path === '/recent') {
+      return isRootFolder ? 'Recent' : (
+        <CurrentPageText
+          folderStack={['Recent', ...folderStack.slice(1)]}
+          currentFolder={currentFolder}
+          onBreadcrumbClick={onBreadcrumbClick}
+        />
+      );
+    } else if (path === '/bin') {
+      return isRootFolder ? 'Bin' : (
+        <CurrentPageText
+          folderStack={['Bin', ...folderStack.slice(1)]}
+          currentFolder={currentFolder}
+          onBreadcrumbClick={onBreadcrumbClick}
+        />
+      );
     } else {
       return (
         <CurrentPageText
@@ -74,7 +108,8 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
           </div>
           <span className="text">{getPageTitle()}</span>
         </div>
-        <div className="settings-icon-container"> <HeaderQuestionIcon 
+        <div className="settings-icon-container">
+          <HeaderQuestionIcon 
             onClick={handleQuestionClick} 
             title="Frequently Asked Questions"
           />
