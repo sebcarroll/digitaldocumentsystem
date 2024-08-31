@@ -204,9 +204,9 @@ const DriveContent = ({
                           src={file.thumbnailLink} 
                           alt={file.name} 
                           onError={(e) => {
-                            e.target.onerror = null; // prevents looping
-                            e.target.style.display = 'none'; // hide the img element
-                            e.target.nextElementSibling.style.display = 'flex'; // show the icon
+                            e.target.onerror = null; 
+                            e.target.style.display = 'none'; 
+                            e.target.nextElementSibling.style.display = 'flex'; 
                           }}
                         />
                       ) : null}

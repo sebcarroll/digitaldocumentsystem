@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
-import DrivePage from './pages/HomePage';
+import HomePage from './pages/HomePage';
 import AuthSuccess from './pages/AuthSuccess';
 import FAQPage from './pages/FaqPage';
 import MyDrivePage from './pages/MyDrivePage';
@@ -15,7 +15,7 @@ function App() {
         <Route path="/" element={<LoginPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth-success" element={<AuthSuccess />} />
-        <Route path="/drive" element={<DrivePage />} />
+        <Route path="/drive" element={<HomePage />} />
         <Route path="/my-drive" element={<MyDrivePage />} />
         <Route path="/shared-with-me" element={<SharedWithMePage />} />
         <Route path="/recent" element={<RecentPage />} />

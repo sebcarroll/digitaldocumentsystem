@@ -6,7 +6,7 @@ import Sidebar from '../components/generalComponents/sidebar.js';
 import Header from '../components/generalComponents/header.js';
 import SearchBar from '../components/generalComponents/searchbar.js';
 import ViewOptions from '../components/generalComponents/viewOptions.js';
-import DriveContent from '../components/generalComponents/driveContent.js';
+import DriveContent from '../components/homePage/homePageContent.js';
 import { useFileOperations } from '../hooks/useFileOperations.js';
 import { useFileSelection } from '../hooks/useFileSelection.js';
 import { useViewOptions } from '../hooks/useViewOptions.js';

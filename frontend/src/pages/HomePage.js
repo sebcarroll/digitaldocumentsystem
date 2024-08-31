@@ -1,14 +1,14 @@
 import React from 'react';
 import { fetchDriveFiles } from '../services/api';
 import BaseDrivePage from './BaseDrivePage';
-import DriveContent from '../components/generalComponents/driveContent.js';
+import DriveContent from '../components/homePage/homePageContent.js';
 
 /**
  * DrivePage component
  * Renders the main drive page with file management functionality
  * @returns {JSX.Element} The rendered DrivePage component
  */
-const DrivePage = () => {
+const HomePage = () => {
   return (
     <BaseDrivePage
       DriveContent={DriveContent}
@@ -17,4 +17,4 @@ const DrivePage = () => {
   );
 };
 
-export default DrivePage;
+export default HomePage;
