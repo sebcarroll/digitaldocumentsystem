@@ -25,20 +25,26 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }
       return <span className="breadcrumb-item current-item">Welcome To Diganise</span>;
     }
 
-    breadcrumbs.push({ id: 'root', name: rootName });
+    // Add the root name only if it's not already in the folderStack
+    if (!folderStack.length || folderStack[0].name !== rootName) {
+      breadcrumbs.push({ id: 'root', name: rootName });
+    }
 
+    // Add folders from the folderStack
     if (folderStack && folderStack.length > 0) {
       breadcrumbs = [...breadcrumbs, ...folderStack];
     }
 
-    if (currentFolder && currentFolder.id !== 'root') {
+    // Add the current folder if it's not the root and not already in the breadcrumbs
+    if (currentFolder && currentFolder.id !== 'root' && 
+        (breadcrumbs.length === 0 || breadcrumbs[breadcrumbs.length - 1].id !== currentFolder.id)) {
       breadcrumbs.push(currentFolder);
     }
 
-    // Remove 'My Drive' from breadcrumbs if it's not the /my-drive page
-    if (path !== '/my-drive' && breadcrumbs.length > 1) {
-      breadcrumbs = breadcrumbs.filter(crumb => crumb.name !== 'My Drive');
-    }
+    // Remove duplicate entries
+    breadcrumbs = breadcrumbs.filter((crumb, index, self) =>
+      index === self.findIndex((t) => t.id === crumb.id)
+    );
 
     return breadcrumbs.map((folder, index) => {
       let folderName = folder.name || 'Unknown';
