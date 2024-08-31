@@ -85,6 +85,15 @@
   margin-top: 8px;
 }
 
+.breadcrumb-item.clickable {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.breadcrumb-item.current-item {
+  font-weight: bold;
+}
+
 .settings-message {
   color: #ffffff;
   font-size: 16px;

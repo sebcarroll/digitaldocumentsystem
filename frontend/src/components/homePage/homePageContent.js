@@ -151,7 +151,6 @@ const DriveContent = ({
               <span>Name</span>
               <span>Reason suggested</span>
               <span>Owner</span>
-              <span>Location</span>
               <span></span>
             </div>
           )}
@@ -170,7 +169,6 @@ const DriveContent = ({
                   </div>
                   <div className="file-reason">{getReasonSuggested(file)}</div>
                   <div className="file-owner">{getOwner(file)}</div>
-                  <div className="file-location">{fileLocations[file.id] || 'Loading...'}</div>
                   <div className="more-options">
                     <MoreVertIcon onClick={(e) => {
                       e.stopPropagation();

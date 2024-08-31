@@ -46,11 +46,17 @@ export const useFolderNavigation = (setError) => {
     }
   }, [folderStack]);
 
+  const resetNavigation = useCallback(() => {
+    setCurrentFolder({ id: 'root', name: 'My Drive' });
+    setFolderStack([]);
+  }, []);
+
   return {
     currentFolder,
     folderStack,
     handleFileClick,
     handleBackClick,
-    handleBreadcrumbClick
+    handleBreadcrumbClick,
+    resetNavigation
   };
 };

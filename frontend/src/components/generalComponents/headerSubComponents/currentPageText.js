@@ -19,7 +19,13 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }
 
   const getBreadcrumbs = () => {
     const rootName = getRootName();
-    let breadcrumbs = [{ id: 'root', name: rootName }];
+    let breadcrumbs = [];
+
+    if (path === '/drive' && (!currentFolder || currentFolder.id === 'root')) {
+      return <span className="breadcrumb-item current-item">Welcome To Diganise</span>;
+    }
+
+    breadcrumbs.push({ id: 'root', name: rootName });
 
     if (folderStack && folderStack.length > 0) {
       breadcrumbs = [...breadcrumbs, ...folderStack];
@@ -29,12 +35,9 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }
       breadcrumbs.push(currentFolder);
     }
 
-    if (breadcrumbs.length > 4) {
-      breadcrumbs = [
-        breadcrumbs[0],
-        { id: '...', name: '...' },
-        ...breadcrumbs.slice(-2)
-      ];
+    // Remove 'My Drive' from breadcrumbs if it's not the /my-drive page
+    if (path !== '/my-drive' && breadcrumbs.length > 1) {
+      breadcrumbs = breadcrumbs.filter(crumb => crumb.name !== 'My Drive');
     }
 
     return breadcrumbs.map((folder, index) => {
@@ -42,15 +45,22 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }
       if (folderName.length > 20) {
         folderName = folderName.slice(0, 17) + '...';
       }
+      const isLastItem = index === breadcrumbs.length - 1;
       return (
         <React.Fragment key={folder.id || index}>
           {index > 0 && <span className="breadcrumb-separator">&gt;</span>}
-          <span 
-            onClick={() => onBreadcrumbClick(index)} 
-            className={`breadcrumb-item ${index === breadcrumbs.length - 1 ? 'current-item' : ''}`}
-          >
-            {folderName}
-          </span>
+          {isLastItem ? (
+            <span className="breadcrumb-item current-item">
+              {folderName}
+            </span>
+          ) : (
+            <span 
+              onClick={() => onBreadcrumbClick(index)} 
+              className="breadcrumb-item clickable"
+            >
+              {folderName}
+            </span>
+          )}
         </React.Fragment>
       );
     });
