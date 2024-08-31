@@ -1,4 +1,3 @@
-// Sidebar.js
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import NewItemButton from './sidebarSubComponents/newItemButton.js';
@@ -16,6 +15,8 @@ const Sidebar = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, on
       { path: '/bin', label: 'Bin' }
     ];
   
+    console.log('Current location:', location.pathname);
+
     return (
       <aside className="sidebar">
         <div className="new-button-container">
@@ -29,6 +30,7 @@ const Sidebar = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, on
         </div>
         <nav className="sidebar-nav">
           {sidebarItems.map((item) => {
+            console.log(`Rendering SidebarButton for ${item.label}. Path: ${item.path}, Active: ${location.pathname === item.path}`);
             return (
               <SidebarButton
                 key={item.path}

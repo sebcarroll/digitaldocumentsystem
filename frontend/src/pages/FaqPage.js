@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '../components/drivePage/header.js';
-import Sidebar from '../components/drivePage/sidebar.js';
+import Header from '../components/generalComponents/header.js';
+import Sidebar from '../components/generalComponents/sidebar.js';
 import './FaqPage.css';
 
 const FAQPage = () => {

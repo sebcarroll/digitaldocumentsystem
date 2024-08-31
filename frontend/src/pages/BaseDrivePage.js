@@ -1,29 +1,30 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchDriveFiles, checkAuth, fetchUserInfo, fetchFolderDetails, fetchFolderTree, moveFiles } from '../services/api';
+import { checkAuth, fetchUserInfo, fetchFolderDetails, fetchFolderTree } from '../services/api';
 import './DrivePage.css';
-import Sidebar from '../components/drivePage/sidebar.js';
-import Header from '../components/drivePage/header.js';
-import SearchBar from '../components/drivePage/searchbar.js';
-import ViewOptions from '../components/drivePage/viewOptions.js';
-import DriveContent from '../components/drivePage/driveContent.js';
+import Sidebar from '../components/generalComponents/sidebar.js';
+import Header from '../components/generalComponents/header.js';
+import SearchBar from '../components/generalComponents/searchbar.js';
+import ViewOptions from '../components/generalComponents/viewOptions.js';
 import { useFileOperations } from '../hooks/useFileOperations.js';
 import { useFileSelection } from '../hooks/useFileSelection.js';
 import { useViewOptions } from '../hooks/useViewOptions.js';
 import { useFolderNavigation } from '../hooks/useFolderNavigation.js';
 import { useFileSharing } from '../hooks/useFileSharing.js';
-import StyledPopup from '../components/drivePage/folderAndRenamePopup.js';
-import SharePopup from '../components/drivePage/sharePopup.js';
-import MovePopup from '../components/drivePage/movePopup.js';
+import StyledPopup from '../components/generalComponents/folderAndRenamePopup.js';
+import SharePopup from '../components/generalComponents/sharePopup.js';
+import MovePopup from '../components/generalComponents/movePopup.js';
 import { useMovePopup } from '../hooks/useMovePopup';
 import ChatInterface from './chatInterface.js';
 
 /**
- * DrivePage component
+ * BaseDrivePage component
  * Renders the main drive page with file management functionality
- * @returns {JSX.Element} The rendered DrivePage component
+ * @param {React.Component} DriveContent - The component to render the drive content
+ * @param {Function} fetchFiles - The function to fetch files for this specific page
+ * @returns {JSX.Element} The rendered BaseDrivePage component
  */
-const DrivePage = () => {
+const BaseDrivePage = ({ DriveContent, fetchFiles }) => {
   const [driveContent, setDriveContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,7 +38,6 @@ const DrivePage = () => {
   const [isUploadPopupOpen, setIsUploadPopupOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Move this to the top to resolve circular dependency
   const { currentFolder, folderStack, handleBackClick, handleBreadcrumbClick, handleFileClick } = useFolderNavigation(setError);
 
   const getDriveFiles = useCallback(async (folderId) => {
@@ -49,7 +49,7 @@ const DrivePage = () => {
         return;
       }
 
-      const content = await fetchDriveFiles(folderId);
+      const content = await fetchFiles(folderId);
       setDriveContent(content.files || []);
     } catch (error) {
       console.error('Failed to fetch drive files:', error);
@@ -57,7 +57,7 @@ const DrivePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, fetchFiles]);
 
   const getFolderTree = useCallback(async () => {
     try {
@@ -92,7 +92,7 @@ const DrivePage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    console.log('DrivePage mounted or updated');
+    console.log('BaseDrivePage mounted or updated');
     if (currentFolder && currentFolder.id) {
       getDriveFiles(currentFolder.id);
     }
@@ -164,11 +164,11 @@ const DrivePage = () => {
     sharingError,    
   } = useFileSharing(selectedFiles);
 
-const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
-  setShowActionMenu(false);
-  setSelectedFiles([]);
-  handleFileClick(destinationFolder, newFolderStack);
-}, [setShowActionMenu, setSelectedFiles, handleFileClick]);
+  const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
+    setShowActionMenu(false);
+    setSelectedFiles([]);
+    handleFileClick(destinationFolder, newFolderStack);
+  }, [setShowActionMenu, setSelectedFiles, handleFileClick]);
 
   const {
     isOpen: isMovePopupOpen,
@@ -183,12 +183,8 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
     handleMove: handleMoveFiles,
   } = useMovePopup(selectedFiles, setError, handleMoveComplete);
 
-  /**
-   * Handles opening the chat interface
-   * @param {string} [query=''] - The initial query for the chat
-   */
   const handleOpenChat = useCallback((query = '', openUploadMenu = false) => {
-    console.log("handleOpenChat called in DrivePage", { query, openUploadMenu });
+    console.log("handleOpenChat called in BaseDrivePage", { query, openUploadMenu });
     setIsChatOpen(true);
     setChatInitialQuery(query);
     if (openUploadMenu) {
@@ -196,17 +192,12 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
     }
   }, []);
 
-  console.log("DrivePage rendered, handleOpenChat type:", typeof handleOpenChat);
-
   const handleCloseChat = useCallback(() => {
     setIsChatOpen(false);
     setChatInitialQuery('');
     setIsUploadPopupOpen(false);
   }, []);
 
-  /**
-   * Handles the share functionality
-   */
   const handleShare = () => {
     if (selectedFiles.length > 0) {
       setIsSharePopupOpen(true);
@@ -215,9 +206,6 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
     }
   };
 
-  /**
-   * Handles closing the share popup
-   */
   const handleCloseSharePopup = useCallback(() => {
     setIsSharePopupOpen(false);
     setShowActionMenu(false);
@@ -228,11 +216,6 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
     console.log('isChatOpen changed:', isChatOpen);
   }, [isChatOpen]);
 
-  /**
-   * Gets the appropriate icon for a file based on its MIME type
-   * @param {string} mimeType - The MIME type of the file
-   * @returns {string} The emoji representing the file type
-   */
   const getFileIcon = (mimeType) => {
     if (mimeType === 'application/vnd.google-apps.folder') return '📁';
     if (mimeType.includes('image')) return '🖼️';
@@ -261,7 +244,6 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
     }
   }, [folderNames]);
 
-  // Filter drive content based on active view options
   const filteredDriveContent = driveContent.filter(file => {
     const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
     return (filesActive && !isFolder) || (foldersActive && isFolder);
@@ -291,29 +273,29 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
         />
       </div>
       <div className="main-area">
-      <div className="search-bar-container">
-        <SearchBar onOpenChat={handleOpenChat}/>
-      </div>
+        <div className="search-bar-container">
+          <SearchBar onOpenChat={handleOpenChat}/>
+        </div>
         <div className="view-options-container">
-        <ViewOptions
-          filesActive={filesActive}
-          foldersActive={foldersActive}
-          listLayoutActive={listLayoutActive}
-          onFilesClick={handleFilesClick}
-          onFoldersClick={handleFoldersClick}
-          onListLayoutClick={handleListLayoutClick}
-          onGridLayoutClick={handleGridLayoutClick}
-          showActionMenu={showActionMenu}
-          selectedFiles={selectedFiles}
-          onMove={handleOpenMovePopup}
-          onDelete={handleDelete}
-          onCopyLink={handleCopyLink}
-          onRename={openRenamePopup}
-          onMakeCopy={handleMakeCopy}
-          onCloseActionMenu={handleCloseActionMenu}
-          onShare={handleShare}
-          isFolder={isFolder}
-        />
+          <ViewOptions
+            filesActive={filesActive}
+            foldersActive={foldersActive}
+            listLayoutActive={listLayoutActive}
+            onFilesClick={handleFilesClick}
+            onFoldersClick={handleFoldersClick}
+            onListLayoutClick={handleListLayoutClick}
+            onGridLayoutClick={handleGridLayoutClick}
+            showActionMenu={showActionMenu}
+            selectedFiles={selectedFiles}
+            onMove={handleOpenMovePopup}
+            onDelete={handleDelete}
+            onCopyLink={handleCopyLink}
+            onRename={openRenamePopup}
+            onMakeCopy={handleMakeCopy}
+            onCloseActionMenu={handleCloseActionMenu}
+            onShare={handleShare}
+            isFolder={isFolder}
+          />
         </div>
         <main className="main-content">
           <DriveContent 
@@ -345,7 +327,6 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
         title="Rename"
         initialValue={fileToRename ? fileToRename.name : ''}
       />
-
       {isSharePopupOpen && (
         currentUserRole === null ? (
           <div>Loading user permissions...</div>
@@ -376,28 +357,28 @@ const handleMoveComplete = useCallback((destinationFolder, newFolderStack) => {
           />
         )
       )}
-    <MovePopup
-      isOpen={isMovePopupOpen}
-      onClose={handleCloseMovePopup}
-      onMove={handleMoveFiles}
-      selectedFiles={moveSelectedFiles}
-      currentFolder={moveCurrentFolder}
-      folderStack={moveFolderStack}
-      folders={moveFolders}
-      handleFolderClick={handleMoveFolderClick}
-      handleBreadcrumbClick={handleMoveBreadcrumbClick}
-    />
-    {isChatOpen && (
-      <ChatInterface
-        initialQuery={chatInitialQuery}
-        onClose={handleCloseChat}
-        getFileIcon={getFileIcon}
-        isUploadPopupOpen={isUploadPopupOpen}
-        setIsUploadPopupOpen={setIsUploadPopupOpen}
+      <MovePopup
+        isOpen={isMovePopupOpen}
+        onClose={handleCloseMovePopup}
+        onMove={handleMoveFiles}
+        selectedFiles={moveSelectedFiles}
+        currentFolder={moveCurrentFolder}
+        folderStack={moveFolderStack}
+        folders={moveFolders}
+        handleFolderClick={handleMoveFolderClick}
+        handleBreadcrumbClick={handleMoveBreadcrumbClick}
       />
-    )}
+      {isChatOpen && (
+        <ChatInterface
+          initialQuery={chatInitialQuery}
+          onClose={handleCloseChat}
+          getFileIcon={getFileIcon}
+          isUploadPopupOpen={isUploadPopupOpen}
+          setIsUploadPopupOpen={setIsUploadPopupOpen}
+        />
+      )}
     </div>
   );
 };
 
-export default DrivePage;
+export default BaseDrivePage;
