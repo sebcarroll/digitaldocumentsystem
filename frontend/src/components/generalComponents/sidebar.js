@@ -12,7 +12,6 @@ const Sidebar = ({ onCreateFolder, onUploadFile, onUploadFolder, onCreateDoc, on
       { path: '/my-drive', label: 'My Drive' },
       { path: '/shared-with-me', label: 'Shared with me' },
       { path: '/recent', label: 'Recent' },
-      { path: '/bin', label: 'Bin' }
     ];
   
     console.log('Current location:', location.pathname);

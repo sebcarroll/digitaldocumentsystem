@@ -80,15 +80,8 @@ const Header = ({ folderStack, currentFolder, onBreadcrumbClick, userEmail, user
           onBreadcrumbClick={onBreadcrumbClick}
         />
       );
-    } else if (path === '/bin') {
-      return isRootFolder ? 'Bin' : (
-        <CurrentPageText
-          folderStack={['Bin', ...folderStack.slice(1)]}
-          currentFolder={currentFolder}
-          onBreadcrumbClick={onBreadcrumbClick}
-        />
-      );
-    } else {
+    }
+      else {
       return (
         <CurrentPageText
           folderStack={folderStack}

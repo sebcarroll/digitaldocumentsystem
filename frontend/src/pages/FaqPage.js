@@ -62,7 +62,7 @@ const FAQPage = () => {
   },
   {
     question: "Can I recover deleted files?",
-    answer: "Yes, deleted files go to the Bin and stay there for 30 days before being permanently deleted. To recover a file, go to the Bin, right-click on the file, and select 'Restore'."
+    answer: "No, once a file is deleted, it cannot be recovered. Please be cautious when deleting files, as they will be permanently removed from your Diganise account. Future versions of the software may include a trash bin functionality."
   },
   {
     question: "How do I change the colour of a folder?",

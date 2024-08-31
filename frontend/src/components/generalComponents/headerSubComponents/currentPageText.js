@@ -16,8 +16,6 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick }) => {
         return 'Shared With Me';
       case '/recent':
         return 'Recent';
-      case '/bin':
-        return 'Bin';
       default:
         return 'My Drive';
     }

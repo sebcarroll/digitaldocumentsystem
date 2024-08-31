@@ -6,7 +6,6 @@ import FAQPage from './pages/FaqPage';
 import MyDrivePage from './pages/MyDrivePage';
 import SharedWithMePage from './pages/SharedWithMePage';
 import RecentPage from './pages/RecentPage';
-import BinPage from './pages/BinPage';
 
 function App() {
   return (
@@ -19,7 +18,6 @@ function App() {
         <Route path="/my-drive" element={<MyDrivePage />} />
         <Route path="/shared-with-me" element={<SharedWithMePage />} />
         <Route path="/recent" element={<RecentPage />} />
-        <Route path="/bin" element={<BinPage />} />
         <Route path="/faq" element={<FAQPage />} />
       </Routes>
     </Router>
