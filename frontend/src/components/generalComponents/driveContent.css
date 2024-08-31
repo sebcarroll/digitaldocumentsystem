@@ -206,6 +206,19 @@
   min-width: 0; /* This ensures that the ellipsis works properly */
 }
 
+.time-category {
+  font-weight: bold;
+  padding: 10px 0;
+  margin-top: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.file-last-interaction,
+.file-size {
+  color: #5f6368;
+  font-size: 0.9em;
+}
+
 .file-list .file-reason,
 .file-list .file-owner,
 .file-list .file-location,

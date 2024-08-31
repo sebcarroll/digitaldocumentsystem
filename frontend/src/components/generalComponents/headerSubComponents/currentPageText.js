@@ -60,12 +60,12 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }
               {folderName}
             </span>
           ) : (
-            <span 
-              onClick={() => onBreadcrumbClick(index)} 
-              className="breadcrumb-item clickable"
-            >
-              {folderName}
-            </span>
+          <span 
+            onClick={() => onBreadcrumbClick(index)}
+            className="breadcrumb-item clickable"
+          >
+            {folderName}
+          </span>
           )}
         </React.Fragment>
       );

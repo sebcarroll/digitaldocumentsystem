@@ -35,14 +35,17 @@ export const useFolderNavigation = (setError) => {
   }, [folderStack]);
 
   const handleBreadcrumbClick = useCallback((index) => {
+    console.log('index:', index);
     if (index === 0) {
       // Clicking on the root folder
       setFolderStack([]);
       setCurrentFolder({ id: 'root', name: 'My Drive' });
-    } else if (index <= folderStack.length) {
-      const newStack = folderStack.slice(0, index - 1);
+    } else {
+      // Clicking on a folder in the stack
+      const newStack = folderStack.slice(0, index);
+      const clickedFolder = folderStack[index];
       setFolderStack(newStack);
-      setCurrentFolder(folderStack[index - 1]);
+      setCurrentFolder(clickedFolder);
     }
   }, [folderStack]);
 
