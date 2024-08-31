@@ -2,7 +2,7 @@ import {React, useEffect, useState} from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import PeopleIcon from '@mui/icons-material/People';
-import './driveContent.css';
+import '../generalComponents/driveContent.css';
 
 /**
  * Formats the file size into a human-readable string

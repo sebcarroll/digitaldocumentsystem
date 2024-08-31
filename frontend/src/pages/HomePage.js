@@ -1,6 +1,6 @@
 import React from 'react';
 import { fetchDriveFiles } from '../services/api';
-import BaseDrivePage from './BaseDrivePage';
+import BaseDrivePage from './DrivePage';
 import DriveContent from '../components/homePage/homePageContent.js';
 
 /**

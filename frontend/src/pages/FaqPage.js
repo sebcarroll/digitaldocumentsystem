@@ -1,9 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '../components/generalComponents/header.js';
 import Sidebar from '../components/generalComponents/sidebar.js';
 import './FaqPage.css';
+import { checkAuth, fetchUserInfo } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const FAQPage = () => {
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  const navigate = useNavigate();
+
+  
+  useEffect(() => {
+    const checkAuthAndFetchUserInfo = async () => {
+      try {
+        const authStatus = await checkAuth();
+        if (authStatus.authenticated) {
+          const userInfo = await fetchUserInfo();
+          setUserEmail(userInfo.email);
+          setUserName(userInfo.name);
+        } else {
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+      }
+    };
+  
+    checkAuthAndFetchUserInfo();
+  }, [navigate]);
+  
   const faqData = 
     [
         {
@@ -63,7 +89,7 @@ const FAQPage = () => {
   return (
     <div className="faq-page">
     <div className="faq-header">
-      <Header />
+      <Header userEmail={userEmail} userName={userName} />
     </div>
       <div className="faq-main-content">
         <div className="faq-sidebar">
