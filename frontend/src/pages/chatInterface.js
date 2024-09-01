@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './chatInterface.css';
-import { sendQuery, uploadDocument, openDriveFile, clearChatHistory, uploadSelectedDocuments, updateDocumentSelection } from '../services/api';
+import { sendQuery, uploadDocument, openDriveFile, clearChatHistory, uploadSelectedDocuments, updateDocumentSelection, setDocumentsUnselected  } from '../services/api';
 import SendButton from '../components/generalComponents/searchbarSubComponents/searchbarSendButton.js';
 import AttachFileSharpIcon from '@mui/icons-material/AttachFileSharp';
 import UploadPopup from '../components/chatInterface/uploadDocumentPopup.js';
@@ -123,7 +123,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
 
   const handleRemoveDocument = async (docId) => {
     try {
-      await updateDocumentSelection(docId, false);
+      await setDocumentsUnselected([docId]);
       setSelectedDocuments(prev => prev.filter(doc => doc.id !== docId));
       addMessage(`Document removed from selection.`, false);
     } catch (error) {

@@ -480,3 +480,19 @@ export const uploadSelectedDocuments = async (selectedFiles) => {
   }
   return response.json();
 };
+
+export const setDocumentsUnselected = async (documentIds) => {
+  const response = await fetch(`${API_URL}/chat/set-documents-unselected`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ documentIds }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update document selection');
+  }
+  return response.json();
+};

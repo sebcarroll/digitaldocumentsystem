@@ -176,3 +176,26 @@ def upload_documents():
     except Exception as e:
         logger.error(f"Error in upload_documents: {str(e)}", exc_info=True)
         return jsonify({"error": "An error occurred while uploading documents"}), 500
+    
+@chat_bp.route('/set-documents-unselected', methods=['POST'])
+def set_documents_unselected():
+    chat_service = current_app.extensions['chat_service']
+    try:
+        data = request.json
+        document_ids = data.get('documentIds', [])
+        
+        if not document_ids:
+            return jsonify({"error": "No document IDs provided"}), 400
+
+        results = []
+        for doc_id in document_ids:
+            success = chat_service.update_document_selection(doc_id, False)
+            results.append({"id": doc_id, "success": success})
+
+        return jsonify({
+            "message": "Documents updated successfully",
+            "results": results
+        })
+    except Exception as e:
+        logger.error(f"Error in set_documents_unselected: {str(e)}", exc_info=True)
+        return jsonify({"error": "An error occurred while updating documents"}), 500
