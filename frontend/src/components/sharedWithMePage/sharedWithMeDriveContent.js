@@ -1,4 +1,4 @@
-import {React, useEffect, useState} from 'react';
+import React from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import FolderSharedIcon from '@mui/icons-material/FolderShared';
 import PeopleIcon from '@mui/icons-material/People';
@@ -39,9 +39,7 @@ const DriveContent = ({
   getFileIcon,
   selectedFiles,
   showActionMenu,
-  isFolder,
-  getFolderName,
-  folderTree
+  isFolder
 }) => {
   const getOwner = (file) => {
     return file.owners && file.owners.length > 0 ? file.owners[0].displayName : "Unknown";
@@ -57,18 +55,29 @@ const DriveContent = ({
     );
   };
 
-  const formatSharedDate = (dateString) => {
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? 'Unknown date' : date.toLocaleDateString();
+  const formatSharedDate = (file) => {
+    const sharedDate = new Date(file.sharedWithMeTime);
+    const createdDate = new Date(file.createdTime);
+  
+    if (!isNaN(sharedDate.getTime()) && sharedDate.getFullYear() !== 1970) {
+      return `Shared • ${sharedDate.toLocaleDateString()}`;
+    } else if (!isNaN(createdDate.getTime())) {
+      return `Created • ${createdDate.toLocaleDateString()}`;
+    } else {
+      return 'Date unknown';
+    }
   };
-
   const sharedContent = filteredDriveContent.filter(file => 
     file.shared && file.owners && file.owners[0].me !== true
   );
 
-  const sortedSharedContent = [...sharedContent].sort((a, b) => 
-    new Date(b.sharedWithMeTime) - new Date(a.sharedWithMeTime)
-  );
+  const sortedSharedContent = [...sharedContent].sort((a, b) => {
+    const dateA = new Date(a.sharedWithMeTime).getFullYear() !== 1970 ? 
+      new Date(a.sharedWithMeTime) : new Date(a.createdTime);
+    const dateB = new Date(b.sharedWithMeTime).getFullYear() !== 1970 ? 
+      new Date(b.sharedWithMeTime) : new Date(b.createdTime);
+    return dateB - dateA;
+  });
 
   return (
     <div className="drive-content">
@@ -80,7 +89,7 @@ const DriveContent = ({
             <div className="file-list-header">
               <span>Name</span>
               <span>Shared by</span>
-              <span>Shared Date</span>
+              <span>Date</span>
             </div>
           )}
           {sortedSharedContent.map((file) => (
@@ -97,7 +106,7 @@ const DriveContent = ({
                     <PeopleIcon className="file-sharing-icon" />
                   </div>
                   <div className="file-owner">{getOwner(file)}</div>
-                  <div className="file-modified">{formatSharedDate(file.sharedWithMeTime)}</div>
+                  <div className="file-modified">{formatSharedDate(file)}</div>
                   <div className="more-options">
                     <MoreVertIcon onClick={(e) => {
                       e.stopPropagation();

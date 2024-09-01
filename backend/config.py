@@ -1,4 +1,5 @@
-"""Configuration module for the application.
+"""
+Configuration module for the application.
 
 This module defines configuration classes for different environments
 (development, production, testing) and loads environment variables.
@@ -7,6 +8,7 @@ This module defines configuration classes for different environments
 import os
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
 class Config:
@@ -36,17 +38,14 @@ class Config:
     # OpenAI configuration
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-    # Celery configuration
-    # broker_url = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
-    # result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/1')
-
     @classmethod
     def init_app(cls, app):
-        """Initialize the Flask application with configuration."""
-        # app.config.update(
-        #     broker_url=cls.broker_url,
-        #     result_backend=cls.result_backend
-        # )
+        """
+        Initialise the Flask application with configuration.
+
+        Args:
+            app: The Flask application instance.
+        """
         pass
 
 class DevelopmentConfig(Config):
@@ -71,7 +70,3 @@ class TestingConfig(Config):
     
     # For OpenAI, you might still want to use a test key or mock it
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    
-    # Use in-memory broker for Celery in testing
-    # broker_url = 'memory://'
-    # result_backend = 'memory://'

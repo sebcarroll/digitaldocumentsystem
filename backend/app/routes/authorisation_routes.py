@@ -20,13 +20,11 @@ from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from config import Config
-import logging
 import requests
 import redis
 import json
 
 redis_client = redis.StrictRedis.from_url(Config.REDIS_TOKEN_URL, decode_responses=True)
-logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 auth_service = AuthService(Config)
@@ -50,12 +48,12 @@ def login():
     """
     Initiate the OAuth2 login flow.
 
-    This function creates an OAuth2 flow, generates an authorization URL,
+    This function creates an OAuth2 flow, generates an authorisation URL,
     and redirects the user to the Google login page. It also stores
     the state token and last active timestamp in the session.
 
     Returns:
-        werkzeug.wrappers.Response: A redirect response to the authorization URL.
+        werkzeug.wrappers.Response: A redirect response to the authorisation URL.
     """
     flow = auth_service.create_flow()
     authorization_url, state = flow.authorization_url(
@@ -71,9 +69,9 @@ def oauth2callback():
     """
     Handle the OAuth2 callback from Google.
 
-    This function processes the authorization response from Google's OAuth2 service,
+    This function processes the authorisation response from Google's OAuth2 service,
     retrieves user information, stores the credentials in Redis, and updates the session.
-    It also initializes or updates the ChatService with Drive functionality.
+    It also initialises or updates the ChatService with Drive functionality.
 
     Returns:
         flask.Response: A redirect response to the auth success page on success,
@@ -85,74 +83,50 @@ def oauth2callback():
         Exception: For any other unexpected errors.
     """
     try:
-        logger.info("Starting oauth2callback function")
-        
         if 'error' in request.args:
-            error_message = f"Error in request args: {request.args.get('error')}"
-            logger.error(error_message)
-            return jsonify({"error": "Authentication failed", "details": error_message}), 400
+            return jsonify({"error": "Authentication failed", "details": request.args.get('error')}), 400
 
         state = session.get('state')
         if not state:
-            logger.error("No state in session")
             return jsonify({"error": "No state in session"}), 400
 
-        logger.info("Creating flow and fetching token")
         flow = auth_service.create_flow(state)
         flow.fetch_token(authorization_response=request.url)
 
-        logger.info("Getting credentials")
         credentials = flow.credentials
         credentials_dict = auth_service.credentials_to_dict(credentials)
-        logger.debug(f"Credentials dict: {credentials_dict}")
         
-        logger.info("Creating DriveCore and fetching user info")
         drive_core = DriveCore(credentials_dict)
         user_info = auth_service.fetch_user_info(drive_core)
-        logger.debug(f"User info: {user_info}")
 
         user_id = user_info.get('id')
         user_email = user_info.get('email')
         
         if not user_id:
-            logger.error("User ID not found in user info")
             return jsonify({"error": "Failed to retrieve user ID"}), 500
 
-        logger.info(f"Setting Redis key for user {user_id}")
         redis_client.set(f'user:{user_id}:token', json.dumps(credentials_dict))
 
-        logger.info("Updating session")
         session['user_email'] = user_email
         session['user_id'] = user_id
         session['last_active'] = datetime.now(timezone.utc).isoformat()
 
-        # Initialize or update ChatService with Drive functionality
         chat_service = current_app.extensions.get('chat_service')
         if chat_service:
             chat_service.drive_core = drive_core
             chat_service.file_extractor = FileExtractor(drive_core=drive_core)
-            logger.info("Updated existing ChatService with Drive functionality")
         else:
             current_app.extensions['chat_service'] = ChatService(drive_core)
-            logger.info("Created new ChatService with Drive functionality")
 
-        logger.info("Redirecting to success page")
         return redirect('http://localhost:3000/auth-success')
 
     except OAuth2Error as oe:
-        logger.error(f"OAuth2 error: {str(oe)}")
         return jsonify({"error": "OAuth2 error occurred", "details": str(oe)}), 400
-
     except RefreshError as re:
-        logger.error(f"Token refresh error: {str(re)}")
         return jsonify({"error": "Failed to refresh token", "details": str(re)}), 401
-
     except GoogleApiError as ge:
-        logger.error(f"Google API error: {str(ge)}")
         return jsonify({"error": "Google API error occurred", "details": str(ge)}), 500
-
     except Exception as e:
-        logger.exception(f"Unexpected error in oauth2callback: {str(e)}")
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 @auth_bp.route('/check-auth')
@@ -175,8 +149,8 @@ def check_auth():
             if drive_core:
                 session['last_active'] = datetime.now(timezone.utc).isoformat()
                 return jsonify({"authenticated": True})
-        except Exception as e:
-            logger.error(f"Error getting drive core: {str(e)}")
+        except Exception:
+            pass
     return jsonify({"authenticated": False})
 
 @auth_bp.route('/refresh-token')
@@ -200,8 +174,8 @@ def refresh_token():
                 updated_credentials_dict = auth_service.credentials_to_dict(credentials)
                 redis_client.set(f'user:{user_id}:token', json.dumps(updated_credentials_dict))
                 return jsonify({"message": "Token refreshed successfully"})
-        except Exception as e:
-            logger.error(f"Error refreshing token: {str(e)}")
+        except Exception:
+            pass
     return jsonify({"error": "Failed to refresh token"}), 401
 
 @auth_bp.route('/logout')
@@ -225,13 +199,22 @@ def logout():
                               params={'token': credentials.token},
                               headers={'content-type': 'application/x-www-form-urlencoded'})
             redis_client.delete(f'user:{user_id}:token')
-        except Exception as e:
-            logger.error(f"Error revoking token: {str(e)}")
+        except Exception:
+            pass
     session.clear()
     return jsonify({"message": "Logged out successfully"})
 
 @auth_bp.route('/user-info')
 def get_user_info():
+    """
+    Retrieve user information for the authenticated user.
+
+    This function fetches the user's email and name from their Google account.
+
+    Returns:
+        flask.Response: A JSON response containing the user's email and name,
+                        or an error message if retrieval fails.
+    """
     try:
         drive_core = get_drive_core(session)
         user_info = AuthService.fetch_user_info(drive_core)
@@ -240,8 +223,6 @@ def get_user_info():
             "name": user_info.get('name')
         })
     except ValueError as e:
-        logger.error(f"Authentication error: {str(e)}")
         return jsonify({"error": str(e)}), 401
-    except Exception as e:
-        logger.error(f"Error fetching user info: {str(e)}")
+    except Exception:
         return jsonify({"error": "Failed to fetch user information"}), 500

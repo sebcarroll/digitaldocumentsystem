@@ -7,14 +7,9 @@ logging out, and cleaning up services after requests.
 
 from flask import Blueprint, session, jsonify, request, g
 from app.utils.drive_utils import get_drive_core
-import logging
 from app.services.google_drive.drive_service import DriveService
 
 drive_bp = Blueprint('drive', __name__)
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 @drive_bp.route('/drive')
 def drive():
@@ -33,38 +28,27 @@ def drive():
     - A JSON object containing the list of files and the next page token.
     - In case of errors, returns an appropriate error message and HTTP status code.
     """
-    logger.info("Entering drive() function")
     try:
-        logger.debug("Attempting to get drive_core")
         drive_core = get_drive_core(session)
-        logger.debug("drive_core obtained successfully")
         
         folder_id = request.args.get('folder_id', 'root')
         page_token = request.args.get('page_token')
         page_size = int(request.args.get('page_size', 1000))
         
-        logger.info(f"Listing folder contents. Folder ID: {folder_id}, Page Token: {page_token}, Page Size: {page_size}")
         drive_service = DriveService(drive_core)
         file_list, next_page_token = drive_service.list_folder_contents(folder_id, page_token, page_size)
-        logger.debug(f"Received {len(file_list)} files")
         
         if not file_list:
-            logger.info("No files found in the folder")
             return jsonify({"message": "No files found in this folder."})
         else:
-            logger.info("Successfully retrieved file list")
             return jsonify({
                 "files": file_list,
                 "nextPageToken": next_page_token
             })
     except ValueError as e:
-        logger.error(f"ValueError occurred: {str(e)}")
         return jsonify({"error": str(e)}), 401
     except Exception as error:
-        logger.exception(f"Unexpected error occurred: {str(error)}")
         return jsonify({"error": f"An error occurred: {error}"}), 500
-    finally:
-        logger.info("Exiting drive() function")
 
 @drive_bp.route('/drive/<file_id>/open')
 def open_file(file_id):
@@ -82,21 +66,15 @@ def open_file(file_id):
     - A JSON object containing the web view link and MIME type of the file.
     - In case of errors, returns an appropriate error message and HTTP status code.
     """
-    logger.info(f"Entering open_file() function for file ID: {file_id}")
     try:
         drive_core = get_drive_core(session)
         drive_service = DriveService(drive_core)
         web_view_link, mime_type = drive_service.get_file_web_view_link(file_id)
-        logger.info(f"Successfully retrieved web view link for file ID: {file_id}")
         return jsonify({"webViewLink": web_view_link, "mimeType": mime_type})
     except ValueError as e:
-        logger.error(f"ValueError occurred: {str(e)}")
         return jsonify({"error": str(e)}), 401
     except Exception as e:
-        logger.exception(f"Unexpected error occurred: {str(e)}")
         return jsonify({"error": str(e)}), 400
-    finally:
-        logger.info("Exiting open_file() function")
 
 @drive_bp.route('/drive/<folder_id>/details')
 def get_folder_details(folder_id):
@@ -127,7 +105,6 @@ def get_folder_details(folder_id):
         else:
             return jsonify({"error": "Folder not found"}), 404
     except Exception as e:
-        logger.exception(f"Unexpected error occurred: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @drive_bp.teardown_app_request
@@ -142,7 +119,6 @@ def cleanup_services(exception=None):
     - exception: An optional exception that occurred during the request.
     """
     if 'drive_core' in g:
-        logger.debug("Cleaning up drive_core from request context")
         del g.drive_core
 
 @drive_bp.route('/logout')
@@ -155,8 +131,5 @@ def logout():
     Returns:
     - A JSON object with a success message.
     """
-    logger.info("Logging out user")
     session.clear()
-    logger.info("User logged out successfully")
     return jsonify({"message": "Logged out successfully"})
-
