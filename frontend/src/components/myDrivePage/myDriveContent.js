@@ -92,7 +92,7 @@ const DriveContent = ({
                     {renderSharingIcon(file)}
                   </div>
                   <div className="file-owner">{getOwner(file)}</div>
-                  <div className="file-modified">{new Date(file.modifiedTime).toLocaleDateString()}</div>
+                  <div className="file-modified">{`Modified • ${new Date(file.modifiedTime).toLocaleDateString()}`}</div>
                   <div className="file-size">{isFolder(file) ? '-' : formatFileSize(file.size)}</div>
                   <div className="more-options">
                     <MoreVertIcon onClick={(e) => {

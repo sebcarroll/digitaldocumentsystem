@@ -30,7 +30,7 @@ def mock_openai_embeddings():
 @pytest.fixture
 def mock_document_schema():
     """Create a mock for the DocumentSchema class."""
-    with patch('app.services.database.pinecone_manager_service.QueryandDocumentSchema') as mock:
+    with patch('app.services.database.pinecone_manager_service.DocumentSchema') as mock:
         yield mock
 
 

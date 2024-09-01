@@ -1,1 +1,1 @@
-from .query_and_document import QueryandDocumentSchema
+from .query_and_document import DocumentSchema

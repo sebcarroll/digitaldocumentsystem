@@ -142,7 +142,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
   return (
     <div className="chat-interface">
       <div className="chat-header">
-      <button onClick={handleClose} className="close-button">×</button>
+        <button onClick={handleClose} className="close-button">×</button>
       </div>
       <div className="message-list" ref={messageListRef}>
         {messages.map((message, index) => (
@@ -150,10 +150,10 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
         ))}
         {isLoading && <div className="loading-indicator">Processing...</div>}
       </div>
-      <SelectedDocuments 
-        documents={selectedDocuments} 
-        onRemove={handleRemoveDocument} 
-      />
+        <SelectedDocuments 
+          documents={selectedDocuments} 
+          onRemove={handleRemoveDocument} 
+        />
       <form onSubmit={handleSubmit} className="input-area">
         <div className="file-upload-label" onClick={handleFileIconClick}>
           <AttachFileSharpIcon />

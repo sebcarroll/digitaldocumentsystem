@@ -1,9 +1,8 @@
 from marshmallow import Schema, fields, post_load
 from datetime import datetime, timezone
 
-class QueryandDocumentSchema(Schema):
+class DocumentSchema(Schema):
     googleDriveFileId = fields.Str(required=True)
-    userId = fields.Str(required=True)
     content = fields.Str(required=True)
     isSelected = fields.Boolean(required=True)
     modifiedAt = fields.DateTime(required=True)
