@@ -193,11 +193,12 @@ class ChatService:
         logger.info(f"Processing query for user {self.user_id}: {question}")
         try:
             selected_documents = self.pinecone_manager.get_selected_documents(self.user_id)
+            selected_documents = [doc for doc in selected_documents if doc['metadata'].get('isSelected', False)]
             
             context = "\n\n".join([doc['metadata'].get('content', '') for doc in selected_documents])
             
             chat_history = self.memory.chat_memory.messages
-            prompt = f"""Use the following pieces of context and the chat history to answer the question at the end. If you don't know the answer, give an apology and reason as to why you cannot answer the question, don't try to make up an answer. You are allowed to give verbatim answers from the documents when requested.
+            prompt = f"""Use the following pieces of context, the chat history, and your own knowledge to answer the question at the end. You are allowed to give verbatim answers from the documents when requested.
 
             Context:
             {context}

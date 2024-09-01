@@ -5,7 +5,6 @@ import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import FolderIcon from '@mui/icons-material/Folder';
 import PeopleIcon from '@mui/icons-material/People';
 
-// Format file size function
 const formatFileSize = (size) => {
   if (size == null || isNaN(size)) {
     return 'N/A';
@@ -38,8 +37,6 @@ const getFileExtension = (filename) => {
 };
 
 const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbClick }) => {
-  console.log('UploadPopupBreadcrumb rendering', { folderStack, currentFolder });
-
   const getBreadcrumbs = () => {
     let breadcrumbs = [...folderStack, currentFolder].filter(Boolean);
     if (breadcrumbs.length === 0) {
@@ -49,7 +46,6 @@ const UploadPopupBreadcrumb = ({ folderStack = [], currentFolder, onBreadcrumbCl
       breadcrumbs = [{ id: '...', name: '...' }, ...breadcrumbs.slice(-2)];
     }
 
-    console.log('Breadcrumbs generated:', breadcrumbs);
     return breadcrumbs.map((folder, index) => {
       let folderName = folder.name || 'Unknown';
       if (folderName.length > 15) {
@@ -92,8 +88,6 @@ const UploadPopup = ({
 }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
 
-  console.log('UploadPopup rendering', { isOpen, getFileIcon, setError });
-
   useEffect(() => {
     if (isOpen) {
       console.log("UploadPopup received new props:", { items });
@@ -101,38 +95,44 @@ const UploadPopup = ({
   }, [isOpen, items]);
 
   const handleFileSelect = useCallback((file) => {
-    console.log("handleFileSelect called with file:", file);
     setSelectedFiles(prevSelected => {
       const isAlreadySelected = prevSelected.some(f => f.id === file.id);
       if (isAlreadySelected) {
-        console.log("Removing file from selection:", file.name);
         return prevSelected.filter(f => f.id !== file.id);
       } else {
-        console.log("Adding file to selection:", file.name);
         return [...prevSelected, file];
       }
     });
   }, []);
 
-  useEffect(() => {
-    console.log("Selected files updated in UploadPopup:", selectedFiles);
-  }, [selectedFiles]);
-
   if (!isOpen) {
-    console.log('UploadPopup not rendering because isOpen prop is false');
     return null;
   }
 
+  const renderFileIcon = (file) => {
+    return (
+      <span className="file-type-icon">
+        {isFolder(file) ? 
+          (file.shared ? <FolderIcon /> : getFileIcon('application/vnd.google-apps.folder')) 
+          : getFileIcon(file.mimeType)}
+      </span>
+    );
+  };
+
+  const renderSharingIcon = (file) => {
+    if (!isFolder(file) && file.shared) {
+      return <PeopleIcon className="file-sharing-icon" />;
+    }
+    return null;
+  };
+
   const renderItem = (item) => {
-    console.log('Rendering item', item);
-    const isItemFolder = item.mimeType === 'application/vnd.google-apps.folder';
+    const isItemFolder = isFolder(item);
     const isSelected = selectedFiles.some(f => f.id === item.id);
   
     return (
       <div key={item.id} className="folder-item" onClick={() => {
-        console.log('Item clicked', { isItemFolder, item });
         if (!isItemFolder) {
-          console.log('Calling handleFileSelect for non-folder item');
           handleFileSelect(item);
         } else {
           handleFolderClick(item);
@@ -150,11 +150,9 @@ const UploadPopup = ({
           )}
           <div className="file-header">
             <div className="file-name">
-              <span className="file-type-icon">
-                {isItemFolder ? <FolderIcon /> : getFileIcon(item.mimeType)}
-              </span>
+              {renderFileIcon(item)}
               <span className="file-name-text">{item.name}</span>
-              {item.shared && <PeopleIcon className="file-sharing-icon" />}
+              {renderSharingIcon(item)}
             </div>
             <div className="file-info">
               {!isItemFolder && (
@@ -167,31 +165,22 @@ const UploadPopup = ({
     );
   };
 
-  console.log('All items:', items);
-  console.log('Current folder:', currentFolder);
+  const sortByMostRecentlyModified = (a, b) => {
+    return new Date(b.modifiedTime) - new Date(a.modifiedTime);
+  };
 
-  const ROOT_FOLDER_ID = '0AJjuiEj-GTr0Uk9PVA';
-  const displayedItems = items.filter(item => {
-    const isInCurrentFolder = (currentFolder.id === 'root' && 
-      ((item.parents && item.parents[0] === ROOT_FOLDER_ID) ||
-       (!item.parents) ||
-       (item.parents && item.parents.length === 0))) ||
-      (item.parents && item.parents.length > 0 && item.parents[0] === currentFolder.id);
-
-    const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
-    const hasAllowedFormat = ALLOWED_FORMATS.includes(`.${getFileExtension(item.name)}`) || 
-                             ALLOWED_FORMATS.includes(item.mimeType);
-
-    return isInCurrentFolder && (isFolder || hasAllowedFormat);
-  });
-
-  console.log('Displayed items:', displayedItems);
+  const filteredAndSortedItems = items
+    .filter(item => 
+      isFolder(item) || 
+      ALLOWED_FORMATS.includes(`.${getFileExtension(item.name)}`) || 
+      ALLOWED_FORMATS.includes(item.mimeType)
+    )
+    .sort(sortByMostRecentlyModified);
 
   const handleUpload = () => {
-    console.log('Upload button clicked', { selectedFiles });
     onUpload(selectedFiles);
-    setSelectedFiles([]); // Reset selected files
-    onClose(); // Close the popup
+    setSelectedFiles([]);
+    onClose();
   };
 
   return (
@@ -204,10 +193,10 @@ const UploadPopup = ({
           onBreadcrumbClick={handleBreadcrumbClick}
         />
         <div className="folder-list">
-          {displayedItems.length > 0 ? (
-            displayedItems.map(item => renderItem(item))
+          {filteredAndSortedItems.length > 0 ? (
+            filteredAndSortedItems.map(item => renderItem(item))
           ) : (
-            <div className="empty-folder-message">This folder is empty</div>
+            <div className="empty-folder-message">No uploadable files or folders in this location</div>
           )}
         </div>
         <div className="popup-actions">

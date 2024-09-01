@@ -133,6 +133,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
   };
 
   const handleClose = () => {
+    setSelectedDocuments([]);
     clearChatHistory();
     onClose();
   };
@@ -176,6 +177,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
         onClose={handleUploadPopupClose}
         onUpload={handleFileUpload}
         {...uploadDocumentHook}
+        isFolder={(file) => file.mimeType === 'application/vnd.google-apps.folder'}
       />
     </div>
   );
