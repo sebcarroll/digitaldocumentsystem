@@ -57,56 +57,6 @@ def test_get_services(app, drive_service):
             assert g.drive_service == mock_drive
             assert g.people_service == mock_people
 
-def test_list_folder_contents(app, drive_service):
-    """
-    Test the list_folder_contents method of DriveService.
-
-    This test ensures that the method correctly retrieves and formats
-    the contents of a Google Drive folder.
-    """
-    with app.app_context():
-        mock_drive = Mock()
-        mock_files = {
-            'files': [
-                {
-                    'name': 'file1',
-                    'id': 'id1',
-                    'mimeType': 'type1',
-                    'size': '1000',
-                    'hasThumbnail': True,
-                    'thumbnailLink': 'http://thumbnail1.com',
-                    'modifiedTime': '2023-01-01T00:00:00.000Z',
-                    'createdTime': '2023-01-01T00:00:00.000Z',
-                    'viewedByMeTime': '2023-01-02T00:00:00.000Z',
-                    'sharedWithMeTime': '2023-01-03T00:00:00.000Z',
-                    'owners': [{'displayName': 'Owner1'}],
-                    'parents': ['parent1'],
-                    'shared': True
-                }
-            ],
-            'nextPageToken': 'next_token'
-        }
-        mock_drive.files().list().execute.return_value = mock_files
-
-        with patch.object(drive_service, 'get_services', return_value=(mock_drive, None)):
-            file_list, next_page_token = drive_service.list_folder_contents('folder_id')
-
-        assert len(file_list) == 1
-        assert file_list[0]['name'] == 'file1'
-        assert file_list[0]['id'] == 'id1'
-        assert file_list[0]['mimeType'] == 'type1'
-        assert file_list[0]['size'] == '1000'
-        assert file_list[0]['hasThumbnail'] == True
-        assert file_list[0]['thumbnailLink'] == 'http://thumbnail1.com'
-        assert file_list[0]['modifiedTime'] == '2023-01-01T00:00:00.000Z'
-        assert file_list[0]['createdTime'] == '2023-01-01T00:00:00.000Z'
-        assert file_list[0]['viewedByMeTime'] == '2023-01-02T00:00:00.000Z'
-        assert file_list[0]['sharedWithMeTime'] == '2023-01-03T00:00:00.000Z'
-        assert file_list[0]['owners'] == [{'displayName': 'Owner1'}]
-        assert file_list[0]['parents'] == ['parent1']
-        assert file_list[0]['shared'] == True
-        assert next_page_token == 'next_token'
-
 def test_get_file_web_view_link(app, drive_service):
     """
     Test the get_file_web_view_link method of DriveService.

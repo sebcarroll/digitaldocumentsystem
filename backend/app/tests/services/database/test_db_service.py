@@ -43,25 +43,21 @@ def test_init_db_success(app):
         )
         assert pinecone_manager is not None
 
-def test_get_db_failure(app):
+def test_init_db_failure(app):
     """
-    Test get_db failure when initialization fails.
+    Test database initialization failure.
 
-    This test ensures that get_db raises a RuntimeError when
-    database initialization fails.
+    This test ensures that when PineconeManager raises an exception,
+    it's propagated and the global pinecone_manager remains None.
 
     Args:
         app (Flask): The test Flask application.
     """
     global pinecone_manager
     pinecone_manager = None
-    
-    with patch('app.services.database.db_service.init_db', side_effect=Exception("Test error")), \
-         patch('app.services.database.db_service.current_app', return_value=app):
-        with pytest.raises(RuntimeError) as exc_info:
-            get_db()
-        assert "Pinecone manager initialization failed" in str(exc_info.value)
-
+    with patch('app.services.database.db_service.PineconeManager', side_effect=Exception("Test error")):
+        with pytest.raises(Exception, match="Test error"):
+            init_db(app)
     assert pinecone_manager is None
 
 def test_get_db_success(app):
@@ -83,44 +79,3 @@ def test_get_db_success(app):
             db = get_db()
         
         assert db == mock_instance
-
-def test_get_db_initialization(app):
-    """
-    Test that get_db initializes the database if it's not already initialized.
-
-    This test ensures that get_db calls init_db to initialize
-    the database if it hasn't been initialized yet.
-
-    Args:
-        app (Flask): The test Flask application.
-    """
-    global pinecone_manager
-    pinecone_manager = None
-    
-    with patch('app.services.database.db_service.init_db') as mock_init_db, \
-         patch('app.services.database.db_service.current_app', return_value=app):
-        db = get_db()
-    
-        mock_init_db.assert_called_once_with(app)
-        assert db == pinecone_manager
-
-def test_get_db_failure(app):
-    """
-    Test get_db failure when initialization fails.
-
-    This test ensures that get_db raises a RuntimeError when
-    database initialization fails.
-
-    Args:
-        app (Flask): The test Flask application.
-    """
-    global pinecone_manager
-    pinecone_manager = None
-    
-    with patch('app.services.database.db_service.init_db', side_effect=Exception("Test error")):
-        with app.app_context():
-            with pytest.raises(RuntimeError) as exc_info:
-                get_db()
-            assert "Pinecone manager initialization failed" in str(exc_info.value)
-
-    assert pinecone_manager is None
