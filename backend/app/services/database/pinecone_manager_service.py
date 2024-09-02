@@ -1,13 +1,9 @@
 """Module for managing Pinecone database operations."""
 
-import logging
 import math
 from typing import Dict, Any, List
-from datetime import datetime
 from pinecone import Pinecone as PineconeClient
 from langchain_openai import OpenAIEmbeddings
-
-logger = logging.getLogger(__name__)
 
 class PineconeManager:
     """Manages operations related to Pinecone vector database."""
@@ -74,7 +70,6 @@ class PineconeManager:
 
             return {"success": True, "vectors_upserted": vectors_upserted}
         except Exception as e:
-            logger.error(f"Error upserting document {document['id']} for user {user_id}: {str(e)}", exc_info=True)
             return {"success": False, "error": str(e)}
 
     def update_document_selection(self, file_id: str, is_selected: bool, user_id: str) -> bool:
@@ -102,8 +97,7 @@ class PineconeManager:
                 self.index.update(id=match['id'], set_metadata={"isSelected": is_selected}, namespace=user_id)
             
             return True
-        except Exception as e:
-            logger.error(f"Error updating selection for document {file_id} for user {user_id}: {str(e)}", exc_info=True)
+        except Exception:
             return False
 
     def delete_document(self, file_id: str, user_id: str) -> bool:
@@ -130,8 +124,7 @@ class PineconeManager:
             self.index.delete(ids=chunk_ids, namespace=user_id)
             
             return True
-        except Exception as e:
-            logger.error(f"Error deleting document {file_id} for user {user_id}: {str(e)}", exc_info=True)
+        except Exception:
             return False
         
     def get_selected_documents(self, user_id: str) -> List[Dict[str, Any]]:
@@ -173,8 +166,7 @@ class PineconeManager:
                 reconstructed_docs.append({'metadata': doc})
             
             return reconstructed_docs
-        except Exception as e:
-            logger.error(f"Error retrieving selected documents for user {user_id}: {str(e)}", exc_info=True)
+        except Exception:
             return []
 
     def update_all_selected_documents(self, user_id: str, is_selected: bool) -> bool:
@@ -190,9 +182,6 @@ class PineconeManager:
 
         Returns:
             bool: True if the update operation was successful, False otherwise.
-
-        Raises:
-            Exception: If there's an error during the update process.
         """
         try:
             # Fetch all documents for the user
@@ -208,10 +197,8 @@ class PineconeManager:
                 document_id = match['metadata']['googleDriveFileId']
                 self.update_document_selection(document_id, is_selected, user_id)
 
-            logger.info(f"Updated selection status to {is_selected} for all documents of user {user_id}")
             return True
-        except Exception as e:
-            logger.error(f"Error updating all documents for user {user_id}: {str(e)}", exc_info=True)
+        except Exception:
             return False
         
     def get_document_metadata(self, file_id: str, user_id: str) -> Dict[str, Any]:
@@ -230,6 +217,5 @@ class PineconeManager:
             if results and file_id in results['vectors']:
                 return results['vectors'][file_id]['metadata']
             return {}
-        except Exception as e:
-            logger.error(f"Error retrieving metadata for document {file_id} for user {user_id}: {str(e)}", exc_info=True)
+        except Exception:
             return {}

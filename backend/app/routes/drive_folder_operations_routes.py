@@ -88,10 +88,6 @@ def fetch_folders():
         return jsonify({"error": str(e)}), 401
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-    
-import logging
-
-logger = logging.getLogger(__name__)
 
 @drive_folder_ops_bp.route('/drive/folder-tree', methods=['GET'])
 def fetch_folder_tree():
@@ -105,21 +101,12 @@ def fetch_folder_tree():
         ValueError: If there's an issue with the user's session or credentials.
         Exception: For any other unexpected errors during the process.
     """
-    logger.info("Fetching folder tree...")
     try:
         drive_core = get_drive_core(session)
-        logger.debug("Drive core obtained successfully")
-        
         folder_ops = DriveFolderOperations(drive_core)
-        logger.debug("DriveFolderOperations instance created")
-        
         folder_tree = folder_ops.build_folder_tree()
-        logger.info(f"Folder tree built successfully. Root folders: {len(folder_tree)}")
-        
         return jsonify({"folderTree": folder_tree})
     except ValueError as e:
-        logger.error(f"Authentication error: {str(e)}")
         return jsonify({"error": str(e)}), 401
     except Exception as e:
-        logger.error(f"Unexpected error occurred while fetching folder tree: {str(e)}")
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500

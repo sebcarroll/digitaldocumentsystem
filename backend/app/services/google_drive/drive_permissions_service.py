@@ -1,13 +1,34 @@
+"""Module for managing Google Drive permissions."""
+
 from .core import DriveCore
 
 class DrivePermissionsService:
+    """Service for handling Google Drive permissions."""
+
     def __init__(self, drive_core, user_email=None, user_id=None):
+        """
+        Initialize the DrivePermissionsService.
+
+        Args:
+            drive_core (DriveCore): The DriveCore instance.
+            user_email (str, optional): The email of the current user.
+            user_id (str, optional): The ID of the current user.
+        """
         self.drive_core = drive_core
         self.drive_service = drive_core.drive_service
         self.user_email = user_email
         self.user_id = user_id
 
     def get_people_with_access(self, item_id):
+        """
+        Get the list of people with access to a specific item.
+
+        Args:
+            item_id (str): The ID of the Drive item.
+
+        Returns:
+            dict: Information about people with access and current user's role.
+        """
         try:
             file = self.drive_core.drive_service.files().get(fileId=item_id, fields='owners', supportsAllDrives=True).execute()
             
@@ -61,6 +82,17 @@ class DrivePermissionsService:
             return str(e), 400
 
     def update_permission(self, item_id, permission_id, new_role):
+        """
+        Update the permission for a specific user on a Drive item.
+
+        Args:
+            item_id (str): The ID of the Drive item.
+            permission_id (str): The ID of the permission to update.
+            new_role (str): The new role to assign.
+
+        Returns:
+            dict: Result of the permission update operation.
+        """
         try:
             user_role = self.get_user_role(item_id)
             if isinstance(user_role, tuple) or user_role.get('role') not in ['owner', 'writer']:
@@ -78,6 +110,16 @@ class DrivePermissionsService:
             return str(e), 400
 
     def remove_permission(self, item_id, permission_id):
+        """
+        Remove a permission from a Drive item.
+
+        Args:
+            item_id (str): The ID of the Drive item.
+            permission_id (str): The ID of the permission to remove.
+
+        Returns:
+            dict: Result of the permission removal operation.
+        """
         try:
             user_role = self.get_user_role(item_id)
             if isinstance(user_role, tuple) or user_role['role'] not in ['owner', 'writer']:
@@ -93,6 +135,15 @@ class DrivePermissionsService:
             return str(e), 400
 
     def get_user_role(self, item_id):
+        """
+        Get the role of the current user for a specific Drive item.
+
+        Args:
+            item_id (str): The ID of the Drive item.
+
+        Returns:
+            dict: The role and ID of the current user for the item.
+        """
         try:
             file = self.drive_core.drive_service.files().get(fileId=item_id, fields='owners,permissions', supportsAllDrives=True).execute()
             

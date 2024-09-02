@@ -47,7 +47,6 @@ def share_item(item_id):
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
-
 @drive_sharing_bp.route('/drive/<item_id>/update-general-access', methods=['POST'])
 def update_general_access(item_id):
     """

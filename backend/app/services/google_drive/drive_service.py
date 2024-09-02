@@ -1,76 +1,113 @@
+"""Module for managing Google Drive service operations."""
+
 from google.auth.transport.requests import Request
 from flask import g
 from .core import DriveCore
 from googleapiclient.discovery import build
-import logging
-
-logger = logging.getLogger(__name__)
 
 class DriveService:
+    """Service for handling Google Drive operations."""
+
     def __init__(self, drive_core):
+        """
+        Initialize the DriveService.
+
+        Args:
+            drive_core (DriveCore): The DriveCore instance.
+        """
         self.drive_core = drive_core
 
     def get_services(self):
-        # Check if the services are already in the g context
+        """
+        Get or create Google Drive and People services.
+
+        Returns:
+            tuple: A tuple containing the Drive service and People service.
+        """
         if 'drive_service' in g and 'people_service' in g:
-            logger.info("Returning cached services from g context.")
             return g.drive_service, g.people_service
 
         if self.drive_core.credentials.expired and self.drive_core.credentials.refresh_token:
-            logger.info("Refreshing credentials...")
             self.drive_core.credentials.refresh(Request())
 
-        # Initialize the services
-        logger.info("Initializing Google Drive and People services.")
         g.drive_service = build('drive', 'v3', credentials=self.drive_core.credentials)
         g.people_service = build('people', 'v1', credentials=self.drive_core.credentials)
 
         return g.drive_service, g.people_service
 
     def list_folder_contents(self, folder_id, page_token=None, page_size=1000):
+        """
+        List contents of a Google Drive folder.
+
+        Args:
+            folder_id (str): ID of the folder to list.
+            page_token (str, optional): Token for pagination.
+            page_size (int, optional): Number of items per page.
+
+        Returns:
+            tuple: A tuple containing the list of files and the next page token.
+        """
         drive_service, _ = self.get_services()
         query = f"'{folder_id}' in parents and trashed = false"
         if folder_id == 'root':
             query = "trashed = false"
 
-        logger.info(f"Listing contents of folder: {folder_id}")
-        files = drive_service.files().list(
-            q=query,
-            fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, createdTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared)",
-            pageToken=page_token,
-            pageSize=page_size,
-            orderBy="modifiedTime desc"
-        ).execute()
+            files = drive_service.files().list(
+                q=query,
+                fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, createdTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared)",
+                pageToken=page_token,
+                pageSize=page_size,
+                orderBy="modifiedTime desc"
+            ).execute()
 
-        items = files.get('files', [])
-        next_page_token = files.get('nextPageToken')
+            items = files.get('files', [])
+            next_page_token = files.get('nextPageToken')
 
-        file_list = [{
-            "name": item['name'],
-            "id": item['id'],
-            "mimeType": item['mimeType'],
-            "size": item.get('size'),
-            "hasThumbnail": item.get('hasThumbnail', False),
-            "thumbnailLink": item.get('thumbnailLink'),
-            "modifiedTime": item.get('modifiedTime'),
-            "createdTime": item.get('createdTime'),
-            "viewedByMeTime": item.get('viewedByMeTime'),
-            "sharedWithMeTime": item.get('sharedWithMeTime'),
-            "owners": item.get('owners', []),
-            "parents": item.get('parents', []),
-            "shared": item.get('shared', False)
-        } for item in items]
-        return file_list, next_page_token
+            file_list = [{
+                "name": item['name'],
+                "id": item['id'],
+                "mimeType": item['mimeType'],
+                "size": item.get('size'),
+                "hasThumbnail": item.get('hasThumbnail', False),
+                "thumbnailLink": item.get('thumbnailLink'),
+                "modifiedTime": item.get('modifiedTime'),
+                "createdTime": item.get('createdTime'),
+                "viewedByMeTime": item.get('viewedByMeTime'),
+                "sharedWithMeTime": item.get('sharedWithMeTime'),
+                "owners": item.get('owners', []),
+                "parents": item.get('parents', []),
+                "shared": item.get('shared', False)
+            } for item in items]
+            return file_list, next_page_token
 
     def get_file_web_view_link(self, file_id):
+        """
+        Get the web view link for a file.
+
+        Args:
+            file_id (str): ID of the file.
+
+        Returns:
+            tuple: A tuple containing the web view link and mime type.
+        """
         drive_service, _ = self.get_services()
-        logger.info(f"Retrieving web view link for file: {file_id}")
-        file = drive_service.files().get(fileId=file_id, fields="webViewLink,mimeType").execute()
-        return file.get('webViewLink'), file.get('mimeType')
+        try:
+            file = drive_service.files().get(fileId=file_id, fields="webViewLink,mimeType").execute()
+            return file.get('webViewLink'), file.get('mimeType')
+        except Exception as e:
+            raise Exception(f"Error getting file web view link: {str(e)}")
     
     def get_file_details(self, file_id):
+        """
+        Get details of a specific file.
+
+        Args:
+            file_id (str): ID of the file.
+
+        Returns:
+            dict: A dictionary containing file details.
+        """
         drive_service, _ = self.get_services()
-        logger.info(f"Retrieving details for file: {file_id}")
         try:
             file = drive_service.files().get(
                 fileId=file_id,
@@ -92,11 +129,10 @@ class DriveService:
                 "shared": file.get('shared', False)
             }
         except Exception as e:
-            logger.error(f"Error retrieving file details: {str(e)}")
-            return None
+            raise Exception(f"Error retrieving file details: {str(e)}")
 
     def cleanup_services(self):
-        logger.info("Cleaning up services.")
+        """Clean up and close Drive and People services."""
         drive_service = g.pop('drive_service', None)
         people_service = g.pop('people_service', None)
         if drive_service is not None:

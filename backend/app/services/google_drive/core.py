@@ -5,13 +5,9 @@ It includes functionality to initialize Google Drive and People API services
 and perform operations such as listing folder contents.
 """
 
-import logging
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
-# Set up logging
-logger = logging.getLogger(__name__)
 
 class DriveCore:
     """
@@ -30,29 +26,20 @@ class DriveCore:
 
         Raises:
             TypeError: If credentials are neither a dict nor a Credentials object.
-            HttpError: If there's an error building the services.
+            Exception: If there's an error building the services.
         """
-        logger.debug("Initializing DriveCore")
         try:
             if isinstance(credentials, dict):
                 self.credentials = Credentials(**credentials)
-                logger.debug("Credentials initialized from dict")
             elif isinstance(credentials, Credentials):
                 self.credentials = credentials
-                logger.debug("Using provided Credentials object")
             else:
-                logger.error(f"Invalid credentials type: {type(credentials)}")
                 raise TypeError("credentials must be either a dict or a Credentials object")
             
             self.drive_service = build('drive', 'v3', credentials=self.credentials)
             self.people_service = build('people', 'v1', credentials=self.credentials)
-            logger.info("Drive and People services initialized successfully")
-        except HttpError as e:
-            logger.error(f"HTTP error occurred while building services: {e}")
-            raise
         except Exception as e:
-            logger.exception(f"Unexpected error during DriveCore initialization: {e}")
-            raise
+            raise Exception(f"Error during DriveCore initialization: {str(e)}")
 
     def list_folder_contents(self, folder_id, page_token=None):
         """
@@ -66,9 +53,8 @@ class DriveCore:
             list: A list of file metadata dictionaries.
 
         Raises:
-            HttpError: If there's an error calling the Drive API.
+            Exception: If there's an error calling the Drive API.
         """
-        logger.debug(f"Listing contents of folder: {folder_id}")
         results = []
         try:
             while True:
@@ -82,17 +68,11 @@ class DriveCore:
                 
                 files = response.get('files', [])
                 results.extend(files)
-                logger.debug(f"Retrieved {len(files)} files")
                 
                 page_token = response.get('nextPageToken')
                 if not page_token:
                     break
             
-            logger.info(f"Retrieved a total of {len(results)} files from folder {folder_id}")
             return results
-        except HttpError as e:
-            logger.error(f"HTTP error occurred while listing folder contents: {e}")
-            raise
         except Exception as e:
-            logger.exception(f"Unexpected error while listing folder contents: {e}")
-            raise
+            raise Exception(f"Error listing folder contents: {str(e)}")

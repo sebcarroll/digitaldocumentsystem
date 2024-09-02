@@ -1,18 +1,33 @@
+"""Module for handling Google Drive folder operations."""
+
 from googleapiclient.http import MediaIoBaseUpload
 import io
 import os
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-import logging
-
-logger = logging.getLogger(__name__)
 
 class DriveFolderOperations:
+    """Class for managing Google Drive folder operations."""
+
     def __init__(self, drive_core):
+        """
+        Initialize DriveFolderOperations.
+
+        Args:
+            drive_core: The DriveCore instance.
+        """
         self.drive_core = drive_core
         self.drive_service = drive_core.drive_service
 
     def create_folder(self, parent_folder_id, folder_name):
+        """
+        Create a new folder in Google Drive.
+
+        Args:
+            parent_folder_id (str): The ID of the parent folder.
+            folder_name (str): The name of the new folder.
+
+        Returns:
+            dict: A dictionary containing the ID of the created folder.
+        """
         file_metadata = {
             'name': folder_name,
             'mimeType': 'application/vnd.google-apps.folder',
@@ -22,6 +37,16 @@ class DriveFolderOperations:
         return {"id": folder.get('id')}
     
     def upload_folder(self, parent_folder_id, files):
+        """
+        Upload a folder structure to Google Drive.
+
+        Args:
+            parent_folder_id (str): The ID of the parent folder.
+            files (list): List of file objects to upload.
+
+        Returns:
+            dict: A dictionary containing information about uploaded files.
+        """
         uploaded_files = []
         folder_structure = {parent_folder_id: parent_folder_id} 
 
@@ -65,6 +90,16 @@ class DriveFolderOperations:
         return {"uploaded_files": uploaded_files}
     
     def fetch_folders(self, parent_id, page_token=None):
+        """
+        Fetch folders from a specific parent folder.
+
+        Args:
+            parent_id (str): The ID of the parent folder.
+            page_token (str, optional): Token for pagination.
+
+        Returns:
+            dict: A dictionary containing fetched folders and next page token.
+        """
         try:
             results = self.drive_service.files().list(
                 q=f"'{parent_id}' in parents and mimeType='application/vnd.google-apps.folder'",
@@ -82,7 +117,15 @@ class DriveFolderOperations:
             return {"error": str(e)}, 400
 
     def fetch_all_folders(self):
-        """Fetch all folders from Google Drive."""
+        """
+        Fetch all folders from Google Drive.
+
+        Returns:
+            list: A list of all folders in the Drive.
+
+        Raises:
+            Exception: If fetching folders fails.
+        """
         try:
             results = []
             page_token = None
@@ -101,13 +144,18 @@ class DriveFolderOperations:
                     break
             return results
         except Exception as e:
-            logger.error(f"Failed to fetch folders: {str(e)}")
             raise Exception(f"Failed to fetch folders: {str(e)}")
 
-
     def build_folder_tree(self):
-        """Build a tree structure of all folders."""
-        logger.info("Building folder tree")
+        """
+        Build a tree structure of all folders.
+
+        Returns:
+            list: A list of root folders with their hierarchical structure.
+
+        Raises:
+            Exception: If building the folder tree fails.
+        """
         try:
             folders = self.fetch_all_folders()
             folder_dict = {folder['id']: folder for folder in folders}
@@ -132,8 +180,6 @@ class DriveFolderOperations:
                     # If parent is not in folder_dict and not My Drive, it's a top-level folder
                     root_folders.append(folder)
 
-            logger.info(f"Built folder tree with {len(root_folders)} root folders")
             return root_folders
         except Exception as e:
-            logger.error(f"Failed to build folder tree: {str(e)}")
-            raise
+            raise Exception(f"Failed to build folder tree: {str(e)}")
