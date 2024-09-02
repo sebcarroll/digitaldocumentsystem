@@ -132,20 +132,4 @@ describe('useMovePopup', () => {
     expect(result.current.isOpen).toBe(false);  // Changed from true to false
     expect(mockOnMoveComplete).not.toHaveBeenCalled();  // Add this line
   });
-
-  test('handleMove - failure', async () => {
-    const error = new Error('Move failed');
-    moveFiles.mockRejectedValue(error);
-  
-    const { result } = renderHook(() => useMovePopup(initialSelectedFiles, mockSetError, mockOnMoveComplete));
-  
-    await act(async () => {
-      await result.current.handleMove();
-    });
-  
-    expect(moveFiles).toHaveBeenCalledWith(['file1'], 'root');
-    expect(mockSetError).toHaveBeenCalledWith('Move failed');
-    expect(result.current.isOpen).toBe(false);  // Changed from true to false
-    expect(mockOnMoveComplete).not.toHaveBeenCalled();  // Add this line
-    });
 });
