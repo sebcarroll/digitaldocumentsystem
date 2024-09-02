@@ -5,6 +5,7 @@ from app.services.google_drive.core import DriveCore
 
 @pytest.fixture
 def mock_credentials_dict():
+    """Fixture to provide a mock dictionary of credentials for testing."""
     return {
         'token': 'fake_token',
         'refresh_token': 'fake_refresh_token',
@@ -16,15 +17,25 @@ def mock_credentials_dict():
 
 @pytest.fixture
 def mock_drive_service():
+    """Fixture to provide a mock Google Drive service for testing."""
     return Mock()
 
 @pytest.fixture
 def mock_people_service():
+    """Fixture to provide a mock Google People service for testing."""
     return Mock()
 
 def test_drive_core_initialization(mock_credentials_dict):
+    """
+    Test the initialization of the DriveCore class.
+    
+    This test verifies that the DriveCore is initialized with the correct
+    credentials and that the Google Drive and People services are correctly built.
+    """
     with patch('app.services.google_drive.core.build') as mock_build:
-        mock_build.side_effect = [Mock(), Mock()]  # For drive_service and people_service
+        # Mock the build function to return a mock service for both drive and people
+        mock_build.side_effect = [Mock(), Mock()]  
+        
         drive_core = DriveCore(mock_credentials_dict)
         
         assert isinstance(drive_core.credentials, Credentials)
@@ -33,6 +44,11 @@ def test_drive_core_initialization(mock_credentials_dict):
         mock_build.assert_any_call('people', 'v1', credentials=drive_core.credentials)
 
 def test_list_folder_contents(mock_credentials_dict, mock_drive_service):
+    """
+    Test the list_folder_contents method of DriveCore.
+    
+    This test ensures that the contents of a Google Drive folder are listed correctly.
+    """
     with patch('app.services.google_drive.core.build', return_value=mock_drive_service):
         drive_core = DriveCore(mock_credentials_dict)
         
@@ -62,6 +78,12 @@ def test_list_folder_contents(mock_credentials_dict, mock_drive_service):
         )
 
 def test_list_folder_contents_pagination(mock_credentials_dict, mock_drive_service):
+    """
+    Test the list_folder_contents method of DriveCore with pagination.
+    
+    This test verifies that the DriveCore correctly handles paginated responses
+    from the Google Drive API when listing folder contents.
+    """
     with patch('app.services.google_drive.core.build', return_value=mock_drive_service):
         drive_core = DriveCore(mock_credentials_dict)
         

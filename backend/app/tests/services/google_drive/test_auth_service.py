@@ -4,6 +4,7 @@ from app.services.google_drive.auth_service import AuthService
 
 @pytest.fixture
 def mock_config():
+    """Fixture to provide a mock configuration for testing."""
     config = Mock()
     config.GOOGLE_CLIENT_ID = 'test_client_id'
     config.GOOGLE_CLIENT_SECRET = 'test_client_secret'
@@ -13,9 +14,16 @@ def mock_config():
 
 @pytest.fixture
 def auth_service(mock_config):
+    """Fixture to provide an instance of AuthService initialized with mock_config."""
     return AuthService(mock_config)
 
 def test_create_flow(app, auth_service):
+    """
+    Test the create_flow method of AuthService.
+    
+    This test ensures that the Flow is created with the correct client configuration
+    and scopes, and that the redirect URI is correctly set.
+    """
     with app.app_context():
         with patch('app.services.google_drive.auth_service.Flow.from_client_config') as mock_flow, \
              patch('app.services.google_drive.auth_service.url_for') as mock_url_for:
@@ -30,6 +38,12 @@ def test_create_flow(app, auth_service):
             assert kwargs['redirect_uri'] == 'http://test.com/callback'
 
 def test_fetch_user_info():
+    """
+    Test the fetch_user_info method of AuthService.
+    
+    This test ensures that user information is correctly fetched from the Google
+    service using the provided credentials.
+    """
     mock_credentials = Mock()
     mock_service = Mock()
     mock_userinfo = Mock()
@@ -44,6 +58,11 @@ def test_fetch_user_info():
     assert user_info == {'email': 'test@example.com', 'id': '12345'}
 
 def test_credentials_to_dict():
+    """
+    Test the credentials_to_dict method of AuthService.
+    
+    This test verifies that the credentials are correctly converted to a dictionary.
+    """
     mock_credentials = Mock()
     mock_credentials.token = 'test_token'
     mock_credentials.refresh_token = 'test_refresh_token'

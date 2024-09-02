@@ -5,6 +5,7 @@ import io
 
 @pytest.fixture
 def mock_credentials():
+    """Fixture to provide mock credentials for testing."""
     return {
         'token': 'test_token',
         'refresh_token': 'test_refresh_token',
@@ -16,14 +17,20 @@ def mock_credentials():
 
 @pytest.fixture
 def folder_operations(mock_credentials):
+    """Fixture to initialize DriveFolderOperations with a mocked DriveCore."""
     with patch('app.services.google_drive.core.DriveCore') as MockDriveCore:
         mock_drive_core = MockDriveCore.return_value
         mock_drive_core.drive_service = Mock()
         ops = DriveFolderOperations(mock_drive_core)
         return ops, mock_drive_core.drive_service
 
-
 def test_create_folder(folder_operations):
+    """
+    Test creating a folder in Google Drive.
+
+    Verifies that the folder is created under the specified parent folder
+    and that the correct folder ID is returned.
+    """
     ops, mock_drive = folder_operations
     mock_drive.files().create().execute.return_value = {'id': 'new_folder_id'}
     
@@ -40,6 +47,12 @@ def test_create_folder(folder_operations):
     )
 
 def test_upload_folder(folder_operations):
+    """
+    Test uploading a folder structure to Google Drive.
+
+    Verifies that files are uploaded correctly with the appropriate folder
+    hierarchy maintained and that their IDs are returned.
+    """
     ops, mock_drive = folder_operations
 
     # Create mock file-like objects
@@ -58,31 +71,28 @@ def test_upload_folder(folder_operations):
         {'id': 'subfolder_id'},
         {'id': 'file1_id'},
         {'id': 'file2_id'},
-        {'id': 'extra_id'}
+        {'id': 'extra_id'}  # In case of additional create calls
     ]
 
     result = ops.upload_folder('parent_folder_id', mock_files)
 
-    print(f"\nNumber of create() calls: {mock_drive.files().create.call_count}")
-
-    calls = mock_drive.files().create.call_args_list
-    print("\nDetailed call information:")
-    for i, call in enumerate(calls):
-        print(f"\nCall {i + 1}:")
-        print(f"Args: {call.args}")
-        print(f"Kwargs: {call.kwargs}")
-
-    print("\nResult:", result)
-
+    # Ensure the uploaded files have the correct IDs and names
     assert len(result['uploaded_files']) == 2
     assert result['uploaded_files'][0]['name'] == 'folder/file1.txt'
     assert result['uploaded_files'][1]['name'] == 'folder/subfolder/file2.txt'
     assert result['uploaded_files'][0]['id'] == 'file1_id'
     assert result['uploaded_files'][1]['id'] == 'file2_id'
 
+    # Check that the number of create calls is within the expected range
     assert mock_drive.files().create.call_count in (4, 5) 
 
 def test_fetch_folders(folder_operations):
+    """
+    Test fetching folders from Google Drive.
+
+    Verifies that the method retrieves the list of folders under the specified
+    parent folder and returns their IDs and names.
+    """
     ops, mock_drive = folder_operations
     mock_drive.files().list().execute.return_value = {
         'files': [
