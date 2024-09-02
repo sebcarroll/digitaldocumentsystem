@@ -86,22 +86,26 @@ def test_fetch_folders(folder_operations):
     ops, mock_drive = folder_operations
     mock_drive.files().list().execute.return_value = {
         'files': [
-            {'id': 'folder1', 'name': 'Folder 1'},
-            {'id': 'folder2', 'name': 'Folder 2'}
-        ]
+            {'id': 'folder1', 'name': 'Folder 1', 'parents': ['parent_id']},
+            {'id': 'folder2', 'name': 'Folder 2', 'parents': ['parent_id']}
+        ],
+        'nextPageToken': None
     }
     
     result = ops.fetch_folders('parent_id')
     
     assert result == {
         "folders": [
-            {'id': 'folder1', 'name': 'Folder 1'},
-            {'id': 'folder2', 'name': 'Folder 2'}
-        ]
+            {'id': 'folder1', 'name': 'Folder 1', 'parents': ['parent_id']},
+            {'id': 'folder2', 'name': 'Folder 2', 'parents': ['parent_id']}
+        ],
+        "nextPageToken": None
     }
     mock_drive.files().list.assert_called_with(
         q="'parent_id' in parents and mimeType='application/vnd.google-apps.folder'",
         spaces='drive',
-        fields='files(id, name)',
+        fields='nextPageToken, files(id, name, parents)',
+        pageToken=None,
+        pageSize=1000,
         supportsAllDrives=True
     )

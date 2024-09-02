@@ -110,11 +110,16 @@ class ChatService:
         """
         html = markdown.markdown(text)
         
-        html = re.sub(r'<p>\|(.+)\|</p>', r'<table><tr><th>\1</th></tr>', html)
+        # Improve table formatting
+        html = re.sub(r'<p>\|(.+)\|</p>', r'<table><tr><th>\1</th></tr>', html, 1)
         html = re.sub(r'<p>\|[-:|\s]+\|</p>', '', html)
         html = re.sub(r'<p>\|(.+)\|</p>', r'<tr><td>\1</td></tr>', html)
-        html = html.replace('</tr><table>', '</table>')
+        html = html.replace('</p>', '')
+        html = html.replace('<p>', '')
+        if '<table>' in html and '</table>' not in html:
+            html += '</table>'
         
+        # Improve list formatting
         html = re.sub(r'<p>(\d+\. .*?)</p>', r'<ol><li>\1</li></ol>', html)
         html = re.sub(r'<p>(- .*?)</p>', r'<ul><li>\1</li></ul>', html)
         
@@ -226,7 +231,7 @@ class ChatService:
         Raises:
             Exception: If there's an error during the document selection reset process.
         """
-        self.memory.clear()
+        self.memory.chat_memory.clear()
         if self.user_id:
             self.pinecone_manager.update_all_selected_documents(self.user_id, False)
 

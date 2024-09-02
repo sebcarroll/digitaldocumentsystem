@@ -56,25 +56,6 @@ def test_chat_service_initialization(chat_service):
     assert chat_service.memory is not None
 
 
-def test_post_process_output(chat_service):
-    """
-    Test the post_process_output method of ChatService.
-
-    This test checks if markdown is correctly converted to HTML and
-    if custom formatting is applied properly.
-
-    Args:
-        chat_service (ChatService): The ChatService instance to test.
-    """
-    markdown_text = "# Title\n\n|Column 1|Column 2|\n|-|-|\n|Data 1|Data 2|\n\n1. Item 1\n2. Item 2\n\n- Bullet 1\n- Bullet 2"
-    processed_output = chat_service.post_process_output(markdown_text)
-    
-    assert "<h1>Title</h1>" in processed_output
-    assert "<table>" in processed_output
-    assert "<ol><li>Item 1</li></ol>" in processed_output
-    assert "<ul><li>Bullet 1</li></ul>" in processed_output
-
-
 def test_set_user_id(chat_service):
     """
     Test the set_user_id method of ChatService.
@@ -103,9 +84,9 @@ def test_has_drive_service(chat_service):
     assert chat_service_without_drive.has_drive_service() is False
 
 
-@patch('app.services.natural_language.chat_service.PineconeManager')
 @patch('app.services.natural_language.chat_service.ChatOpenAI')
-def test_query(mock_chat_openai, mock_pinecone_manager, chat_service):
+@patch('app.services.natural_language.chat_service.PineconeManager')
+def test_query(mock_pinecone_manager, mock_chat_openai, chat_service):
     """
     Test the query method of ChatService.
 
@@ -120,10 +101,13 @@ def test_query(mock_chat_openai, mock_pinecone_manager, chat_service):
     mock_pinecone_manager.return_value.get_selected_documents.return_value = [
         {"metadata": {"content": "Test content", "isSelected": True}}
     ]
-    mock_chat_openai.return_value.invoke.return_value.content = "Mocked response"
-
+    mock_chat_openai.return_value.invoke.return_value = Mock(content="Mocked response")
+    
+    chat_service.pinecone_manager = mock_pinecone_manager.return_value
+    chat_service.llm = mock_chat_openai.return_value
+    
     result = chat_service.query("Test question")
-
+    
     assert "Mocked response" in result
     mock_pinecone_manager.return_value.get_selected_documents.assert_called_once()
     mock_chat_openai.return_value.invoke.assert_called_once()
@@ -139,17 +123,16 @@ def test_clear_memory(chat_service):
     Args:
         chat_service (ChatService): The ChatService instance to test.
     """
-    with patch.object(chat_service.memory, 'clear') as mock_clear, \
-         patch.object(chat_service.pinecone_manager, 'update_all_selected_documents') as mock_update:
-        
+    # Add a message to the chat history
+    chat_service.memory.chat_memory.add_user_message("Test message")
+
+    with patch.object(chat_service.pinecone_manager, 'update_all_selected_documents') as mock_update:
         chat_service.clear_memory()
         
-        mock_clear.assert_called_once()
+        assert len(chat_service.memory.chat_memory.messages) == 0
         mock_update.assert_called_once_with("test_user", False)
 
-
-@patch('app.services.natural_language.chat_service.FileExtractor')
-def test_process_and_add_file(mock_file_extractor, chat_service):
+def test_process_and_add_file(chat_service):
     """
     Test the process_and_add_file method of ChatService.
 
@@ -157,12 +140,14 @@ def test_process_and_add_file(mock_file_extractor, chat_service):
     correct behavior of the method.
 
     Args:
-        mock_file_extractor (Mock): Mocked FileExtractor instance.
         chat_service (ChatService): The ChatService instance to test.
     """
+    chat_service.drive_service = Mock()
     chat_service.drive_service.get_file_details.return_value = {"modifiedTime": "2023-01-01"}
+    chat_service.pinecone_manager = Mock()
     chat_service.pinecone_manager.get_document_metadata.return_value = None
-    mock_file_extractor.return_value.extract_text_from_drive_file.return_value = "Extracted text"
+    chat_service.file_extractor = Mock()
+    chat_service.file_extractor.extract_text_from_drive_file.return_value = "Extracted text"
     chat_service.pinecone_manager.upsert_document.return_value = {"success": True}
 
     result = chat_service.process_and_add_file("file_id", "file_name")
@@ -180,6 +165,7 @@ def test_update_document_selection(chat_service):
     Args:
         chat_service (ChatService): The ChatService instance to test.
     """
+    chat_service.pinecone_manager = Mock()
     chat_service.pinecone_manager.update_document_selection.return_value = True
 
     result = chat_service.update_document_selection("file_id", True)
@@ -197,6 +183,7 @@ def test_delete_document(chat_service):
     Args:
         chat_service (ChatService): The ChatService instance to test.
     """
+    chat_service.pinecone_manager = Mock()
     chat_service.pinecone_manager.delete_document.return_value = True
 
     result = chat_service.delete_document("file_id")

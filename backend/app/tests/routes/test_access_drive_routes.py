@@ -1,10 +1,9 @@
-"""
-Test suite for the Google Drive access routes.
+"""Test suite for the Google Drive access routes.
 
 This module contains unit tests for various endpoints and functionalities
 related to Google Drive access in the application. It covers scenarios such as
-successful operations, error handling, and edge cases for the drive listing,
-file opening, and logout functionalities.
+successful operations, error handling, and edge cases for drive listing,
+file opening, folder details retrieval, and logout functionalities.
 """
 
 import pytest
@@ -16,8 +15,7 @@ from app.services.google_drive.drive_service import DriveService
 
 @pytest.fixture
 def app():
-    """
-    Create and configure a new app instance for each test.
+    """Create and configure a new app instance for each test.
 
     Returns:
         flask.Flask: A Flask app instance configured for testing.
@@ -30,8 +28,7 @@ def app():
 
 @pytest.fixture
 def client(app):
-    """
-    Create a test client for the app.
+    """Create a test client for the app.
 
     Args:
         app (flask.Flask): The Flask app instance.
@@ -42,8 +39,7 @@ def client(app):
     return app.test_client()
 
 def test_drive_success(client):
-    """
-    Test successful retrieval of Drive contents.
+    """Test successful retrieval of Drive contents.
 
     This test verifies that the /drive endpoint correctly returns
     a list of files when files are present in the specified folder.
@@ -51,12 +47,14 @@ def test_drive_success(client):
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
         mock_drive_core = mock_get_drive_core.return_value
-        mock_drive_core.list_folder_contents.return_value = [
-            {'id': '1', 'name': 'file1'},
-            {'id': '2', 'name': 'file2'}
-        ]
+        mock_service = mock_drive_service.return_value
+        mock_service.list_folder_contents.return_value = (
+            [{'id': '1', 'name': 'file1'}, {'id': '2', 'name': 'file2'}],
+            'next_page_token'
+        )
 
         response = client.get('/drive?folder_id=test_folder&page_token=test_token&page_size=10')
         
@@ -65,11 +63,10 @@ def test_drive_success(client):
         assert 'files' in json_data
         assert len(json_data['files']) == 2
         assert 'nextPageToken' in json_data
-        assert json_data['nextPageToken'] is None
+        assert json_data['nextPageToken'] == 'next_page_token'
 
 def test_drive_no_files(client):
-    """
-    Test Drive content retrieval when no files are present.
+    """Test Drive content retrieval when no files are present.
 
     This test ensures that the /drive endpoint returns an appropriate
     message when no files are found in the specified folder.
@@ -77,9 +74,11 @@ def test_drive_no_files(client):
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
         mock_drive_core = mock_get_drive_core.return_value
-        mock_drive_core.list_folder_contents.return_value = []
+        mock_service = mock_drive_service.return_value
+        mock_service.list_folder_contents.return_value = ([], None)
 
         response = client.get('/drive')
         
@@ -89,8 +88,7 @@ def test_drive_no_files(client):
         assert json_data['message'] == "No files found in this folder."
 
 def test_drive_value_error(client):
-    """
-    Test Drive content retrieval with invalid credentials.
+    """Test Drive content retrieval with invalid credentials.
 
     This test verifies that the /drive endpoint correctly handles
     and reports a ValueError, which typically indicates invalid credentials.
@@ -109,8 +107,7 @@ def test_drive_value_error(client):
         assert json_data['error'] == "Invalid credentials"
 
 def test_drive_general_error(client):
-    """
-    Test Drive content retrieval with a general error.
+    """Test Drive content retrieval with a general error.
 
     This test ensures that the /drive endpoint properly handles
     and reports unexpected errors during the file listing process.
@@ -118,9 +115,11 @@ def test_drive_general_error(client):
     with client.session_transaction() as sess:
         sess['credentials'] = {'token': 'test_token'}
     
-    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core:
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
         mock_drive_core = mock_get_drive_core.return_value
-        mock_drive_core.list_folder_contents.side_effect = Exception("Unexpected error")
+        mock_service = mock_drive_service.return_value
+        mock_service.list_folder_contents.side_effect = Exception("Unexpected error")
 
         response = client.get('/drive')
         
@@ -130,8 +129,7 @@ def test_drive_general_error(client):
         assert "An error occurred: Unexpected error" in json_data['error']
 
 def test_open_file_success(client):
-    """
-    Test successful file opening.
+    """Test successful file opening.
 
     This test verifies that the /drive/<file_id>/open endpoint
     correctly returns the web view link and MIME type for a file.
@@ -155,8 +153,7 @@ def test_open_file_success(client):
         assert json_data['mimeType'] == 'text/plain'
 
 def test_open_file_value_error(client):
-    """
-    Test file opening with an invalid file ID.
+    """Test file opening with an invalid file ID.
 
     This test ensures that the /drive/<file_id>/open endpoint
     properly handles and reports attempts to open an invalid file.
@@ -178,8 +175,7 @@ def test_open_file_value_error(client):
         assert json_data['error'] == "Invalid file ID"
 
 def test_open_file_general_error(client):
-    """
-    Test file opening with a general error.
+    """Test file opening with a general error.
 
     This test verifies that the /drive/<file_id>/open endpoint
     correctly handles and reports unexpected errors during file opening.
@@ -200,9 +196,76 @@ def test_open_file_general_error(client):
         assert 'error' in json_data
         assert json_data['error'] == "Unexpected error"
 
-def test_logout(client):
+def test_get_folder_details_success(client):
+    """Test successful retrieval of folder details.
+
+    This test verifies that the /drive/<folder_id>/details endpoint
+    correctly returns the details of a specified folder.
     """
-    Test the logout functionality.
+    with client.session_transaction() as sess:
+        sess['credentials'] = {'token': 'test_token'}
+    
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_service = mock_drive_service.return_value
+        mock_service.get_file_details.return_value = {'id': 'folder_id', 'name': 'Test Folder'}
+
+        response = client.get('/drive/folder_id/details')
+        
+        assert response.status_code == 200
+        json_data = response.get_json()
+        assert 'id' in json_data
+        assert 'name' in json_data
+        assert json_data['id'] == 'folder_id'
+        assert json_data['name'] == 'Test Folder'
+
+def test_get_folder_details_not_found(client):
+    """Test folder details retrieval for a non-existent folder.
+
+    This test ensures that the /drive/<folder_id>/details endpoint
+    correctly handles and reports attempts to retrieve details for a non-existent folder.
+    """
+    with client.session_transaction() as sess:
+        sess['credentials'] = {'token': 'test_token'}
+    
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_service = mock_drive_service.return_value
+        mock_service.get_file_details.return_value = None
+
+        response = client.get('/drive/non_existent_folder/details')
+        
+        assert response.status_code == 404
+        json_data = response.get_json()
+        assert 'error' in json_data
+        assert json_data['error'] == "Folder not found"
+
+def test_get_folder_details_error(client):
+    """Test folder details retrieval with a general error.
+
+    This test verifies that the /drive/<folder_id>/details endpoint
+    correctly handles and reports unexpected errors during folder details retrieval.
+    """
+    with client.session_transaction() as sess:
+        sess['credentials'] = {'token': 'test_token'}
+    
+    with patch('app.routes.access_drive_routes.get_drive_core') as mock_get_drive_core, \
+         patch('app.routes.access_drive_routes.DriveService') as mock_drive_service:
+        mock_drive_core = mock_get_drive_core.return_value
+        mock_service = mock_drive_service.return_value
+        mock_service.get_file_details.side_effect = Exception("Unexpected error")
+
+        response = client.get('/drive/folder_id/details')
+        
+        assert response.status_code == 500
+        json_data = response.get_json()
+        assert 'error' in json_data
+        assert json_data['error'] == "Unexpected error"
+
+def test_logout(client):
+    """Test the logout functionality.
 
     This test ensures that the /logout endpoint correctly clears
     the user's session and returns a success message.
@@ -221,8 +284,7 @@ def test_logout(client):
         assert 'credentials' not in sess
 
 def test_cleanup_services(app):
-    """
-    Test the cleanup of services after a request.
+    """Test the cleanup of services after a request.
 
     This test verifies that the teardown function correctly
     removes the 'drive_core' attribute from the Flask 'g' object.

@@ -145,8 +145,8 @@ def test_oauth2callback_route_oauth_error(mock_create_flow, client):
     """
     response = client.get('/oauth2callback?error=access_denied')
     assert response.status_code == 400
-    assert response.json == {"error": "Authentication failed", "details": "Error in request args: access_denied"}
-
+    assert response.json == {"error": "Authentication failed", "details": "access_denied"}
+    
 @patch('app.routes.authorisation_routes.DriveCore')
 @patch('app.routes.authorisation_routes.redis_client')
 def test_check_auth_route_authenticated(mock_redis, mock_drive_core, client, init_session):

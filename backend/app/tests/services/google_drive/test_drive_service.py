@@ -1,92 +1,190 @@
+"""
+Test module for the Google Drive service operations.
+
+This module contains unit tests for the DriveService class, which handles
+various Google Drive operations such as listing folder contents, retrieving
+file details, and managing service connections.
+"""
+
 import pytest
-from unittest.mock import Mock, patch, call
-from flask import g
+from unittest.mock import Mock, patch, MagicMock
+from flask import Flask, g
 from app.services.google_drive.drive_service import DriveService
 from app.services.google_drive.core import DriveCore
-from google.auth.transport.requests import Request
 
 @pytest.fixture
-def mock_session():
-    return {'credentials': {
-        'token': 'test_token',
-        'refresh_token': 'test_refresh_token',
-        'token_uri': 'test_token_uri',
-        'client_id': 'test_client_id',
-        'client_secret': 'test_client_secret',
-        'scopes': ['test_scope'],
-        'expiry': None 
-    }}
+def app():
+    """
+    Create and configure a Flask app for testing.
+
+    Returns:
+        Flask: A Flask application instance.
+    """
+    app = Flask(__name__)
+    app.config['TESTING'] = True
+    return app
 
 @pytest.fixture
-def drive_service(mock_session):
-    drive_core = DriveCore(mock_session['credentials'])
-    return DriveService(drive_core)
+def drive_service():
+    """
+    Create a DriveService instance for testing.
 
-@patch('app.services.google_drive.drive_service.Request')
-@patch('app.services.google_drive.drive_service.build')
-def test_get_services(mock_build, mock_request, app, drive_service):
+    Returns:
+        DriveService: An instance of the DriveService class.
+    """
+    mock_drive_core = Mock(spec=DriveCore)
+    mock_drive_core.credentials = Mock()
+    mock_drive_core.credentials.expired = False
+    return DriveService(mock_drive_core)
+
+def test_get_services(app, drive_service):
+    """
+    Test the get_services method of DriveService.
+
+    This test verifies that the method correctly creates and returns
+    Drive and People services, and stores them in the Flask g object.
+    """
     with app.app_context():
-        mock_drive = Mock()
-        mock_people = Mock()
-        mock_build.side_effect = [mock_drive, mock_people]
-        
-        with patch.object(drive_service.drive_core.credentials, 'refresh') as mock_refresh:
+        with patch('app.services.google_drive.drive_service.build') as mock_build:
+            mock_drive = Mock()
+            mock_people = Mock()
+            mock_build.side_effect = [mock_drive, mock_people]
+
             drive, people = drive_service.get_services()
 
-            # Log the actual calls to help with debugging
-            print(mock_build.mock_calls)
-
-            # Check that build was called with the correct arguments
-            mock_build.assert_has_calls([
-                call('drive', 'v3', credentials=drive_service.drive_core.credentials),
-                call('people', 'v1', credentials=drive_service.drive_core.credentials)
-            ], any_order=True)
+            assert drive == mock_drive
+            assert people == mock_people
+            assert g.drive_service == mock_drive
+            assert g.people_service == mock_people
 
 def test_list_folder_contents(app, drive_service):
+    """
+    Test the list_folder_contents method of DriveService.
+
+    This test ensures that the method correctly retrieves and formats
+    the contents of a Google Drive folder.
+    """
     with app.app_context():
         mock_drive = Mock()
-        mock_files = Mock()
-        mock_drive.files.return_value.list.return_value.execute.return_value = {
+        mock_files = {
             'files': [
-                {'name': 'file1', 'id': 'id1', 'mimeType': 'type1'},
-                {'name': 'file2', 'id': 'id2', 'mimeType': 'type2'}
+                {
+                    'name': 'file1',
+                    'id': 'id1',
+                    'mimeType': 'type1',
+                    'size': '1000',
+                    'hasThumbnail': True,
+                    'thumbnailLink': 'http://thumbnail1.com',
+                    'modifiedTime': '2023-01-01T00:00:00.000Z',
+                    'createdTime': '2023-01-01T00:00:00.000Z',
+                    'viewedByMeTime': '2023-01-02T00:00:00.000Z',
+                    'sharedWithMeTime': '2023-01-03T00:00:00.000Z',
+                    'owners': [{'displayName': 'Owner1'}],
+                    'parents': ['parent1'],
+                    'shared': True
+                }
             ],
             'nextPageToken': 'next_token'
         }
+        mock_drive.files().list().execute.return_value = mock_files
 
         with patch.object(drive_service, 'get_services', return_value=(mock_drive, None)):
             file_list, next_page_token = drive_service.list_folder_contents('folder_id')
 
-        assert file_list == [
-            {'name': 'file1', 'id': 'id1', 'mimeType': 'type1'},
-            {'name': 'file2', 'id': 'id2', 'mimeType': 'type2'}
-        ]
+        assert len(file_list) == 1
+        assert file_list[0]['name'] == 'file1'
+        assert file_list[0]['id'] == 'id1'
+        assert file_list[0]['mimeType'] == 'type1'
+        assert file_list[0]['size'] == '1000'
+        assert file_list[0]['hasThumbnail'] == True
+        assert file_list[0]['thumbnailLink'] == 'http://thumbnail1.com'
+        assert file_list[0]['modifiedTime'] == '2023-01-01T00:00:00.000Z'
+        assert file_list[0]['createdTime'] == '2023-01-01T00:00:00.000Z'
+        assert file_list[0]['viewedByMeTime'] == '2023-01-02T00:00:00.000Z'
+        assert file_list[0]['sharedWithMeTime'] == '2023-01-03T00:00:00.000Z'
+        assert file_list[0]['owners'] == [{'displayName': 'Owner1'}]
+        assert file_list[0]['parents'] == ['parent1']
+        assert file_list[0]['shared'] == True
         assert next_page_token == 'next_token'
 
 def test_get_file_web_view_link(app, drive_service):
+    """
+    Test the get_file_web_view_link method of DriveService.
+
+    This test verifies that the method correctly retrieves the web view link
+    and MIME type for a given file ID.
+    """
     with app.app_context():
         mock_drive = Mock()
-        mock_drive.files.return_value.get.return_value.execute.return_value = {
-            'webViewLink': 'https://example.com',
+        mock_drive.files().get().execute.return_value = {
+            'webViewLink': 'https://example.com/view',
             'mimeType': 'application/pdf'
         }
 
         with patch.object(drive_service, 'get_services', return_value=(mock_drive, None)):
             web_view_link, mime_type = drive_service.get_file_web_view_link('file_id')
 
-        assert web_view_link == 'https://example.com'
+        assert web_view_link == 'https://example.com/view'
         assert mime_type == 'application/pdf'
 
-def test_cleanup_services(app, drive_service):
+def test_get_file_details(app, drive_service):
+    """
+    Test the get_file_details method of DriveService.
+
+    This test ensures that the method correctly retrieves and formats
+    the details of a specific file.
+    """
     with app.app_context():
         mock_drive = Mock()
-        mock_people = Mock()
-        g.drive_service = mock_drive
-        g.people_service = mock_people
+        mock_drive.files().get().execute.return_value = {
+            'id': 'file_id',
+            'name': 'test_file',
+            'mimeType': 'application/pdf',
+            'size': '1000',
+            'hasThumbnail': True,
+            'thumbnailLink': 'http://thumbnail.com',
+            'modifiedTime': '2023-01-01T00:00:00.000Z',
+            'createdTime': '2023-01-01T00:00:00.000Z',
+            'viewedByMeTime': '2023-01-02T00:00:00.000Z',
+            'sharedWithMeTime': '2023-01-03T00:00:00.000Z',
+            'owners': [{'displayName': 'Owner'}],
+            'parents': ['parent_id'],
+            'shared': True
+        }
+
+        with patch.object(drive_service, 'get_services', return_value=(mock_drive, None)):
+            file_details = drive_service.get_file_details('file_id')
+
+        assert file_details['id'] == 'file_id'
+        assert file_details['name'] == 'test_file'
+        assert file_details['mimeType'] == 'application/pdf'
+        assert file_details['size'] == '1000'
+        assert file_details['hasThumbnail'] == True
+        assert file_details['thumbnailLink'] == 'http://thumbnail.com'
+        assert file_details['modifiedTime'] == '2023-01-01T00:00:00.000Z'
+        assert file_details['createdTime'] == '2023-01-01T00:00:00.000Z'
+        assert file_details['viewedByMeTime'] == '2023-01-02T00:00:00.000Z'
+        assert file_details['sharedWithMeTime'] == '2023-01-03T00:00:00.000Z'
+        assert file_details['owners'] == [{'displayName': 'Owner'}]
+        assert file_details['parents'] == ['parent_id']
+        assert file_details['shared'] == True
+
+def test_cleanup_services(app, drive_service):
+    """
+    Test the cleanup_services method of DriveService.
+
+    This test verifies that the method correctly removes and closes
+    the Drive and People services stored in the Flask g object.
+    """
+    with app.app_context():
+        mock_drive_service = Mock()
+        mock_people_service = Mock()
+        g.drive_service = mock_drive_service
+        g.people_service = mock_people_service
 
         drive_service.cleanup_services()
 
-        assert 'drive_service' not in g
-        assert 'people_service' not in g
-        mock_drive.close.assert_called_once()
-        mock_people.close.assert_called_once()
+        assert not hasattr(g, 'drive_service')
+        assert not hasattr(g, 'people_service')
+        mock_drive_service.close.assert_called_once()
+        mock_people_service.close.assert_called_once()

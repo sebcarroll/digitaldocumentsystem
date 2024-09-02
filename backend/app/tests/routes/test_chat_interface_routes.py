@@ -218,6 +218,7 @@ def test_initialize_chat_service(app):
              patch('app.routes.chat_interface_routes.get_drive_core') as mock_get_drive_core:
             
             mock_chat_service = MockChatService.return_value
+            mock_chat_service.has_drive_core.return_value = False  # Add this line
             mock_drive_core = MagicMock()
             mock_get_drive_core.return_value = mock_drive_core
             

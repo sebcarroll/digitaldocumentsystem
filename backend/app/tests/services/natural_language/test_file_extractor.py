@@ -188,18 +188,22 @@ def test_extract_text_from_drive_file(file_extractor):
     Args:
         file_extractor (FileExtractor): The FileExtractor instance to test.
     """
-    file_extractor.drive_core.drive_service.files().get().execute.return_value = {
-        'mimeType': 'application/vnd.google-apps.document'
-    }
+    mock_files = MagicMock()
+    mock_get = MagicMock()
+    mock_execute = MagicMock(return_value={'mimeType': 'application/vnd.google-apps.document'})
     
+    file_extractor.drive_core.drive_service.files.return_value = mock_files
+    mock_files.get.return_value = mock_get
+    mock_get.execute = mock_execute
+
     with patch.object(file_extractor, 'convert_google_doc_to_docx', return_value=BytesIO(b"mock docx content")), \
          patch.object(file_extractor, 'load_document', return_value=[Document(page_content="mock extracted text")]):
         
         result = file_extractor.extract_text_from_drive_file("file_id", "file_name")
         
         assert result == "mock extracted text"
-        file_extractor.drive_core.drive_service.files().get.assert_called_once_with(fileId="file_id", fields='mimeType')
-
+        mock_files.get.assert_called_once_with(fileId="file_id", fields='mimeType')
+        mock_execute.assert_called_once()
 
 def test_extract_text_from_drive_file_unsupported_mime_type(file_extractor):
     """
