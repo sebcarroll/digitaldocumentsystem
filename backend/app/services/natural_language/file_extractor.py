@@ -1,12 +1,10 @@
 """Module for extracting text from various file formats stored on Google Drive."""
 
-import logging
 import os
 import io
 import docx2txt
 from typing import Union, List
 from io import BytesIO
-import tempfile
 import csv
 import xlrd
 import openpyxl
@@ -24,9 +22,6 @@ from langchain_community.document_loaders import (
 from PyPDF2 import PdfReader
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.schema import Document
-
-# Set up logging
-logger = logging.getLogger(__name__)
 
 class FileExtractor:
     """
@@ -51,21 +46,17 @@ class FileExtractor:
             file_id (str): The ID of the Google Doc file.
 
         Returns:
-            BinaryIO: A file-like object containing the .docx content.
+            BytesIO: A file-like object containing the .docx content.
 
         Raises:
             Exception: If there's an error during the conversion process.
         """
-        try:
-            request = self.drive_core.drive_service.files().export_media(
-                fileId=file_id,
-                mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
-            file = BytesIO(request.execute())
-            return file
-        except Exception as e:
-            logger.error(f"Error converting Google Doc to DOCX: {e}")
-            raise
+        request = self.drive_core.drive_service.files().export_media(
+            fileId=file_id,
+            mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        file = BytesIO(request.execute())
+        return file
 
     def convert_google_sheet_to_xlsx(self, file_id: str) -> BytesIO:
         """
@@ -75,21 +66,17 @@ class FileExtractor:
             file_id (str): The ID of the Google Sheet file.
 
         Returns:
-            BinaryIO: A file-like object containing the .xlsx content.
+            BytesIO: A file-like object containing the .xlsx content.
 
         Raises:
             Exception: If there's an error during the conversion process.
         """
-        try:
-            request = self.drive_core.drive_service.files().export_media(
-                fileId=file_id,
-                mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
-            file = io.BytesIO(request.execute())
-            return file
-        except Exception as e:
-            logger.error(f"Error converting Google Sheet to XLSX: {e}")
-            raise
+        request = self.drive_core.drive_service.files().export_media(
+            fileId=file_id,
+            mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        file = io.BytesIO(request.execute())
+        return file
 
     def load_document(self, file: Union[str, BytesIO], file_type: str) -> List[Document]:
         """
@@ -106,68 +93,64 @@ class FileExtractor:
             ValueError: If the file type is not supported.
             Exception: If there's an error during the loading process.
         """
-        try:
-            if file_type == 'docx':
-                if isinstance(file, BytesIO):
-                    text = docx2txt.process(file)
-                    return [Document(page_content=text)]
-                else:
-                    loader = Docx2txtLoader(file)
-            elif file_type == 'csv':
-                if isinstance(file, BytesIO):
-                    detected = chardet.detect(file.getvalue())
-                    encoding = detected['encoding']
-                    csv_reader = csv.reader(io.StringIO(file.getvalue().decode(encoding)))
-                    rows = list(csv_reader)
-                    text = "\n".join([",".join(row) for row in rows])
-                    return [Document(page_content=text)]
-                else:
-                    loader = CSVLoader(file)
-            elif file_type == 'txt':
-                if isinstance(file, BytesIO):
-                    text = file.getvalue().decode('utf-8')
-                    return [Document(page_content=text)]
-                else:
-                    loader = TextLoader(file)
-            elif file_type == 'pdf':
-                if isinstance(file, BytesIO):
-                    pdf_reader = PdfReader(file)
-                    documents = []
-                    for page in pdf_reader.pages:
-                        text = page.extract_text()
-                        documents.append(Document(page_content=text))
-                    return documents
-                else:
-                    loader = PyPDFLoader(file)
-            elif file_type in ['xlsx', 'xls']:
-                if isinstance(file, BytesIO):
-                    if file_type == 'xlsx':
-                        workbook = openpyxl.load_workbook(file)
-                        sheets = workbook.sheetnames
-                    else:  # xls
-                        workbook = xlrd.open_workbook(file_contents=file.getvalue())
-                        sheets = workbook.sheet_names()
-                    
-                    text = []
-                    for sheet_name in sheets:
-                        if file_type == 'xlsx':
-                            sheet = workbook[sheet_name]
-                            sheet_text = "\n".join([" ".join(str(cell.value) for cell in row) for row in sheet.iter_rows()])
-                        else:  # xls
-                            sheet = workbook.sheet_by_name(sheet_name)
-                            sheet_text = "\n".join([" ".join(str(sheet.cell_value(row, col)) for col in range(sheet.ncols)) for row in range(sheet.nrows)])
-                        text.append(f"Sheet: {sheet_name}\n{sheet_text}")
-                    
-                    return [Document(page_content="\n\n".join(text))]
-                else:
-                    loader = UnstructuredExcelLoader(file)
+        if file_type == 'docx':
+            if isinstance(file, BytesIO):
+                text = docx2txt.process(file)
+                return [Document(page_content=text)]
             else:
-                raise ValueError(f"Unsupported file type: {file_type}")
-            
-            return loader.load()
-        except Exception as e:
-            logger.error(f"Error loading document: {e}")
-            raise
+                loader = Docx2txtLoader(file)
+        elif file_type == 'csv':
+            if isinstance(file, BytesIO):
+                detected = chardet.detect(file.getvalue())
+                encoding = detected['encoding']
+                csv_reader = csv.reader(io.StringIO(file.getvalue().decode(encoding)))
+                rows = list(csv_reader)
+                text = "\n".join([",".join(row) for row in rows])
+                return [Document(page_content=text)]
+            else:
+                loader = CSVLoader(file)
+        elif file_type == 'txt':
+            if isinstance(file, BytesIO):
+                text = file.getvalue().decode('utf-8')
+                return [Document(page_content=text)]
+            else:
+                loader = TextLoader(file)
+        elif file_type == 'pdf':
+            if isinstance(file, BytesIO):
+                pdf_reader = PdfReader(file)
+                documents = []
+                for page in pdf_reader.pages:
+                    text = page.extract_text()
+                    documents.append(Document(page_content=text))
+                return documents
+            else:
+                loader = PyPDFLoader(file)
+        elif file_type in ['xlsx', 'xls']:
+            if isinstance(file, BytesIO):
+                if file_type == 'xlsx':
+                    workbook = openpyxl.load_workbook(file)
+                    sheets = workbook.sheetnames
+                else:  # xls
+                    workbook = xlrd.open_workbook(file_contents=file.getvalue())
+                    sheets = workbook.sheet_names()
+                
+                text = []
+                for sheet_name in sheets:
+                    if file_type == 'xlsx':
+                        sheet = workbook[sheet_name]
+                        sheet_text = "\n".join([" ".join(str(cell.value) for cell in row) for row in sheet.iter_rows()])
+                    else:  # xls
+                        sheet = workbook.sheet_by_name(sheet_name)
+                        sheet_text = "\n".join([" ".join(str(sheet.cell_value(row, col)) for col in range(sheet.ncols)) for row in range(sheet.nrows)])
+                    text.append(f"Sheet: {sheet_name}\n{sheet_text}")
+                
+                return [Document(page_content="\n\n".join(text))]
+            else:
+                loader = UnstructuredExcelLoader(file)
+        else:
+            raise ValueError(f"Unsupported file type: {file_type}")
+        
+        return loader.load()
 
     def download_file_from_google_drive(self, file_id: str, file_name: str) -> str:
         """
@@ -183,22 +166,16 @@ class FileExtractor:
         Raises:
             Exception: If there's an error during the download process.
         """
-        try:
-            request = self.drive_core.drive_service.files().get_media(fileId=file_id)
-            fh = io.FileIO(file_name, 'wb')
-            downloader = MediaIoBaseDownload(fh, request)
-            
-            done = False
-            while not done:
-                status, done = downloader.next_chunk()
-                logger.info(f"Download progress: {int(status.progress() * 100)}%")
-            
-            fh.close()
-            logger.info(f"File {file_name} downloaded successfully")
-            return file_name
-        except Exception as e:
-            logger.error(f"Error downloading file with ID {file_id}: {e}")
-            raise
+        request = self.drive_core.drive_service.files().get_media(fileId=file_id)
+        fh = io.FileIO(file_name, 'wb')
+        downloader = MediaIoBaseDownload(fh, request)
+        
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+        
+        fh.close()
+        return file_name
 
     def extract_text_from_drive_file(self, file_id: str, file_name: str) -> str:
         """
@@ -218,42 +195,34 @@ class FileExtractor:
         Raises:
             Exception: If there's an error during the extraction process that cannot be handled.
         """
-        try:
-            # Get file metadata to determine the MIME type
-            file_metadata = self.drive_core.drive_service.files().get(fileId=file_id, fields='mimeType').execute()
-            mime_type = file_metadata['mimeType']
+        # Get file metadata to determine the MIME type
+        file_metadata = self.drive_core.drive_service.files().get(fileId=file_id, fields='mimeType').execute()
+        mime_type = file_metadata['mimeType']
 
-            if mime_type == 'application/vnd.google-apps.document':
-                file = self.convert_google_doc_to_docx(file_id)
-                file_extension = 'docx'
-            elif mime_type == 'application/vnd.google-apps.spreadsheet':
-                file = self.convert_google_sheet_to_xlsx(file_id)
+        if mime_type == 'application/vnd.google-apps.document':
+            file = self.convert_google_doc_to_docx(file_id)
+            file_extension = 'docx'
+        elif mime_type == 'application/vnd.google-apps.spreadsheet':
+            file = self.convert_google_sheet_to_xlsx(file_id)
+            file_extension = 'xlsx'
+        elif mime_type in ['application/pdf', 'text/csv', 'text/plain', 
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
+            request = self.drive_core.drive_service.files().get_media(fileId=file_id)
+            file = io.BytesIO(request.execute())
+            if mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 file_extension = 'xlsx'
-            elif mime_type in ['application/pdf', 'text/csv', 'text/plain', 
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'application/vnd.ms-excel',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document']:
-                request = self.drive_core.drive_service.files().get_media(fileId=file_id)
-                file = io.BytesIO(request.execute())
-                if mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                    file_extension = 'xlsx'
-                elif mime_type == 'application/vnd.ms-excel':
-                    file_extension = 'xls'
-                elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                    file_extension = 'docx'
-                else:
-                    file_extension = mime_type.split('/')[-1]
+            elif mime_type == 'application/vnd.ms-excel':
+                file_extension = 'xls'
+            elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                file_extension = 'docx'
             else:
-                raise ValueError(f"Unsupported MIME type: {mime_type}")
+                file_extension = mime_type.split('/')[-1]
+        else:
+            raise ValueError(f"Unsupported MIME type: {mime_type}")
 
-            documents = self.load_document(file, file_extension)
-            extracted_text = "\n\n".join([doc.page_content for doc in documents])
-            
-            logger.info(f"Extracted text from file {file_name} (ID: {file_id}):")
-            logger.info(f"First 500 characters: {extracted_text[:500]}")
-            logger.info(f"Total length: {len(extracted_text)} characters")
-            
-            return extracted_text
-        except Exception as e:
-            logger.error(f"Error extracting text from Drive file with ID {file_id}: {e}")
-            return ""
+        documents = self.load_document(file, file_extension)
+        extracted_text = "\n\n".join([doc.page_content for doc in documents])
+        
+        return extracted_text

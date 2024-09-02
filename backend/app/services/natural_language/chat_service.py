@@ -5,17 +5,14 @@ It integrates with OpenAI's language models, Pinecone vector store, and Google D
 for processing queries and handling documents.
 """
 
-import logging
-import time
-import random
 import os
 import re
+import time
+import random
 import markdown
-from functools import lru_cache
 from typing import Dict, Any, List, Optional
-from datetime import datetime
 
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from openai import RateLimitError
 
@@ -23,8 +20,6 @@ from app.services.natural_language.file_extractor import FileExtractor
 from app.services.database.pinecone_manager_service import PineconeManager
 from app.services.google_drive.core import DriveCore
 from app.services.google_drive.drive_service import DriveService
-
-logger = logging.getLogger(__name__)
 
 def retry_with_exponential_backoff(
     func,
@@ -49,7 +44,6 @@ def retry_with_exponential_backoff(
 
                 delay *= exponential_base * (1 + jitter * random.random())
 
-                logger.warning(f"Retrying in {delay:.2f} seconds...")
                 time.sleep(delay)
 
     return wrapper
@@ -71,7 +65,6 @@ class ChatService:
             drive_core (DriveCore, optional): The DriveCore instance to use for file operations.
             user_id (str, optional): The ID of the user associated with this ChatService instance.
         """
-        logger.info("Initializing ChatService")
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_environment = os.getenv("PINECONE_ENVIRONMENT")
@@ -147,6 +140,8 @@ class ChatService:
 
     def has_drive_core(self) -> bool:
         """
+        Check if the ChatService instance has a DriveCore object.
+
         Returns:
             bool: True if DriveCore is set, False otherwise.
         """
@@ -162,7 +157,6 @@ class ChatService:
         self.drive_core = drive_core
         self.drive_service = DriveService(drive_core)
         self.file_extractor = FileExtractor(drive_core=self.drive_core)
-        logger.info("DriveCore and DriveService set for ChatService")
 
     @retry_with_exponential_backoff
     def query(self, question: str) -> str:
@@ -190,7 +184,6 @@ class ChatService:
         if not self.user_id:
             raise ValueError("User ID is not set. Call set_user_id() before querying.")
 
-        logger.info(f"Processing query for user {self.user_id}: {question}")
         try:
             selected_documents = self.pinecone_manager.get_selected_documents(self.user_id)
             selected_documents = [doc for doc in selected_documents if doc['metadata'].get('isSelected', False)]
@@ -211,7 +204,6 @@ class ChatService:
 
             response = self.llm.invoke(prompt)
             
-            # Extract the content from the AIMessage object
             response_content = response.content if hasattr(response, 'content') else str(response)
             
             self.memory.chat_memory.add_user_message(question)
@@ -220,33 +212,23 @@ class ChatService:
             processed_result = self.post_process_output(response_content)
             return processed_result
         except Exception as e:
-            logger.error(f"Error processing query for user {self.user_id}: {str(e)}", exc_info=True)
             raise
 
     def clear_memory(self):
         """
         Clear the conversation memory and reset document selection.
 
-        This method performs two operations:
-        1. Clears the conversation memory, removing all stored messages.
-        2. Resets the selection status of all documents for the current user
-           in the Pinecone index, setting 'isSelected' to False.
+        This method clears the conversation memory and resets the selection status
+        of all documents for the current user in the Pinecone index.
 
-        If no user ID is set, only the conversation memory is cleared,
-        and a warning is logged.
+        If no user ID is set, only the conversation memory is cleared.
 
         Raises:
             Exception: If there's an error during the document selection reset process.
         """
         self.memory.clear()
         if self.user_id:
-            success = self.pinecone_manager.update_all_selected_documents(self.user_id, False)
-            if success:
-                logger.info(f"Reset all selected documents for user {self.user_id}")
-            else:
-                logger.error(f"Failed to reset selected documents for user {self.user_id}")
-        else:
-            logger.warning("User ID not set, skipping document selection reset")
+            self.pinecone_manager.update_all_selected_documents(self.user_id, False)
 
     def process_and_add_file(self, file_id: str, file_name: str) -> bool:
         """
@@ -272,33 +254,23 @@ class ChatService:
         if not self.drive_service:
             raise ValueError("DriveService is not set. Cannot process file.")
 
-        logger.info(f"Processing file for user {self.user_id}: {file_name} with ID: {file_id}")
         try:
             file_details = self.drive_service.get_file_details(file_id)
             new_last_modified = file_details.get('modifiedTime')
             
-            # Check if the document already exists in the database
             existing_metadata = self.pinecone_manager.get_document_metadata(file_id, self.user_id)
             
             if existing_metadata:
                 existing_last_modified = existing_metadata.get('lastModified')
                 if existing_last_modified == new_last_modified:
-                    # If the file hasn't been modified, just update the isSelected flag
-                    logger.info(f"File {file_name} already exists and is up to date. Updating isSelected flag.")
                     return self.pinecone_manager.update_document_selection(file_id, True, self.user_id)
                 else:
-                    # If the file has been modified, delete the old version
-                    logger.info(f"File {file_name} has been modified. Deleting old version.")
                     self.pinecone_manager.delete_document(file_id, self.user_id)
             
-            # Extract text and create a new document
             extracted_text = self.file_extractor.extract_text_from_drive_file(file_id, file_name)
             
             if not extracted_text:
-                logger.warning(f"No text extracted from file {file_name} with ID {file_id}")
                 return False
-            
-            logger.info(f"Processing extracted text from file {file_name} (first 500 characters): {extracted_text[:500]}")
             
             document = {
                 "id": file_id,
@@ -309,8 +281,7 @@ class ChatService:
             }
             result = self.pinecone_manager.upsert_document(document, self.user_id)
             return result['success']
-        except Exception as e:
-            logger.error(f"Error processing file {file_name} with ID {file_id} for user {self.user_id}: {str(e)}", exc_info=True)
+        except Exception:
             return False
 
     def process_and_add_multiple_files(self, file_ids: List[str], file_names: List[str]) -> Dict[str, Any]:
