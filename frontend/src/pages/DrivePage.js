@@ -262,7 +262,7 @@ const BaseDrivePage = ({ DriveContent, fetchFiles }) => {
           userName={userName}
         />
       </div>
-      <div className="sidebar">
+      <div className="sidebar-container">
         <Sidebar
           onCreateFolder={openCreateFolderPopup}
           onUploadFile={handleUploadFile}

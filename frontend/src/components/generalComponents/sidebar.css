@@ -2,15 +2,14 @@
 
 /* Sidebar layout */
 .sidebar {
-  width: 100%;
-  max-width: none;
-  min-width: auto;
+  width: 35%; /* Default width */
+  min-width: 250px;
+  max-width: 350px;
   background-color: #f5f5f5;
-  padding: 10px 10px;
+  padding: 20px;
   border-right: 1px solid #e0e0e0;
-  height: auto;
+  height: 100vh;
   box-sizing: border-box;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -18,7 +17,8 @@
 
 /* New Item Button styles */
 .new-item-button-container {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  position: relative;
   display: flex;
   justify-content: center;
 }
@@ -53,7 +53,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 0 5px;
 }
 
 .sidebar-button {
@@ -86,13 +85,14 @@
   font-weight: 700;
 }
 
-
 /* Dropdown menu styles */
 .dropdown-menu {
   position: absolute;
   top: 100%;
-  left: 0;
-  min-width: 250px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  max-width: 90%;
   width: auto;
   background-color: white;
   border: 1px solid #ccc;
@@ -141,18 +141,18 @@
 }
 
 /* Media queries for responsiveness */
-@media (min-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar {
-    width: 35%;
-    max-width: 300px;
-    min-width: 200px;
-    height: 100vh;
+    width: 250px;
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .sidebar {
-    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    padding: 15px;
   }
 
   .sidebar-nav {
@@ -163,6 +163,14 @@
 
   .sidebar-button {
     flex: 0 0 calc(50% - 5px);
+  }
+
+  .dropdown-menu {
+    left: 0;
+    transform: none;
+    max-width: 100%;
+    overflow: visible;
+    z-index: 1000;
   }
 }
 
