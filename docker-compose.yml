@@ -15,59 +15,12 @@ services:
     environment:
       - FLASK_ENV=development
       - PYTHONPATH=/backend
-      # - CELERY_BROKER_URL=redis://redis:6379/0
-      # - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - REDIS_TOKEN_URL=redis://redis:6379/2 
     volumes:
       - ./backend:/backend
     depends_on:
       - redis
     command: sh /backend/start.sh
-
-  # celery_worker:
-  #   env_file:
-  #     - ./backend/.env
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #     args:
-  #       - PINECONE_API_KEY
-  #       - PINECONE_ENVIRONMENT
-  #       - PINECONE_INDEX_NAME
-  #       - OPENAI_API_KEY
-  #   command: celery -A celery_app worker --loglevel=info
-  #   volumes:
-  #     - ./backend:/backend
-  #   environment:
-  #     - PYTHONPATH=/backend
-  #     - CELERY_BROKER_URL=redis://redis:6379/0
-  #     - CELERY_RESULT_BACKEND=redis://redis:6379/1
-  #   depends_on:
-  #     - backend
-  #     - redis
-
-  # celery_beat:
-  #   env_file:
-  #     - ./backend/.env
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #     args:
-  #       - PINECONE_API_KEY
-  #       - PINECONE_ENVIRONMENT
-  #       - PINECONE_INDEX_NAME
-  #       - OPENAI_API_KEY
-  #   command: celery -A celery_app beat --loglevel=info
-  #   volumes:
-  #     - ./backend:/backend
-  #   environment:
-  #     - PYTHONPATH=/backend
-  #     - CELERY_BROKER_URL=redis://redis:6379/0
-  #     - CELERY_RESULT_BACKEND=redis://redis:6379/1
-  #   depends_on:
-  #     - backend
-  #     - redis
-
   redis:
     image: redis:alpine
     ports:
