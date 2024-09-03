@@ -51,12 +51,21 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
     }
   };
 
+  const resetInputHeight = () => {
+    setInputHeight(45); // Reset to default height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '45px';
+      textareaRef.current.style.overflowY = 'hidden';
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
       addMessage(input, true);
       handleQuery(input);
       setInput('');
+      resetInputHeight(); // Reset input height after sending query
     }
   };
 
