@@ -222,7 +222,14 @@
 
 @media (max-width: 480px) {
   .text, .breadcrumbs {
-    font-size: 14px;
+    font-size: 12px;
+  }
+
+  .breadcrumb-item {
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .settings-icon-container {
@@ -230,7 +237,30 @@
   }
 
   .icon {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .left-section {
+    max-width: calc(100% - 100px);
+  }
+}
+
+@media (max-width: 360px) {
+  .text, .breadcrumbs {
+    font-size: 10px;
+  }
+
+  .breadcrumb-item {
+    max-width: 40px;
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .left-section {
+    max-width: calc(100% - 80px);
   }
 }

@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../header.css';
 
 const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }) => {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const getRootName = () => {
     switch (path) {
       case '/drive':
@@ -46,26 +54,36 @@ const CurrentPageText = ({ folderStack, currentFolder, onBreadcrumbClick, path }
       index === self.findIndex((t) => t.id === crumb.id)
     );
 
-    return breadcrumbs.map((folder, index) => {
+    // Determine how many folders to display
+    const maxFolders = windowWidth <= 480 ? 2 : 3;
+    const startIndex = Math.max(0, breadcrumbs.length - maxFolders);
+    const displayedBreadcrumbs = breadcrumbs.slice(startIndex);
+
+    return displayedBreadcrumbs.map((folder, index) => {
       let folderName = folder.name || 'Unknown';
-      if (folderName.length > 20) {
-        folderName = folderName.slice(0, 17) + '...';
+      if (windowWidth <= 480) {
+        folderName = folderName.length > 5 ? folderName.slice(0, 5) + '...' : folderName;
+      } else if (folderName.length > 10) {
+        folderName = folderName.slice(0, 9) + '...';
       }
-      const isLastItem = index === breadcrumbs.length - 1;
+      const isLastItem = index === displayedBreadcrumbs.length - 1;
+      const isFirstItem = index === 0 && startIndex > 0;
+
       return (
         <React.Fragment key={folder.id || index}>
           {index > 0 && <span className="breadcrumb-separator">&gt;</span>}
+          {isFirstItem && <span className="breadcrumb-ellipsis">..</span>}
           {isLastItem ? (
             <span className="breadcrumb-item current-item">
               {folderName}
             </span>
           ) : (
-          <span 
-            onClick={() => onBreadcrumbClick(index)}
-            className="breadcrumb-item clickable"
-          >
-            {folderName}
-          </span>
+            <span 
+              onClick={() => onBreadcrumbClick(startIndex + index)}
+              className="breadcrumb-item clickable"
+            >
+              {folderName}
+            </span>
           )}
         </React.Fragment>
       );
