@@ -1,5 +1,10 @@
 import pytest
 from main import create_app
+'''
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+'''
 
 @pytest.fixture
 def app():
@@ -23,3 +28,24 @@ def client(app):
     is properly configured.
     """
     return app.test_client()
+
+'''
+@pytest.fixture(scope="class")
+def chrome_driver(request):
+    """
+    Fixture to provide a Selenium Chrome WebDriver.
+
+    This fixture creates a Chrome WebDriver instance, attaches it to the test class,
+    and ensures it's properly closed after the tests are complete.
+    """
+    service = Service(ChromeDriverManager().install())
+    options = webdriver.ChromeOptions()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--headless')
+    options.add_argument('--disable-dev-shm-usage')
+    
+    driver = webdriver.Chrome(service=service, options=options)
+    request.cls.driver = driver
+    yield driver
+    driver.quit()
+'''

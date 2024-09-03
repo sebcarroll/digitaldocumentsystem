@@ -129,3 +129,43 @@ html, body, #root {
     margin: 0 5px;
   }
 }
+
+@media screen and (max-width: 480px) {
+  .drive-page {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drive-header {
+    padding: 10px;
+  }
+
+  .sidebar {
+    order: 2;
+  }
+
+  .main-area {
+    order: 3;
+    height: auto;
+  }
+
+  .search-bar-container {
+    padding: 10px;
+  }
+
+  .view-options-container {
+    top: auto;
+    position: static;
+    padding: 10px;
+  }
+
+  .main-content {
+    padding: 10px;
+  }
+
+  .drive-header button {
+    padding: 6px 12px;
+    font-size: 12px;
+    margin: 2px;
+  }
+}

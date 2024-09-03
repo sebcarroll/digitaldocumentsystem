@@ -34,3 +34,5 @@ networkx
 pdfminer
 xlrd
 chardet
+selenium
+webdriver_manager
