@@ -52,33 +52,33 @@ class DriveService:
         if folder_id == 'root':
             query = "trashed = false"
 
-            files = drive_service.files().list(
-                q=query,
-                fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, createdTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared)",
-                pageToken=page_token,
-                pageSize=page_size,
-                orderBy="modifiedTime desc"
-            ).execute()
+        files = drive_service.files().list(
+            q=query,
+            fields="nextPageToken, files(id, name, mimeType, size, hasThumbnail, thumbnailLink, modifiedTime, createdTime, viewedByMeTime, sharedWithMeTime, owners, parents, shared)",
+            pageToken=page_token,
+            pageSize=page_size,
+            orderBy="modifiedTime desc"
+        ).execute()
 
-            items = files.get('files', [])
-            next_page_token = files.get('nextPageToken')
+        items = files.get('files', [])
+        next_page_token = files.get('nextPageToken')
 
-            file_list = [{
-                "name": item['name'],
-                "id": item['id'],
-                "mimeType": item['mimeType'],
-                "size": item.get('size'),
-                "hasThumbnail": item.get('hasThumbnail', False),
-                "thumbnailLink": item.get('thumbnailLink'),
-                "modifiedTime": item.get('modifiedTime'),
-                "createdTime": item.get('createdTime'),
-                "viewedByMeTime": item.get('viewedByMeTime'),
-                "sharedWithMeTime": item.get('sharedWithMeTime'),
-                "owners": item.get('owners', []),
-                "parents": item.get('parents', []),
-                "shared": item.get('shared', False)
-            } for item in items]
-            return file_list, next_page_token
+        file_list = [{
+            "name": item['name'],
+            "id": item['id'],
+            "mimeType": item['mimeType'],
+            "size": item.get('size'),
+            "hasThumbnail": item.get('hasThumbnail', False),
+            "thumbnailLink": item.get('thumbnailLink'),
+            "modifiedTime": item.get('modifiedTime'),
+            "createdTime": item.get('createdTime'),
+            "viewedByMeTime": item.get('viewedByMeTime'),
+            "sharedWithMeTime": item.get('sharedWithMeTime'),
+            "owners": item.get('owners', []),
+            "parents": item.get('parents', []),
+            "shared": item.get('shared', False)
+        } for item in items]
+        return file_list, next_page_token
 
     def get_file_web_view_link(self, file_id):
         """
