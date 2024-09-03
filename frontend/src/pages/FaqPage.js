@@ -91,10 +91,10 @@ const FAQPage = () => {
       <div className="faq-header">
         <Header userEmail={userEmail} userName={userName} />
       </div>
-      <div className="faq-sidebar">
-        <Sidebar />
-      </div>
       <div className="faq-main-content">
+        <aside className="sidebar-container">
+          <Sidebar />
+        </aside>
         <div className="faq-content">
           <h1>Frequently Asked Questions</h1>
           {faqData.map((item, index) => (
