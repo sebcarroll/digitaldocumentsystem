@@ -35,7 +35,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  height: calc(100vh - 60px); /* Adjust based on header height */
+  height: calc(100vh - 60px); 
 }
 
 .search-bar-container {
@@ -47,7 +47,7 @@ html, body, #root {
 .view-options-container {
   background-color: #ffffff;
   position: sticky;
-  top: 60px; /* Adjust based on header height */
+  top: 60px;
   z-index: 999;
   padding: 10px;
 }

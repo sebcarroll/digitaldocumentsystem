@@ -1,4 +1,3 @@
-/* chatInterface.css */
 :root {
   --chat-padding: 20px;
   --input-height: 45px;
@@ -18,7 +17,6 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  padding-bottom: calc(var(--input-height) + 40px); /* Add space for input area */
 }
 
 .chat-header {
@@ -40,8 +38,7 @@
   flex-grow: 1;
   overflow-y: auto;
   padding: 20px;
-  padding-bottom: calc(var(--input-height) + 80px); /* Increase padding to make room for document list */
-  margin-bottom: calc(var(--input-height) + 40px);
+  padding-bottom: 20px;
 }
 
 .message {
@@ -91,16 +88,18 @@
   margin-right: 10px;
 }
 
+.input-container {
+  position: sticky;
+  bottom: 0;
+  background-color: #fff;
+  z-index: 2;
+}
+
 .input-area {
   display: flex;
   padding: var(--chat-padding);
   background-color: #f6f6f6;
   border-top: 1px solid #e0e0e0;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 2; /* Ensure it's above the message list but below selected documents */
   align-items: flex-end;
   font-family: 'Courier New', Courier, monospace;
 }
@@ -169,15 +168,10 @@
 }
 
 .selected-documents {
-  position: absolute;
-  bottom: calc(var(--input-height) + 20px);
-  left: 0;
-  right: 0;
-  z-index: 3; /* Higher than input-area */
-  background-color: #fff;
   padding: 10px var(--chat-padding);
   max-height: 100px;
   overflow-y: auto;
+  background-color: #fff;
 }
 
 @media screen and (max-width: 767px) {
@@ -197,8 +191,6 @@
 
   .message-list {
     padding: 10px;
-    padding-bottom: calc(var(--input-height) + 20px);
-    margin-bottom: calc(var(--input-height) + 20px);
   }
 
   .message-text {

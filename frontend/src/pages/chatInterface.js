@@ -17,6 +17,7 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [initialQueryProcessed, setInitialQueryProcessed] = useState(false);
+  const [inputHeight, setInputHeight] = useState(45); // Default height
 
   const messageListRef = useRef(null);
   const textareaRef = useRef(null);
@@ -65,10 +66,9 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
       const scrollHeight = textareaRef.current.scrollHeight;
-      const newHeight = Math.max(scrollHeight, parseInt(getComputedStyle(textareaRef.current).getPropertyValue('min-height')));
-      textareaRef.current.style.height = `${newHeight}px`;
+      const newHeight = Math.min(Math.max(scrollHeight, 45), 150); // Min 45px, Max 150px
+      setInputHeight(newHeight);
       
       // Show scrollbar only when content exceeds max height
       if (scrollHeight > 150) {
@@ -137,7 +137,6 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
     clearChatHistory();
     onClose();
   };
-  
 
   return (
     <div className="chat-interface">
@@ -150,26 +149,28 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
         ))}
         {isLoading && <div className="loading-indicator">Processing...</div>}
       </div>
+      <div className="input-container">
         <SelectedDocuments 
           documents={selectedDocuments} 
           onRemove={handleRemoveDocument} 
         />
-      <form onSubmit={handleSubmit} className="input-area">
-        <div className="file-upload-label" onClick={handleFileIconClick}>
-          <AttachFileSharpIcon />
-        </div>
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={handleInputChange}
-          placeholder="Type your message..."
-          className="message-input"
-          rows="1"
-        />
-        <button type="submit" className="send-button">
-          <SendButton />
-        </button>
-      </form>
+        <form onSubmit={handleSubmit} className="input-area">
+          <div className="file-upload-label" onClick={handleFileIconClick}>
+            <AttachFileSharpIcon />
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={handleInputChange}
+            placeholder="Type your message..."
+            className="message-input"
+            style={{ height: `${inputHeight}px` }}
+          />
+          <button type="submit" className="send-button">
+            <SendButton />
+          </button>
+        </form>
+      </div>
       <UploadPopup
         getFileIcon={getFileIcon}
         setError={setError}
