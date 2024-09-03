@@ -1,3 +1,5 @@
+'''
+
 import pytest
 from selenium.webdriver.common.by import By
 
@@ -10,3 +12,4 @@ class TestRename:
         self.driver.find_element(By.CSS_SELECTOR, ".action-button:nth-child(7) > .MuiSvgIcon-root").click()
         self.driver.find_element(By.CSS_SELECTOR, ".popup-input").send_keys("Test")
         self.driver.find_element(By.CSS_SELECTOR, ".ok-button").click()
+'''

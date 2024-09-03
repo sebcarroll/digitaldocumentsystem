@@ -48,12 +48,11 @@ const BaseDrivePage = ({ DriveContent, fetchFiles }) => {
         navigate('/login');
         return;
       }
-
       const content = await fetchFiles(folderId);
       setDriveContent(content.files || []);
     } catch (error) {
       console.error('Failed to fetch drive files:', error);
-      setError('Failed to load Google Drive files.');
+      setError(`Failed to load Google Drive files: ${error.message}`);
     } finally {
       setLoading(false);
     }
