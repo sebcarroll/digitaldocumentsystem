@@ -75,11 +75,12 @@ const ChatInterface = ({ initialQuery, onClose, getFileIcon, isUploadPopupOpen, 
 
   useEffect(() => {
     if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
       const scrollHeight = textareaRef.current.scrollHeight;
       const newHeight = Math.min(Math.max(scrollHeight, 45), 150); // Min 45px, Max 150px
       setInputHeight(newHeight);
+      textareaRef.current.style.height = `${newHeight}px`;
       
-      // Show scrollbar only when content exceeds max height
       if (scrollHeight > 150) {
         textareaRef.current.style.overflowY = 'auto';
       } else {
