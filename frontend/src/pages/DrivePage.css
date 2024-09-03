@@ -27,7 +27,7 @@ html, body, #root {
 
 .sidebar {
   grid-area: sidebar;
-  display: flex
+  display: flex;
 }
 
 .main-area {
@@ -35,7 +35,7 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  height: calc(100vh - 60px); 
+  height: calc(100vh - 60px);
 }
 
 .search-bar-container {
@@ -107,7 +107,7 @@ html, body, #root {
 
   .main-area {
     grid-area: main-area;
-    height: calc(100vh - 80px); 
+    height: calc(100vh - 80px);
   }
 
   .search-bar-container {
@@ -115,7 +115,7 @@ html, body, #root {
   }
 
   .view-options-container {
-    top: 80px; 
+    top: 80px;
     padding: 16px;
   }
 
@@ -130,23 +130,26 @@ html, body, #root {
   }
 }
 
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 767px) {
   .drive-page {
     display: flex;
     flex-direction: column;
   }
 
-  .drive-header {
-    padding: 10px;
-  }
-
   .sidebar {
     order: 2;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #dadce0;
   }
 
   .main-area {
     order: 3;
-    height: auto;
+  }
+
+  .drive-header {
+    padding: 10px;
   }
 
   .search-bar-container {

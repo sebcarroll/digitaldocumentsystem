@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/generalComponents/header.js';
-import Sidebar from '../components/generalComponents/sidebar.js';
+import Sidebar from '../components/faqPage/faqSidebar.js'; 
 import './FaqPage.css';
 import { checkAuth, fetchUserInfo } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -88,13 +88,13 @@ const FAQPage = () => {
 
   return (
     <div className="faq-page">
-    <div className="faq-header">
-      <Header userEmail={userEmail} userName={userName} />
-    </div>
-      <div className="faq-main-content">
-        <div className="faq-sidebar">
+      <div className="faq-header">
+        <Header userEmail={userEmail} userName={userName} />
+      </div>
+      <div className="faq-sidebar">
         <Sidebar />
-        </div>
+      </div>
+      <div className="faq-main-content">
         <div className="faq-content">
           <h1>Frequently Asked Questions</h1>
           {faqData.map((item, index) => (
