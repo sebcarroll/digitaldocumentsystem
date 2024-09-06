@@ -54,7 +54,7 @@ def login():
 
     Returns:
         werkzeug.wrappers.Response: A redirect response to the authorisation URL.
-    """
+    """ 
     flow = auth_service.create_flow()
     authorization_url, state = flow.authorization_url(
         access_type='offline',
@@ -91,7 +91,8 @@ def oauth2callback():
             return jsonify({"error": "No state in session"}), 400
 
         flow = auth_service.create_flow(state)
-        flow.fetch_token(authorization_response=request.url)
+        authorization_response = request.url.replace('http://', 'https://', 1)
+        flow.fetch_token(authorization_response=authorization_response)
 
         credentials = flow.credentials
         credentials_dict = auth_service.credentials_to_dict(credentials)

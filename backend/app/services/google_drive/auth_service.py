@@ -39,10 +39,9 @@ class AuthService:
                 }
             },
             scopes=self.config.SCOPES,
-            state=state,
-            redirect_uri=url_for('auth.oauth2callback', _external=True)
+            state=state
         )
-        return flow
+        flow.redirect_uri = self.config.GOOGLE_REDIRECT_URI
 
     @staticmethod
     def fetch_user_info(drive_core):

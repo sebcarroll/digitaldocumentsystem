@@ -36,3 +36,4 @@ xlrd
 chardet
 selenium
 webdriver_manager
+flask-talisman

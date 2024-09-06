@@ -6,7 +6,7 @@ Celery, and Pinecone database connections. It also includes routes for home,
 Pinecone testing, and implements session management logic.
 """
 
-from flask import Flask, session, jsonify
+from flask import Flask, session, jsonify, request, redirect
 from flask_cors import CORS
 from app.routes.authorisation_routes import auth_bp
 from app.routes.access_drive_routes import drive_bp
@@ -23,6 +23,12 @@ from app.services.database.db_service import init_db, get_db
 import json
 import redis
 
+def https_redirect():
+    proto = request.headers.get('X-Forwarded-Proto', 'http')
+    if proto == 'http':
+        url = request.url.replace('http://', 'https://', 1)
+        return redirect(url, code=301)
+
 def create_app():
     """
     Create and configure the Flask application.
@@ -31,9 +37,14 @@ def create_app():
         Flask: The configured Flask application instance.
     """
     app = Flask(__name__)
+    app.before_request(https_redirect)
     allowed_origin = os.getenv('ALLOWED_ORIGIN', 'https://diganise.vercel.app/')
     CORS(app, resources={r"/*": {"origins": allowed_origin}}, supports_credentials=True)
+
     app.config.from_object(ProductionConfig)
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
     # Initialize database
     init_db(app)
