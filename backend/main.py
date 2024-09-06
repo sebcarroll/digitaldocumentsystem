@@ -31,7 +31,8 @@ def create_app():
         Flask: The configured Flask application instance.
     """
     app = Flask(__name__)
-    CORS(app, supports_credentials=True)
+    allowed_origin = os.getenv('ALLOWED_ORIGIN', 'https://diganise.vercel.app/')
+    CORS(app, resources={r"/*": {"origins": allowed_origin}}, supports_credentials=True)
     app.config.from_object(ProductionConfig)
 
     # Initialize database
