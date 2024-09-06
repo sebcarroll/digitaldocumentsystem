@@ -2,4 +2,4 @@
 pytest -v /backend/app/tests
 
 # Start Gunicorn
-exec gunicorn --bind 0.0.0.0:8080 main:application
+exec gunicorn --bind :$PORT main:application
