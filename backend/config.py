@@ -55,18 +55,22 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     """Configuration for production environment."""
+
+    PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+    PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT')
+    PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME')
+    REDIS_TOKEN_URL = os.getenv('REDIS_TOKEN_URL', 'rediss://diganise-redis:6378')
+
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     DEBUG = False
-    pass
 
 class TestingConfig(Config):
     """Configuration for testing environment."""
 
     TESTING = True
     
-    # Use the real Pinecone API key and environment for testing
     PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
     PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT')
     PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME')
-    
-    # For OpenAI, you might still want to use a test key or mock it
+    REDIS_TOKEN_URL = os.getenv('REDIS_TOKEN_URL', 'rediss://diganise-redis:6378')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')

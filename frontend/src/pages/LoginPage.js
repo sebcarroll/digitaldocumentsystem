@@ -12,7 +12,7 @@ const LoginPage = () => {
   };
 
   const handleGoogleSignIn = () => {
-    window.location.href = 'http://localhost:8080/login';
+    window.location.href = 'https://diganise-backend-303391474990.europe-west2.run.app/login';
   };
 
   return (

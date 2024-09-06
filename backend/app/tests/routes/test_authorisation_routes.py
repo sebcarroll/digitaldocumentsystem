@@ -100,7 +100,7 @@ def test_oauth2callback_route_success(mock_redis, mock_drive_core, mock_fetch_us
 
     # Ensure the response is correct
     assert response.status_code == 302
-    assert 'http://localhost:3000/auth-success' in response.headers['Location']
+    assert 'https://diganise.vercel.app/auth-success' in response.headers['Location']
 
     # Verify session values are updated correctly
     with client.session_transaction() as sess:

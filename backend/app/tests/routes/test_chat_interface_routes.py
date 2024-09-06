@@ -147,7 +147,7 @@ def test_handle_options(client):
     """
     response = client.options('/chat/test-path')
     assert response.status_code == 200
-    assert response.headers.get('Access-Control-Allow-Origin') == 'http://localhost:3000'
+    assert response.headers.get('Access-Control-Allow-Origin') == 'https://diganise.vercel.app/'
     assert response.headers.get('Access-Control-Allow-Headers') == 'Content-Type'
     assert response.headers.get('Access-Control-Allow-Methods') == 'GET, POST, PUT, DELETE, OPTIONS'
     assert response.headers.get('Access-Control-Allow-Credentials') == 'true'

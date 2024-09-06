@@ -5,17 +5,16 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      args:
-        - PINECONE_API_KEY
-        - PINECONE_ENVIRONMENT
-        - PINECONE_INDEX_NAME
-        - OPENAI_API_KEY
-        - REDIS_TOKEN_URL=rediss://diganise-redis:6378
     ports:
       - "8080:8080"
     environment:
       - FLASK_ENV=development
       - PYTHONPATH=/backend
+      - PINECONE_API_KEY
+      - PINECONE_ENVIRONMENT
+      - PINECONE_INDEX_NAME
+      - OPENAI_API_KEY
+      - REDIS_TOKEN_URL=rediss://diganise-redis:6378
     volumes:
       - ./backend:/backend
     command: sh /backend/start.sh

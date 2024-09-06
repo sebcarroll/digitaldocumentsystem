@@ -118,7 +118,7 @@ def oauth2callback():
         else:
             current_app.extensions['chat_service'] = ChatService(drive_core)
 
-        return redirect('http://localhost:3000/auth-success')
+        return redirect('https://diganise.vercel.app/auth-success')
 
     except OAuth2Error as oe:
         return jsonify({"error": "OAuth2 error occurred", "details": str(oe)}), 400
