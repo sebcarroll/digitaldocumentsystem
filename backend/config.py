@@ -55,7 +55,7 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     """Configuration for production environment."""
-
+    DEBUG = False
     pass
 
 class TestingConfig(Config):

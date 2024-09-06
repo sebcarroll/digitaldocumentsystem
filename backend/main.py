@@ -31,9 +31,8 @@ def create_app():
         Flask: The configured Flask application instance.
     """
     app = Flask(__name__)
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # For development purposes only
     CORS(app, supports_credentials=True)
-    app.config.from_object(DevelopmentConfig if app.debug else ProductionConfig)
+    app.config.from_object(ProductionConfig)
 
     # Initialize database
     init_db(app)
@@ -128,4 +127,5 @@ def create_app():
 application = create_app()
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0', port=8080, ssl_context='adhoc', debug=True)
+    port = int(os.environ.get('PORT', 8080))
+    application.run(host='0.0.0.0', port=port)

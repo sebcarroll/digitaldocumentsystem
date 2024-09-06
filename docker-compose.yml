@@ -10,22 +10,16 @@ services:
         - PINECONE_ENVIRONMENT
         - PINECONE_INDEX_NAME
         - OPENAI_API_KEY
+        - REDIS_TOKEN_URL=rediss://diganise-redis:6378
     ports:
       - "8080:8080"
     environment:
       - FLASK_ENV=development
       - PYTHONPATH=/backend
-      - REDIS_TOKEN_URL=redis://redis:6379/2 
     volumes:
       - ./backend:/backend
-    depends_on:
-      - redis
     command: sh /backend/start.sh
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-      
+
   frontend:
     build:
       context: ./frontend
