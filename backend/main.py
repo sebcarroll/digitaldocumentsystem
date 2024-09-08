@@ -44,7 +44,7 @@ def create_app():
     app.config.from_object(ProductionConfig)
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 
     # Initialize database
     init_db(app)

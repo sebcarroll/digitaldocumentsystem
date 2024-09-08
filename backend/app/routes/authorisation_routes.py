@@ -23,21 +23,6 @@ from config import Config
 import requests
 import redis
 import json
-# Imports the Cloud Logging client library
-import google.cloud.logging
-
-# Instantiates a client
-client = google.cloud.logging.Client()
-
-# Retrieves a Cloud Logging handler based on the environment
-# you're running in and integrates the handler with the
-# Python logging module. By default this captures all logs
-# at INFO level and higher
-client.setup_logging()
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 redis_client = redis.StrictRedis.from_url(Config.REDIS_TOKEN_URL, decode_responses=True)
 
@@ -117,7 +102,6 @@ def oauth2callback():
 
         user_id = user_info.get('id')
         user_email = user_info.get('email')
-        
         if not user_id:
             return jsonify({"error": "Failed to retrieve user ID"}), 500
 
@@ -158,20 +142,16 @@ def check_auth():
         flask.Response: A JSON response indicating the authentication status.
     """
     user_id = session.get('user_id')
-    logging.info(f"User ID: {user_id}")
     if user_id:
         try:
             credentials_dict = json.loads(redis_client.get(f'user:{user_id}:token'))
-            logging.info(f"Credentials: {credentials_dict}")
             drive_core = DriveCore(credentials_dict)
             if drive_core:
                 session['last_active'] = datetime.now(timezone.utc).isoformat()
-                logging.info("Authenticated")
                 return jsonify({"authenticated": True})
 
         except Exception:
             pass
-    logging.info("Not authenticated")
     return jsonify({"authenticated": False})
 
 
