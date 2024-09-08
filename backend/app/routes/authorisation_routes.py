@@ -150,9 +150,9 @@ def check_auth():
             if drive_core:
                 session['last_active'] = datetime.now(timezone.utc).isoformat()
                 return jsonify({"authenticated": True})
-        except Exception as e:
+        except Exception:
             pass
-    return jsonify({"authenticated": e})
+    return jsonify({"authenticated": False})
 
 @auth_bp.route('/refresh-token')
 def refresh_token():
