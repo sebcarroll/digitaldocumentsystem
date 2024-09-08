@@ -42,6 +42,7 @@ class AuthService:
             state=state
         )
         flow.redirect_uri = self.config.GOOGLE_REDIRECT_URI
+        return flow
 
     @staticmethod
     def fetch_user_info(drive_core):
