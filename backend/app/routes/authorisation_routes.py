@@ -23,6 +23,9 @@ from config import Config
 import requests
 import redis
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 redis_client = redis.StrictRedis.from_url(Config.REDIS_TOKEN_URL, decode_responses=True)
 
@@ -143,16 +146,20 @@ def check_auth():
         flask.Response: A JSON response indicating the authentication status.
     """
     user_id = session.get('user_id')
+    logging.info(f"User ID: {user_id}")
     if user_id:
         try:
             credentials_dict = json.loads(redis_client.get(f'user:{user_id}:token'))
+            logging.info(f"Credentials: {credentials_dict}")
             drive_core = DriveCore(credentials_dict)
             if drive_core:
                 session['last_active'] = datetime.now(timezone.utc).isoformat()
                 return jsonify({"authenticated": True})
+                logging.info("Authenticated")
         except Exception:
             pass
     return jsonify({"authenticated": False})
+    logging.info("Not authenticated")
 
 @auth_bp.route('/refresh-token')
 def refresh_token():

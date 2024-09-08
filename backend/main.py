@@ -144,7 +144,7 @@ def create_app():
 
         headers = {"Access-Control-Allow-Origin": "https://diganise.vercel.app",
                    "Access-Control-Allow-Credentials": "true"} 
-'''
+    '''
     @app.after_request
     def after_request(response):
         response.headers.add('Access-Control-Allow-Origin', 'https://diganise.vercel.app')
