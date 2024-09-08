@@ -149,7 +149,7 @@ def create_app():
     def after_request(response):
         response.headers.add('Access-Control-Allow-Origin', 'https://diganise.vercel.app')
         response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
         return response             
    
