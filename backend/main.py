@@ -6,7 +6,7 @@ Celery, and Pinecone database connections. It also includes routes for home,
 Pinecone testing, and implements session management logic.
 """
 
-from flask import Flask, session, jsonify, request, redirect
+from flask import Flask, session, jsonify, request, redirect, make_response
 from flask_cors import CORS
 from app.routes.authorisation_routes import auth_bp
 from app.routes.access_drive_routes import drive_bp
@@ -116,7 +116,7 @@ def create_app():
         session.permanent = True
         app.permanent_session_lifetime = timedelta(minutes=30)
         session.modified = True
-        
+ 
         user_id = session.get('user_id')
         if user_id:
             credentials_json = redis_client.get(f'user:{user_id}:token')
@@ -132,6 +132,15 @@ def create_app():
         
         # Update the last active timestamp
         session['last_active'] = datetime.now(timezone.utc).isoformat()
+        try:
+            response = make_response()
+            response.headers.add('Access-Control-Allow-Origin', 'https://diganise.vercel.app/')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+            response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response
+        except Exception as e:
+            return jsonify({"error": "An error occurred while handling OPTIONS request"}), 500
         
     return app
 
