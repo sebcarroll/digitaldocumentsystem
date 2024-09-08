@@ -141,7 +141,7 @@ def create_app():
             
             return ("", 204, headers)
 
-    headers = {"Access-Control-Allow-Origin": "*"}              
+        headers = {"Access-Control-Allow-Origin": "*"}              
    
     return app
 
