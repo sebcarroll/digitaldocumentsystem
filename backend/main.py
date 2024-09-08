@@ -39,7 +39,7 @@ def create_app():
     app = Flask(__name__)
     app.before_request(https_redirect)
     allowed_origin = os.getenv('ALLOWED_ORIGIN', 'https://diganise.vercel.app')
-    CORS(app, resources={r"/*": {"origins": allowed_origin}}, supports_credentials=True)
+    CORS(app, supports_credentials=True)
 
     app.config.from_object(ProductionConfig)
     app.config['SESSION_COOKIE_SECURE'] = True
@@ -144,7 +144,7 @@ def create_app():
 
         headers = {"Access-Control-Allow-Origin": "https://diganise.vercel.app",
                    "Access-Control-Allow-Credentials": "true"} 
-
+'''
     @app.after_request
     def after_request(response):
         response.headers.add('Access-Control-Allow-Origin', 'https://diganise.vercel.app')
@@ -152,7 +152,7 @@ def create_app():
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
         response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
         return response             
-   
+    '''   
     return app
 
 # Create the application instance
