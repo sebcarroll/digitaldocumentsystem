@@ -130,18 +130,19 @@ def create_app():
                     except ValueError:
                         pass  # Handle invalid timestamp if necessary
         
-        # Update the last active timestamp
-        session['last_active'] = datetime.now(timezone.utc).isoformat()
-        try:
-            response = make_response()
-            response.headers.add('Access-Control-Allow-Origin', 'https://diganise.vercel.app/')
-            response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-            response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            response.headers.add('Access-Control-Allow-Credentials', 'true')
-            return response
-        except Exception as e:
-            return jsonify({"error": "An error occurred while handling OPTIONS request"}), 500
-        
+        #Set CORS headers for the preflight request
+        if request.method == "OPTIONS":
+         # Allows GET requests from any origin with the Content-Type
+         # header and caches preflight response for an 3600s 
+            headers = { "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET",
+                        "Access-Control-Allow-Headers": "Content-Type",
+                        "Access-Control-Max-Age": "3600", }
+            
+            return ("", 204, headers)
+
+    headers = {"Access-Control-Allow-Origin": "*"}              
+   
     return app
 
 # Create the application instance
