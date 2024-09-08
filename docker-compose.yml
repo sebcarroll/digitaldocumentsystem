@@ -14,7 +14,7 @@ services:
       - PINECONE_ENVIRONMENT
       - PINECONE_INDEX_NAME
       - OPENAI_API_KEY
-      - REDIS_TOKEN_URL=rediss://diganise-redis:6378
+      - REDIS_TOKEN_URL=redis://10.184.231.155:6379
     volumes:
       - ./backend:/backend
     command: sh /backend/start.sh

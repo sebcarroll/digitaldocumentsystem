@@ -4,6 +4,9 @@ FROM python:3.12 AS base
 # Set the working directory in the container
 WORKDIR /backend
 
+# Update and install CA certificates
+RUN apt-get update && apt-get install -y ca-certificates
+
 # Copy the requirements file into the container
 COPY requirements.txt .
 

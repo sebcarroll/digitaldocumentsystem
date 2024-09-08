@@ -28,14 +28,17 @@ def test_create_flow(app, auth_service):
         with patch('app.services.google_drive.auth_service.Flow.from_client_config') as mock_flow, \
              patch('app.services.google_drive.auth_service.url_for') as mock_url_for:
             mock_url_for.return_value = 'http://test.com/callback'
-            auth_service.create_flow()
-
+            mock_flow_instance = Mock()
+            mock_flow.return_value = mock_flow_instance
+            
+            flow = auth_service.create_flow()
+            
             mock_flow.assert_called_once()
             _, kwargs = mock_flow.call_args
             assert kwargs['client_config']['web']['client_id'] == 'test_client_id'
             assert kwargs['client_config']['web']['client_secret'] == 'test_client_secret'
             assert kwargs['scopes'] == ['test_scope']
-            assert kwargs['redirect_uri'] == 'http://test.com/callback'
+            assert flow.redirect_uri == 'http://test.com/callback'
 
 def test_fetch_user_info():
     """
