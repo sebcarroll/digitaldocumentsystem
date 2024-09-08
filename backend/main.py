@@ -134,14 +134,14 @@ def create_app():
         if request.method == "OPTIONS":
          # Allows GET requests from any origin with the Content-Type
          # header and caches preflight response for an 3600s 
-            headers = { "Access-Control-Allow-Origin": "*",
+            headers = { "Access-Control-Allow-Origin": "https://diganise.vercel.app",
                         "Access-Control-Allow-Methods": "GET",
                         "Access-Control-Allow-Headers": "Content-Type",
                         "Access-Control-Max-Age": "3600", }
             
             return ("", 204, headers)
 
-        headers = {"Access-Control-Allow-Origin": "*"}              
+        headers = {"Access-Control-Allow-Origin": "https://diganise.vercel.app"}              
    
     return app
 
