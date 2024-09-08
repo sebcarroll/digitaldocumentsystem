@@ -37,3 +37,4 @@ chardet
 selenium
 webdriver_manager
 flask-talisman
+google-cloud-logging
