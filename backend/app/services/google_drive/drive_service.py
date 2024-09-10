@@ -4,6 +4,7 @@ from google.auth.transport.requests import Request
 from flask import g
 from .core import DriveCore
 from googleapiclient.discovery import build
+from google.auth.exceptions import RefreshError
 
 class DriveService:
     """Service for handling Google Drive operations."""
@@ -28,7 +29,10 @@ class DriveService:
             return g.drive_service, g.people_service
 
         if self.drive_core.credentials.expired and self.drive_core.credentials.refresh_token:
-            self.drive_core.credentials.refresh(Request())
+            try:
+                self.drive_core.credentials.refresh(Request())
+            except RefreshError as e:
+                raise Exception(f"Error refreshing credentials: {str(e)}")
 
         g.drive_service = build('drive', 'v3', credentials=self.drive_core.credentials)
         g.people_service = build('people', 'v1', credentials=self.drive_core.credentials)
